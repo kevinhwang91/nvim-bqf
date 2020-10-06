@@ -1,0 +1,13 @@
+{
+	"languageserver": {
+		"lua": {
+			"settings": {
+				"Lua": {
+					"runtime": {
+						"version": "LuaJIT"
+					}
+				}
+			}
+		}
+	}
+}
