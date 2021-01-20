@@ -80,6 +80,7 @@ local function exec_preview(qf_all, idx, file_winid)
     vim.wo.wrap, vim.wo.foldenable = false, false
     vim.wo.number, vim.wo.relativenumber = true, false
     vim.wo.cursorline, vim.wo.signcolumn = true, 'no'
+    vim.wo.foldmethod = 'manual'
 
     if lnum < 1 then
         cmd('normal! gg')
@@ -259,7 +260,7 @@ function M.open(qf_winid, qf_idx)
 
     update_border(api.nvim_win_get_width(preview_winid), qf_items, qf_idx)
 
-    -- It seems that treesitter hold the querys althought bdelete buffer
+    -- It seems that treesitter hold the querys although bdelete buffer
     if vim.treesitter.highlighter.active[pbufnr] then
         return
     end
