@@ -261,7 +261,7 @@ function M.open(qf_winid, qf_idx)
     update_border(api.nvim_win_get_width(preview_winid), qf_items, qf_idx)
 
     -- It seems that treesitter hold the querys although bdelete buffer
-    if vim.treesitter.highlighter.active[pbufnr] then
+    if vim.treesitter.highlighter.active ~= nil and vim.treesitter.highlighter.active[pbufnr] then
         return
     end
 
