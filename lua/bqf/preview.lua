@@ -97,7 +97,7 @@ local function exec_preview(qf_all, idx, file_winid)
     fn.clearmatches()
 
     local lsp_ranges_hl = qf_all.lsp_ranges_hl and not vim.tbl_isempty(qf_all.lsp_ranges_hl) and
-                             qf_all.lsp_ranges_hl[idx] or {}
+                              qf_all.lsp_ranges_hl[idx] or {}
     local pattern_hl = qf_all.pattern_hl
 
     local range_id
@@ -240,7 +240,7 @@ function M.open(qf_winid, qf_idx)
     end
 
     local pbuf_loaded = api.nvim_buf_is_loaded(pbufnr)
-    local file_winid = qfs[qf_winid].file_winid
+    local file_winid = qftool.filewinid(qf_winid)
 
     update_mode(qf_winid)
     local preview_winid, border_winid = floatwin.open(pbufnr, qf_winid, file_winid)
@@ -283,8 +283,7 @@ function M.scroll(direction)
     if preview_winid < 0 or not direction then
         return
     end
-    local qf_winid = api.nvim_get_current_win()
-    local file_winid = qfs[qf_winid].file_winid
+    local file_winid = qftool.filewinid()
     utils.win_execute(preview_winid, function()
         if direction == 0 then
             fn.execute('normal! `p')
@@ -352,8 +351,9 @@ end
 -- quickfix window enter the entry buffer, it only produces in quickfix not for location.
 function M.fix_qf_jump(qf_bufnr)
     local qf_winid = api.nvim_get_current_win()
-    local file_winid = qfs[qf_winid].file_winid or -1
-    if file_winid > 0 and api.nvim_win_is_valid(file_winid) then
+    local ok, msg = pcall(qftool.filewinid, qf_winid)
+    if ok then
+        local file_winid = msg
         local buf_entered = api.nvim_get_current_buf()
         api.nvim_win_set_buf(qf_winid, qf_bufnr)
         api.nvim_set_current_win(file_winid)

@@ -151,7 +151,7 @@ function M.close_win(qf_winid)
         return
     end
 
-    local file_winid = qfs[qf_winid].file_winid
+    local file_winid = qftool.filewinid(qf_winid)
     local last_win_id = fn.win_getid(fn.winnr('#'))
     local qf_pos = qfpos.get_pos(qf_winid, file_winid)
     local qf_win, file_win = fn.win_id2win(qf_winid), fn.win_id2win(file_winid)

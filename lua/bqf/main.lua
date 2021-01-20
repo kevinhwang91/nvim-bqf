@@ -17,21 +17,6 @@ local function setup()
     ]], false)
 end
 
-local function valid_file_winid(file_winid)
-    file_winid = file_winid or fn.win_getid(fn.winnr('#'))
-    if file_winid > 0 and api.nvim_win_is_valid(file_winid) then
-        return file_winid
-    end
-
-    for winid in ipairs(api.nvim_list_wins()) do
-        if winid > 0 and api.nvim_win_is_valid(winid) and api.nvim_win_get_config(winid).relative ==
-            '' then
-            return winid
-        end
-    end
-    assert(false, 'A valid file window is not found in current tabpage')
-end
-
 function M.toggle()
     if vim.b.bqf_enabled then
         M.disable()
@@ -53,13 +38,7 @@ function M.enable()
 
     local qf_type = qftool.type(qf_winid)
 
-    local file_winid
-    if qf_type == 'loc' then
-        file_winid = fn.getloclist(qf_winid, {filewinid = 0}).filewinid
-    else
-        file_winid = valid_file_winid(qfs[qf_winid].file_winid)
-    end
-    qfs[qf_winid].file_winid = file_winid
+    local file_winid = qftool.filewinid(qf_winid)
 
     if qf_type == 'qf' and vim.bo.bufhidden == 'wipe' then
         qfs[qf_winid].bufhidden = 'wipe'
@@ -111,7 +90,7 @@ function M.disable()
 end
 
 function M.kill_alone_qf()
-    local file_winid = qfs[api.nvim_get_current_win()].file_winid
+    local file_winid = qftool.filewinid()
     if file_winid and not api.nvim_win_is_valid(file_winid) then
         cmd('quit')
     end

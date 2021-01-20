@@ -30,7 +30,7 @@ function M.open(close, qf_winid, idx)
     qf_winid = qf_winid or api.nvim_get_current_win()
     idx = idx or api.nvim_win_get_cursor(qf_winid)[1]
 
-    local file_winid = qfs[qf_winid].file_winid
+    local file_winid = qftool.filewinid(qf_winid)
 
     if file_winid and not api.nvim_win_is_valid(file_winid) then
         api.nvim_feedkeys(api.nvim_replace_termcodes('<CR>', true, false, true), 'n', true)
@@ -68,7 +68,7 @@ function M.split(vertical, qf_winid, idx)
         qftool.update({idx = idx}, qf_winid)
     end
     local suffix = qf_type == 'loc' and 'll' or 'cc'
-    local file_winid = qfs[qf_winid].file_winid
+    local file_winid = qftool.filewinid(qf_winid)
     api.nvim_set_current_win(file_winid)
     api.nvim_win_close(qf_winid, true)
 
@@ -87,7 +87,7 @@ function M.tabedit(stay, qf_winid, idx)
     end
     local suffix = qf_type == 'loc' and 'll' or 'cc'
 
-    local file_winid = qfs[qf_winid].file_winid
+    local file_winid = qftool.filewinid(qf_winid)
     api.nvim_set_current_win(file_winid)
     set_opts_around(function()
         api.nvim_set_current_win(qf_winid)

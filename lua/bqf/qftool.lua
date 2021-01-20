@@ -7,6 +7,30 @@ local qfs = require('bqf.qfsession')
 
 local cache = {count = 0}
 
+function M.filewinid(winid)
+    winid = winid or api.nvim_get_current_win()
+    if not qfs[winid].file_winid then
+        local file_winid
+        if M.type(winid) == 'loc' then
+            file_winid = fn.getloclist(winid, {filewinid = 0}).filewinid
+        else
+            file_winid = fn.win_getid(fn.winnr('#'))
+            if file_winid <= 0 or not api.nvim_win_is_valid(file_winid) then
+                for w_id in ipairs(api.nvim_list_wins()) do
+                    if w_id > 0 and w_id ~= winid and api.nvim_win_is_valid(w_id) and
+                        api.nvim_win_get_config(w_id).relative == '' then
+                        file_winid = w_id
+                        break
+                    end
+                end
+                assert(false, 'A valid file window is not found in current tabpage')
+            end
+        end
+        qfs[winid].file_winid = file_winid
+    end
+    return qfs[winid].file_winid
+end
+
 function M.type(winid)
     local bufnr = winid and fn.winbufnr(winid) or api.nvim_get_current_buf()
 
