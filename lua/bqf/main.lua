@@ -98,6 +98,9 @@ end
 
 function M.close_qf()
     local winid = tonumber(fn.expand('<afile>'))
+    if qfs[winid].bufhidden then
+        vim.bo.bufhidden = qfs[winid].bufhidden
+    end
     if winid and api.nvim_win_is_valid(winid) then
         layout.close_win(winid)
         qfs.release(winid)
