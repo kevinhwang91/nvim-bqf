@@ -97,6 +97,8 @@ because vim's syntax is very lagging and is extremely bad for the user experienc
 
 #### fzf mode
 
+Press `zf` in quickfix window will enter fzf mode.
+
 fzf in nvim-bqf supports `ctrl-t`/`ctrl-x`/`ctrl-v` key bindings that allow you to
 open up an item in a new tab, a new horizontal split, or in a new vertical split.
 
@@ -197,7 +199,7 @@ You can set value on the fly without any validation, good luck!
 
 | Function    | Action                                             | Key     |
 | ----------- | -------------------------------------------------- | ------- |
-| open        | open to the item under the cursor                  | `<CR>`  |
+| open        | open the item under the cursor                     | `<CR>`  |
 | openc       | like `open`, and close quickfix window             | `o`     |
 | tab         | open the item under the curosr in a new tab        | `t`     |
 | tabb        | like `tab`, but stay at quickfix window            | `T`     |
