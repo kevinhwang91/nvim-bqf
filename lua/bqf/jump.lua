@@ -3,7 +3,6 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local qfs = require('bqf.qfsession')
 local qftool = require('bqf.qftool')
 local utils = require('bqf.utils')
 
