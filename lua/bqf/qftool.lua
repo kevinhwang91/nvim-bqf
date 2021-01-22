@@ -149,10 +149,13 @@ function M.history(direction)
     local qf_list = M.get({nr = 0, size = 0, title = 0})
     local nr, size, title = qf_list.nr, qf_list.size, qf_list.title
 
-    cmd(string.format([[echon '(' | echohl Identifier | echon %d | echohl None | echon ' of ']], nr))
-    cmd(string.format([[echohl Identifier | echon %d | echohl None | echon ') ']], last_nr))
-    cmd(string.format([[echon '[' | echohl Type | echon %d | echohl None | echon '] ']], size))
-    cmd(string.format([[echohl Title | echon ' >> ' . %q | echohl None]], title))
+    -- delay to cooperate with preview.fix_missing_redraw
+    vim.defer_fn(function()
+        cmd(string.format([[echon '(' | echohl Identifier | echon %d | echohl None | echon ' of ']], nr))
+        cmd(string.format([[echohl Identifier | echon %d | echohl None | echon ') ']], last_nr))
+        cmd(string.format([[echon '[' | echohl Type | echon %d | echohl None | echon '] ']], size))
+        cmd(string.format([[echohl Title | echon ' >> ' . %q | echohl None]], title))
+    end, 100)
 end
 
 return M

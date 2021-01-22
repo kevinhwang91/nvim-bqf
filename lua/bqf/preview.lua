@@ -167,6 +167,21 @@ local function fire_restore_buf_opts(bufnr, loaded_before, fwin_opts)
     end
 end
 
+-- upstream bug
+-- https://github.com/neovim/neovim/issues/11597
+local function fix_missing_redraw(qf_winid)
+    M.open(qf_winid)
+    vim.defer_fn(function()
+        cmd('mode')
+    end, 20)
+end
+
+local function reopen(qf_winid)
+    qf_winid = qf_winid or api.nvim_get_current_win()
+    M.close(qf_winid)
+    M.open(qf_winid)
+end
+
 function M.auto_enabled()
     return auto_preview
 end
@@ -180,13 +195,7 @@ function M.toggle_mode()
     local ps = qfs[qf_winid].preview
     ps.full = ps.full ~= true
     ps.idx = -1
-    M.open(qf_winid)
-
-    if not ps.full then
-        vim.schedule(function()
-            cmd('mode')
-        end)
-    end
+    fix_missing_redraw(qf_winid)
 end
 
 function M.close(qf_winid)
@@ -272,10 +281,14 @@ function M.open(qf_winid, qf_idx)
 end
 
 function M.init_window(qf_winid)
-    qfs[qf_winid].preview = {idx = -1, full = false}
+    qfs[qf_winid].preview = qfs[qf_winid].preview or {full = false}
+    qfs[qf_winid].preview.idx = -1
     if auto_preview and api.nvim_get_current_win() == qf_winid then
-        local qf_idx = api.nvim_win_get_cursor(qf_winid)[1]
-        M.open(qf_winid, qf_idx)
+        if qfs[qf_winid].preview.full then
+            fix_missing_redraw(qf_winid)
+        else
+            M.open(qf_winid)
+        end
     end
 end
 
@@ -342,8 +355,7 @@ end
 
 function M.redraw_win(qf_winid)
     if floatwin.validate_window() then
-        M.close(qf_winid)
-        M.open(qf_winid)
+        reopen(qf_winid)
     end
 end
 
