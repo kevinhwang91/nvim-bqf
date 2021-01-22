@@ -205,8 +205,10 @@ end
 
 function M.open(qf_winid, qf_idx)
     qf_winid = qf_winid or api.nvim_get_current_win()
+    local file_winid = qftool.filewinid(qf_winid)
+
     local ps = qfs[qf_winid].preview
-    if not ps or fn.winnr('$') == 1 then
+    if not ps or fn.winnr('$') == 1 or api.nvim_win_get_config(file_winid).relative ~= '' then
         return
     end
 
@@ -240,7 +242,6 @@ function M.open(qf_winid, qf_idx)
     end
 
     local pbuf_loaded = api.nvim_buf_is_loaded(pbufnr)
-    local file_winid = qftool.filewinid(qf_winid)
 
     update_mode(qf_winid)
     local preview_winid, border_winid = floatwin.open(pbufnr, qf_winid, file_winid)
@@ -318,7 +319,6 @@ function M.toggle_item()
 end
 
 function M.move_curosr()
-    -- TODO colder and cnewer only fire CursorMoved event, why?
     local qf_winid = api.nvim_get_current_win()
     local ps = qfs[qf_winid].preview
     if not ps then
