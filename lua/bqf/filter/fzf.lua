@@ -78,12 +78,8 @@ local function fzf_handler(qf_winid, ret)
         context.bqf.lsp_ranges_hl = lsp_ranges
     end
 
-    local qf_hei = api.nvim_win_get_height(qf_winid)
     title = '*' .. title
     qftool.set({nr = '$', context = context, title = title, items = items}, qf_winid)
-    if qf_hei > #selected_index then
-        preview.redraw_win(qf_winid)
-    end
 end
 
 local function create_job(qf_winid, tmpfile)
@@ -120,7 +116,7 @@ end
 function M.prepare(qf_winid, pid)
     local row, col = unpack(api.nvim_win_get_position(qf_winid))
     local line_count = api.nvim_buf_line_count(fn.winbufnr(qf_winid))
-    api.nvim_win_set_config(false, {
+    api.nvim_win_set_config(0, {
         relative = 'editor',
         width = api.nvim_win_get_width(qf_winid),
         height = math.min(api.nvim_win_get_height(qf_winid) + 1, line_count + 1),

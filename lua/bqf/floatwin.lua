@@ -141,7 +141,7 @@ function M.validate_window()
 end
 
 function M.winid()
-    return M.validate_window() and preview_winid or -1
+    return preview_winid, border_winid
 end
 
 function M.close()
