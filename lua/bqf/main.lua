@@ -53,7 +53,7 @@ function M.enable()
     -- some plugins will change the quickfix window, preview winodw should init later
     vim.defer_fn(function()
         preview.init_window(qf_winid)
-    end, 20)
+    end, 50)
 
     -- after vim-patch:8.1.0877, quickfix will reuse buffer, below buffer setup is no necessary
     if vim.b.bqf_enabled then
