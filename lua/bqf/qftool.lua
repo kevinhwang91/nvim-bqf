@@ -15,14 +15,16 @@ function M.filewinid(winid)
             file_winid = fn.getloclist(winid, {filewinid = 0}).filewinid
         else
             file_winid = fn.win_getid(fn.winnr('#'))
-            if file_winid <= 0 or not api.nvim_win_is_valid(file_winid) then
-                for w_id in ipairs(api.nvim_list_wins()) do
-                    if w_id > 0 and w_id ~= winid and api.nvim_win_is_valid(w_id) and
-                        api.nvim_win_get_config(w_id).relative == '' then
-                        file_winid = w_id
-                        break
-                    end
+        end
+        if file_winid <= 0 or not api.nvim_win_is_valid(file_winid) then
+            for _, w_id in ipairs(api.nvim_list_wins()) do
+                if w_id > 0 and vim.bo[fn.winbufnr(w_id)].buftype ~= 'quickfix' and
+                    api.nvim_win_is_valid(w_id) and api.nvim_win_get_config(w_id).relative == '' then
+                    file_winid = w_id
+                    break
                 end
+            end
+            if file_winid <= 0 or not api.nvim_win_is_valid(file_winid) then
                 assert(false, 'A valid file window is not found in current tabpage')
             end
         end
@@ -151,7 +153,8 @@ function M.history(direction)
 
     -- delay to cooperate with preview.fix_missing_redraw
     vim.defer_fn(function()
-        cmd(string.format([[echon '(' | echohl Identifier | echon %d | echohl None | echon ' of ']], nr))
+        cmd(string.format([[echon '(' | echohl Identifier | echon %d | echohl None | echon ' of ']],
+            nr))
         cmd(string.format([[echohl Identifier | echon %d | echohl None | echon ') ']], last_nr))
         cmd(string.format([[echon '[' | echohl Type | echon %d | echohl None | echon '] ']], size))
         cmd(string.format([[echohl Title | echon ' >> ' . %q | echohl None]], title))
