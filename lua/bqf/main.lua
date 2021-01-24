@@ -8,6 +8,7 @@ local qftool = require('bqf.qftool')
 local preview = require('bqf.preview')
 local layout = require('bqf.layout')
 local keymap = require('bqf.keymap')
+local sign = require('bqf.sign')
 
 local function setup()
     api.nvim_exec([[
@@ -46,10 +47,12 @@ function M.enable()
 
     vim.wo.number, vim.wo.relativenumber = true, false
     vim.wo.wrap, vim.foldenable = false, false
-    vim.wo.foldcolumn = '0'
+    vim.wo.foldcolumn, vim.wo.signcolumn = '0', 'number'
 
     layout.init(qf_winid, file_winid, qf_type)
 
+    local qf_bufnr = fn.winbufnr(qf_winid)
+    sign.reset(qf_bufnr)
     -- some plugins will change the quickfix window, preview winodw should init later
     vim.defer_fn(function()
         preview.init_window(qf_winid)
@@ -62,7 +65,7 @@ function M.enable()
 
     vim.b.bqf_enabled = true
     preview.buf_event()
-    keymap.buf_nmap()
+    keymap.buf_map()
 
     api.nvim_exec([[
         augroup Bqf

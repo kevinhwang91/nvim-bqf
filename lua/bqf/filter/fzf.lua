@@ -9,10 +9,17 @@ local jump = require('bqf.jump')
 local utils = require('bqf.utils')
 local supply = require('bqf.supply')
 local qftool = require('bqf.qftool')
+local base = require('bqf.filter.base')
 local config = require('bqf.config')
+local sign = require('bqf.sign')
 
 local def_config = {
-    action_for = {['ctrl-t'] = 'tabedit', ['ctrl-x'] = 'split', ['ctrl-v'] = 'vsplit'},
+    action_for = {
+        ['ctrl-t'] = 'tabedit',
+        ['ctrl-x'] = 'split',
+        ['ctrl-v'] = 'vsplit',
+        ['ctrl-s'] = 'signtoggle'
+    },
     extra_opts = {'--bind', 'ctrl-o:toggle-all'}
 }
 
@@ -36,7 +43,7 @@ local function setup()
     ]], false)
 end
 
-local function fzf_handler(qf_winid, ret)
+local function handler(qf_winid, ret)
     if #ret < 2 then
         return
     end
@@ -48,38 +55,34 @@ local function fzf_handler(qf_winid, ret)
     table.sort(selected_index)
 
     local idx
+    local action = action_for[key]
     if #selected_index == 1 then
         idx = selected_index[1]
-        local action = action_for[key]
         if action == 'tabedit' then
             jump.tabedit(false, qf_winid, idx)
         elseif action == 'split' then
             jump.split(false, qf_winid, idx)
         elseif action == 'vsplit' then
             jump.split(true, qf_winid, idx)
-        else
+        elseif not action then
             jump.open(true, qf_winid, idx)
-
         end
         return
     end
 
-    local qf_all = qftool.getall(qf_winid)
-    local context, title, old_items = qf_all.context, qf_all.title, qf_all.items
-    local lsp_ranges, items = {}, {}
-    for _, index in ipairs(selected_index) do
-        table.insert(items, old_items[index])
-        if qf_all.lsp_ranges_hl then
-            table.insert(lsp_ranges, qf_all.lsp_ranges_hl[index])
+    if action == 'signtoggle' then
+        for _, i in ipairs(selected_index) do
+            sign.toggle(0, fn.winbufnr(qf_winid), i)
         end
-    end
+    else
+        local qf_all = qftool.getall(qf_winid)
+        base.filter_list(qf_winid, coroutine.wrap(function()
+            for _, i in ipairs(selected_index) do
+                coroutine.yield(i, qf_all.items[i])
+            end
+        end))
 
-    if #lsp_ranges > 0 then
-        context.bqf.lsp_ranges_hl = lsp_ranges
     end
-
-    title = '*' .. title
-    qftool.set({nr = '$', context = context, title = title, items = items}, qf_winid)
 end
 
 local function create_job(qf_winid, tmpfile)
@@ -140,37 +143,33 @@ function M.run()
 
     local qf_winid = api.nvim_get_current_win()
     local qf_type = qftool.type()
-    local items, prompt
-    if qf_type == 'loc' then
-        items = fn.getloclist(0)
-        prompt = 'Location> '
-    else
-        items = fn.getqflist()
-        prompt = 'Quickfix> '
-    end
+    local prompt = qf_type == 'loc' and 'Location> ' or 'Quickfix> '
+    local qf_all = qftool.getall(qf_winid)
+    local items, signs = qf_all.items, qf_all.signs or {}
     if #items < 2 then
         return
     end
 
-    local padding = utils.gutter_size(qf_winid) - 2
+    local padding = utils.gutter_size(qf_winid) - 3
     local expect_keys = table.concat(vim.tbl_keys(action_for), ',')
+    local escape_signe = utils.render_str(string.format('%%%ds', padding), 'BqfSign', 'cyan')
     local escape_filename = utils.render_str('%s', 'qfFileName', 'blue')
     local escape_linenr = utils.render_str('%d col %d', 'qfLineNr', 'black')
     local escape_seqarator = utils.render_str('|', 'qfSeparator', 'white')
     local escape_error = utils.render_str('%s', 'qfError', 'red')
-    local fmt = string.format('%%d\t%s%s%s%s%s %%s', string.rep(' ', padding), escape_filename,
+    local fmt = string.format('%%d\t%s %s%s%s%s %%s', escape_signe, escape_filename,
         escape_seqarator, escape_linenr, escape_seqarator)
-    local fmt_e = string.format('%%d\t%s%s%s%s %s%s %%s', string.rep(' ', padding), escape_filename,
+    local fmt_e = string.format('%%d\t%s %s%s%s %s%s %%s', escape_signe, escape_filename,
         escape_seqarator, escape_linenr, escape_error, escape_seqarator)
     local opts = {
         source = supply.tbl_kv_map(function(key, val)
             local ret
             if not val.type or val.type == '' then
-                ret = string.format(fmt, key, fn.bufname(val.bufnr), val.lnum, val.col,
-                    vim.trim(val.text))
+                ret = string.format(fmt, key, signs[key] and '^' or '', fn.bufname(val.bufnr),
+                    val.lnum, val.col, vim.trim(val.text))
             else
-                ret = string.format(fmt_e, key, fn.bufname(val.bufnr), val.lnum, val.col,
-                    val.type == 'E' and 'error' or val.type, vim.trim(val.text))
+                ret = string.format(fmt_e, key, signs[key] and '^' or '', fn.bufname(val.bufnr),
+                    val.lnum, val.col, val.type == 'E' and 'error' or val.type, vim.trim(val.text))
             end
             return ret
         end, items),
@@ -203,7 +202,7 @@ function M.run()
     -- TODO lua can't translate nested table data to vimscript
     local fzf_wrap = fn['fzf#wrap'](opts)
     fzf_wrap['sink*'] = function(ret)
-        return fzf_handler(qf_winid, ret)
+        return handler(qf_winid, ret)
     end
     fn['fzf#run'](fzf_wrap)
 end
