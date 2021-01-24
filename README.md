@@ -10,15 +10,17 @@ The goal of nvim-bqf is to make Neovim's quickfix window better.
 
 * [Table of contents](#table-of-contents)
 * [Features](#features)
-* [Todo](#todo)
+* [TODO](#todo)
 * [Quickstart](#quickstart)
   * [Requirements](#requirements)
   * [Installation](#installation)
   * [Minimal configuration](#minimal-configuration)
   * [Usage](#usage)
+    * [filter with signs](#filter-with-signs)
     * [fzf mode](#fzf-mode)
     * [Search and replace example](#search-and-replace-example)
 * [Documentation](#documentation)
+  * [Setup and description](#setup-and-description)
   * [Function table](#function-table)
   * [Buffer Commands](#buffer-commands)
   * [Commands](#commands)
@@ -42,12 +44,13 @@ The goal of nvim-bqf is to make Neovim's quickfix window better.
 - Fast start time, compare with others lua plugins
 - Integrate [fzf](https://github.com/junegunn/fzf) as a filter in quickfix window
 
-## Todo
+## TODO
 
-- [ ] Add tests
-- [ ] Provide some useful functions to users
-- [ ] Batch filter items with signs
+- [x] Batch filter items with signs
+- [ ] Provide statusline for information
 - [ ] Find a better way to list history and switch to one
+- [ ] Provide some useful functions to users
+- [ ] Add tests
 - [ ] Use context field to override the existed configuration
 
 ## Quickstart
@@ -95,7 +98,12 @@ because vim's syntax is very lagging and is extremely bad for the user experienc
 3. If you want to taste quickfix like demo, check out [Integrate with other plugins](#integrate-with-other-plugins),
    and pick up the configuration you like.
 
-#### fzf mode
+#### Filter with signs
+
+1. Press `<Tab>` or `<S-Tab>` to toggle the sign of item
+2. Press `zn` or `zN` will create new quickfix list
+
+#### Fzf mode
 
 Press `zf` in quickfix window will enter fzf mode.
 
@@ -104,6 +112,8 @@ open up an item in a new tab, a new horizontal split, or in a new vertical split
 
 fzf becomes a quickfix filter and create a new quickfix list when multiple items are selected and
 accepted.
+
+fzf also support `ctrl-s` to toggle items' sign.
 
 #### Search and replace example
 
@@ -117,6 +127,8 @@ but filter `fzf.lua` file.
 > Demonstrating batch undo just show that quickfix has this feature
 
 ## Documentation
+
+### Setup and description
 
 ```lua
 root = {
@@ -177,6 +189,10 @@ root = {
                 ['ctrl-x'] = {
                     description = [[press ctrl-x to open up the item in a new horizontal split]],
                     default = 'split'
+                },
+                ['ctrl-s'] = {
+                    description = [[press ctrl-s to toggle sign for the selected items]],
+                    default = 'signtoggle'
                 }
             },
             extra_opts = {
@@ -195,27 +211,34 @@ You can set value on the fly without any validation, good luck!
 
 ### Function table
 
-`Function` only works in the quickfix window
+`Function` only works in the quickfix window, keys can be customized by
+`lua require('bqf').setup({func_map = {}})`.
 
-| Function    | Action                                             | Key     |
-| ----------- | -------------------------------------------------- | ------- |
-| open        | open the item under the cursor                     | `<CR>`  |
-| openc       | like `open`, and close quickfix window             | `o`     |
-| tab         | open the item under the curosr in a new tab        | `t`     |
-| tabb        | like `tab`, but stay at quickfix window            | `T`     |
-| split       | open the item under the cursor in vertical split   | `<C-x>` |
-| vsplit      | open the item under the cursor in horizontal split | `<C-v>` |
-| prevfile    | go to previous file under the cursor               | `<C-p>` |
-| nextfile    | go to next file under the cursor                   | `<C-n>` |
-| prevhist    | go to previous quickfix list                       | `<`     |
-| nexthist    | go to next quickfix list                           | `>`     |
-| pscrollup   | scroll up half-page in preview window              | `<C-b>` |
-| pscrolldown | scroll down half-page in preview window            | `<C-f>` |
-| pscrollorig | scroll back to original postion in preview window  | `zo`    |
-| ptogglemode | toggle preview window between normal and max size  | `zp`    |
-| ptoggleitem | toggle preview for an item of quickfix list        | `p`     |
-| ptoggleauto | toggle auto preview when cursor move               | `P`     |
-| fzffilter   | use fzf as a filter for quickfix list              | `zf`    |
+| Function    | Action                                             | Def Key   |
+| ----------- | -------------------------------------------------- | --------- |
+| open        | open the item under the cursor                     | `<CR>`    |
+| openc       | like `open`, and close quickfix window             | `o`       |
+| tab         | open the item under the curosr in a new tab        | `t`       |
+| tabb        | like `tab`, but stay at quickfix window            | `T`       |
+| split       | open the item under the cursor in vertical split   | `<C-x>`   |
+| vsplit      | open the item under the cursor in horizontal split | `<C-v>`   |
+| prevfile    | go to previous file under the cursor               | `<C-p>`   |
+| nextfile    | go to next file under the cursor                   | `<C-n>`   |
+| prevhist    | go to previous quickfix list                       | `<`       |
+| nexthist    | go to next quickfix list                           | `>`       |
+| stoggleup   | toggle sign and move cursor up                     | `<S-Tab>` |
+| stoggledown | toggle sign and move cursor down                   | `<Tab>`   |
+| stogglevm   | toggle multiple signs in visual mode               | `<Tab>`   |
+| sclear      | clear the signs in current quickfix list           | `z<Tab>`  |
+| pscrollup   | scroll up half-page in preview window              | `<C-b>`   |
+| pscrolldown | scroll down half-page in preview window            | `<C-f>`   |
+| pscrollorig | scroll back to original postion in preview window  | `zo`      |
+| ptogglemode | toggle preview window between normal and max size  | `zp`      |
+| ptoggleitem | toggle preview for an item of quickfix list        | `p`       |
+| ptoggleauto | toggle auto preview when cursor moved              | `P`       |
+| filter      | create new list for signed items                   | `zn`      |
+| filterr     | create new list for non-signed items               | `zN`      |
+| fzffilter   | enter fzf mode                                     | `zf`      |
 
 ### Buffer Commands
 
@@ -328,12 +351,14 @@ highlight default link BqfPreviewFloat Normal
 highlight default link BqfPreviewBorder Normal
 highlight default link BqfPreviewCursor Cursor
 highlight default link BqfPreviewRange Search
+highlight default link BqfSign SignColumn
 ```
 
 - `BqfPreviewFloat`: highlight floating window
 - `BqfPreviewBorder`: highlight border of floating window
 - `BqfPreviewCursor`: highlight the cursor format `[lnum, col]` in preview window
 - `BqfPreviewRange`: highlight the range format `[lnum, col, range]`, `pattern_hl` and `lsp_ranges_hl`
+- `BqfSign`: highlight the sign in quickfix window
 
 ## Advanced configuration
 
@@ -362,7 +387,8 @@ require('bqf').setup({
     },
     func_map = {
         vsplit = '',
-        ptogglemode = 'z,'
+        ptogglemode = 'z,',
+        stoggleup = ''
     },
     filter = {
         fzf = {
@@ -454,3 +480,4 @@ call plug#end()
 ## License
 
 The project is licensed under a BSD-3-clause license. See [LICENSE](./LICENSE) file for details.
+
