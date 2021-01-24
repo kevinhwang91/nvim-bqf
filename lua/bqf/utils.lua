@@ -85,8 +85,13 @@ function M.lsp_range2pos_list(lsp_ranges)
 end
 
 function M.pattern2pos_list(pattern_hl)
-    local s_lnum, s_col = unpack(fn.searchpos(pattern_hl, 'cn'))
-    local e_lnum, e_col = unpack(fn.searchpos(pattern_hl, 'cen'))
+    local s_lnum, s_col, e_lnum, e_col
+    if not pcall(function()
+        s_lnum, s_col = unpack(fn.searchpos(pattern_hl, 'cn'))
+        e_lnum, e_col = unpack(fn.searchpos(pattern_hl, 'cen'))
+    end) then
+        return {}
+    end
     if s_lnum == 0 or s_col == 0 or e_lnum == 0 or e_col == 0 then
         return {}
     end
