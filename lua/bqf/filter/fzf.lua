@@ -44,10 +44,6 @@ local function setup()
 end
 
 local function handler(qf_winid, ret)
-    if #ret < 2 then
-        return
-    end
-
     local key = table.remove(ret, 1)
     local selected_index = vim.tbl_map(function(e)
         return tonumber(e:match('%d+'))
@@ -67,22 +63,24 @@ local function handler(qf_winid, ret)
         elseif not action then
             jump.open(true, qf_winid, idx)
         end
-        return
     end
 
     if action == 'signtoggle' then
         for _, i in ipairs(selected_index) do
             sign.toggle(0, fn.winbufnr(qf_winid), i)
         end
-    else
-        local qf_all = qftool.getall(qf_winid)
-        base.filter_list(qf_winid, coroutine.wrap(function()
-            for _, i in ipairs(selected_index) do
-                coroutine.yield(i, qf_all.items[i])
-            end
-        end))
-
     end
+
+    if #selected_index == 1 then
+        return
+    end
+    local qf_all = qftool.getall(qf_winid)
+    base.filter_list(qf_winid, coroutine.wrap(function()
+        for _, i in ipairs(selected_index) do
+            coroutine.yield(i, qf_all.items[i])
+        end
+    end))
+
 end
 
 local function create_job(qf_winid, tmpfile)
