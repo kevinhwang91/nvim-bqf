@@ -69,17 +69,18 @@ local function handler(qf_winid, ret)
         for _, i in ipairs(selected_index) do
             sign.toggle(0, fn.winbufnr(qf_winid), i)
         end
+    else
+        if #selected_index == 1 then
+            return
+        end
+        local qf_all = qftool.getall(qf_winid)
+        base.filter_list(qf_winid, coroutine.wrap(function()
+            for _, i in ipairs(selected_index) do
+                coroutine.yield(i, qf_all.items[i])
+            end
+        end))
     end
 
-    if #selected_index == 1 then
-        return
-    end
-    local qf_all = qftool.getall(qf_winid)
-    base.filter_list(qf_winid, coroutine.wrap(function()
-        for _, i in ipairs(selected_index) do
-            coroutine.yield(i, qf_all.items[i])
-        end
-    end))
 
 end
 
