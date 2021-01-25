@@ -34,7 +34,7 @@ function M.run(reverse)
     local qf_winid = api.nvim_get_current_win()
     local qf_all = qftool.getall(qf_winid)
     local items, signs = qf_all.items, qf_all.signs or {}
-    if reverse and #signs == 0 then
+    if reverse and vim.tbl_isempty(signs) then
         return
     end
     M.filter_list(qf_winid, coroutine.wrap(function()
