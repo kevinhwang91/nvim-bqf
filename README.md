@@ -115,7 +115,17 @@ accepted.
 
 fzf also support `ctrl-s` to toggle items' sign.
 
-#### Search and replace example
+#### Filter items with signs demo
+
+Key input sequence: `<Tab>j<Tab>zn<zN>zf^^<C-o><C-s>zf<C-o><C-s>`
+
+<p align="center">
+    <img width="864px" src="https://user-images.githubusercontent.com/17562139/105815794-6a95f600-5fee-11eb-9add-003b5e9b5dc0.gif">
+</p>
+
+> input `^^` in fzf will find all signed items, `ctrl-o` in fzf mode has bind `toggle-all`
+
+#### Search and replace demo
 
 Using external grep-like program to search `qftool` and replace it to `mytool`,
 but filter `fzf.lua` file.
