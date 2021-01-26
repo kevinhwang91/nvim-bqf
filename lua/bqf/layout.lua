@@ -152,7 +152,6 @@ function M.close_win(qf_winid)
     end
 
     local file_winid = qftool.filewinid(qf_winid)
-    local last_win_id = fn.win_getid(fn.winnr('#'))
     local qf_pos = qfpos.get_pos(qf_winid, file_winid)
     local qf_win, file_win = fn.win_id2win(qf_winid), fn.win_id2win(file_winid)
     local qf_win_j, qf_win_l, qf_hei, qf_wid
@@ -178,9 +177,9 @@ function M.close_win(qf_winid)
         cmd(string.format('noautocmd call nvim_win_close(%d, v:false)', qf_winid))
     end
 
-    if api.nvim_win_is_valid(last_win_id) and cur_winid == qf_winid then
-        -- current window is a quickfix window, go back last window
-        cmd(string.format('noautocmd call nvim_set_current_win(%d)', last_win_id))
+    if api.nvim_win_is_valid(file_winid) and cur_winid == qf_winid then
+        -- current window is a quickfix window, go back file window
+        cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
     else
         cmd(string.format('noautocmd call nvim_set_current_win(%d)', cur_winid))
     end
