@@ -26,7 +26,7 @@ local def_config = {
 local action_for, extra_opts, has_tail
 
 local function setup()
-    assert(fn.exists('*fzf#run') == 1,
+    assert(vim.g.loaded_fzf or fn.exists('*fzf#run') == 1,
         'fzf#run function not found. You also need Vim plugin from the main fzf repository')
     local filter_conf = config.filter or {}
     filter_conf.fzf = vim.tbl_deep_extend('force', def_config, filter_conf.fzf or {})
@@ -135,11 +135,6 @@ function M.prepare(qf_winid, pid)
 end
 
 function M.run()
-    local fzf_existed = fn.exists('*fzf#run') == 1
-    if not fzf_existed then
-        return
-    end
-
     local qf_winid = api.nvim_get_current_win()
     local qf_type = qftool.type()
     local prompt = qf_type == 'loc' and 'Location> ' or 'Quickfix> '
