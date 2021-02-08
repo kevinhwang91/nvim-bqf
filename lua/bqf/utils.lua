@@ -115,7 +115,7 @@ function M.gutter_size(winid, lnum, col)
     local size
     M.win_execute(winid, function()
         api.nvim_win_set_cursor(winid, {lnum, 0})
-        size = fn.wincol() - fn.virtcol('.')
+        size = fn.wincol() - 1
         api.nvim_win_set_cursor(winid, {lnum, col})
     end)
     return size
