@@ -52,11 +52,11 @@ local function get_opts(qf_winid, file_winid)
             col = -2
         end
     else
-        return {{}, {}}
+        return {}, {}
     end
 
     if width < 1 or height < 1 then
-        return {{}, {}}
+        return {}, {}
     end
 
     local preview_opts = vim.tbl_extend('force', opts, {
