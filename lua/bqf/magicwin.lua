@@ -196,10 +196,11 @@ local function enter_revert(qf_winid, winid, qf_pos)
             l_size = 0
         else
             local awrow = fn.winline() - 1
-            if f_win_so >= awrow then
+            if f_win_so >= awrow and awrow > 0 then
                 -- get the true wrow
                 cmd('resize +1 | resize -1')
                 awrow = fn.winline() - 1
+                topline = fn.line('w0')
             end
 
             -- print('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
