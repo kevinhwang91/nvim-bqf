@@ -6,6 +6,18 @@ The goal of nvim-bqf is to make Neovim's quickfix window better.
     <img width="864px" src=https://user-images.githubusercontent.com/17562139/105016283-6b260e00-5a7d-11eb-8e5f-cd4e034e2d14.gif>
 </p>
 
+---
+
+In today's era of floating windows, are you afraid to toggle quickfix window to make your eyes uncomfortable?
+Are you constantly jumping between the edit window and the quickfix window when you use quickfix window
+to refactor because of lacking a sustainability preview window? Do you think quickfix window lacks a
+fuzzy search function? At present, nvim-bqf can solve the above problems.
+
+You really don't need any search and replace plugins, because nvim-bqf with the built-in function of
+the quickfix window allows you to easily search and replace targets.
+
+So why not nvim-bqf?
+
 ## Table of contents
 
 * [Table of contents](#table-of-contents)
@@ -37,16 +49,16 @@ The goal of nvim-bqf is to make Neovim's quickfix window better.
 
 ## Features
 
-- Magic window make your eyes comfortable
-- Extend built-in context of quickfix
-- Fix some annoying bugs of quickfix
-- Support convenient actions inside quickfix window
-- Fast start time, compare with others lua plugins
-- Integrate [fzf](https://github.com/junegunn/fzf) as a filter in quickfix window
+- Toggle quickfix window with magic window keep your eyes comfortable
+- Extend built-in context of quickfix to build an eye friendly highlighting at preview
+- Support convenient actions inside quickfix window, see [Function table](#function-table) below
+- Support built-in buffer for preview perfectly
+- Fast start time compare with others lua plugins, which almost only spend time on `lua require`
+- Using signs to filter the items of quickfix window
+- Integrate [fzf](https://github.com/junegunn/fzf) as a picker/filter in quickfix window
 
 ## TODO
 
-- [x] Batch filter items with signs
 - [ ] Provide statusline for information
 - [ ] Find a better way to list history and switch to one
 - [ ] Provide some useful functions to users
@@ -435,10 +447,10 @@ function! Coc_qf_diagnostic() abort
     let items = []
     let loc_ranges = []
     for d in diagnostic_list
-        let type = d.severity[0]
-        let text = printf('[%s%s] %s [%s]', (empty(d.source) ? 'coc.nvim' : d.source),
-                    \ (d.code ? ' ' . d.code : ''), split(d.message, '\n')[0], type)
-        let item = {'filename': d.file, 'lnum': d.lnum, 'col': d.col, 'text': text, 'type': type}
+        let text = printf('[%s%s] %s', (empty(d.source) ? 'coc.nvim' : d.source),
+                    \ (d.code ? ' ' . d.code : ''), split(d.message, '\n')[0])
+        let item = {'filename': d.file, 'lnum': d.lnum, 'col': d.col, 'text': text, 'type':
+                    \ d.severity[0]}
         call add(loc_ranges, d.location.range)
         call add(items, item)
     endfor
@@ -490,4 +502,3 @@ call plug#end()
 ## License
 
 The project is licensed under a BSD-3-clause license. See [LICENSE](./LICENSE) file for details.
-
