@@ -53,7 +53,7 @@ function M.enable()
 
     local qf_bufnr = fn.winbufnr(qf_winid)
     sign.reset(qf_bufnr)
-    -- some plugins will change the quickfix window, preview winodw should init later
+    -- some plugins will change the quickfix window, preview window should init later
     vim.defer_fn(function()
         preview.init_window(qf_winid)
     end, 50)

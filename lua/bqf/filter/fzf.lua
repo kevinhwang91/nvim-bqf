@@ -137,7 +137,7 @@ end
 function M.run()
     local qf_winid = api.nvim_get_current_win()
     local qf_type = qftool.type()
-    local prompt = qf_type == 'loc' and 'Location> ' or 'Quickfix> '
+    local prompt = qf_type == 'loc' and ' Location> ' or ' Quickfix> '
     local qf_all = qftool.getall(qf_winid)
     local items, signs = qf_all.items, qf_all.signs or {}
     if #items < 2 then

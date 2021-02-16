@@ -276,6 +276,10 @@ function M.open(qf_winid, qf_idx)
 end
 
 function M.init_window(qf_winid)
+    -- delayed called, qf_winid maybe invalid
+    if not api.nvim_win_is_valid(qf_winid) then
+        return
+    end
     qfs[qf_winid].preview = qfs[qf_winid].preview or {full = false}
     qfs[qf_winid].preview.idx = -1
     if auto_preview and api.nvim_get_current_win() == qf_winid then
@@ -297,7 +301,6 @@ function M.scroll(direction)
         if direction == 0 then
             fn.execute('normal! `p')
         else
-            -- TODO nvim_feedkeys and nvim_input don't work inside floating windiw, why?
             -- ^D = 0x04, ^U = 0x15
             fn.execute(string.format('normal! %c', direction > 0 and 0x04 or 0x15))
         end
