@@ -135,11 +135,19 @@ local function do_syntax(qf_winid, idx, file_winid, preview_winid)
         return
     end
 
-    if not ps.buf_loaded or vim.bo[ps.bufnr].filetype == '' then
+    if not ps.buf_loaded and vim.bo[ps.bufnr].filetype == '' then
+        local title_disabled = false
+        if vim.o.title then
+            vim.o.title = false
+            title_disabled = true
+        end
         utils.win_execute(preview_winid, function()
             cmd('filetype detect')
             cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
         end)
+        if title_disabled then
+            vim.o.title = true
+        end
     end
 end
 
