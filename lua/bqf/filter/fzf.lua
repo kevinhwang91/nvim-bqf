@@ -80,8 +80,6 @@ local function handler(qf_winid, ret)
             end
         end))
     end
-
-
 end
 
 local function create_job(qf_winid, tmpfile)

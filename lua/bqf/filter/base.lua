@@ -6,12 +6,12 @@ local qftool = require('bqf.qftool')
 function M.filter_list(qf_winid, co_wrap)
     local qf_all = qftool.getall(qf_winid)
     local items = qf_all.items
-    if #items < 2 then
+    if not co_wrap or #items < 2 then
         return
     end
     local context, title = qf_all.context, qf_all.title
     local lsp_ranges, new_items = {}, {}
-    for i, item in co_wrap or 0 do
+    for i, item in co_wrap do
         table.insert(new_items, item)
         if qf_all.lsp_ranges_hl then
             table.insert(lsp_ranges, qf_all.lsp_ranges_hl[i])
