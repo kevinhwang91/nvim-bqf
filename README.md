@@ -195,7 +195,8 @@ root = {
         }
     },
     func_map = {
-        description = [[see ###Function table for detail]]
+        description = [[the table for {function = key}]],
+        default = [[see ###Function table for detail]],
     },
     filter = {
         fzf = {
@@ -235,6 +236,8 @@ You can set value on the fly without any validation, good luck!
 
 `Function` only works in the quickfix window, keys can be customized by
 `lua require('bqf').setup({func_map = {}})`.
+
+> You can reference [Customize configuration](#customize-configuration) to configure `func_map`.
 
 | Function    | Action                                             | Def Key   |
 | ----------- | -------------------------------------------------- | --------- |
