@@ -21,6 +21,7 @@ local def_config = {
 }
 
 local auto_preview, delay_syntax, keep_preview
+local orig_pos
 
 local config = require('bqf.config')
 local qfs = require('bqf.qfsession')
@@ -92,7 +93,7 @@ local function exec_preview(qf_all, idx, file_winid)
     end
 
     utils.zz()
-    cmd('mark p')
+    orig_pos = api.nvim_win_get_cursor(0)
 
     fn.clearmatches()
 
@@ -307,7 +308,7 @@ function M.scroll(direction)
     local file_winid = qftool.filewinid()
     utils.win_execute(preview_winid, function()
         if direction == 0 then
-            fn.execute('normal! `p')
+            api.nvim_win_set_cursor(preview_winid, orig_pos)
         else
             -- ^D = 0x04, ^U = 0x15
             fn.execute(string.format('normal! %c', direction > 0 and 0x04 or 0x15))
