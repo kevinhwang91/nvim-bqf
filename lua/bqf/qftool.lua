@@ -9,8 +9,8 @@ local cache = {count = 0}
 
 function M.filewinid(winid)
     winid = winid or api.nvim_get_current_win()
-    if not qfs[winid].file_winid then
-        local file_winid
+    local file_winid = qfs[winid].file_winid
+    if not file_winid or not api.nvim_win_is_valid(file_winid) then
         if M.type(winid) == 'loc' then
             file_winid = fn.getloclist(winid, {filewinid = 0}).filewinid
         else

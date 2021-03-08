@@ -158,7 +158,7 @@ local function tune_topline(winid, topline, l_size)
         lines = api.nvim_buf_get_lines(bufnr, math.max(0, topline - l_size - 1), topline - 1, false)
         line_offset = linesize2offset(winid, lines, true)
     else
-        lines = api.nvim_buf_get_lines(bufnr, topline, topline - l_size, false)
+        lines = api.nvim_buf_get_lines(bufnr, topline - 1, topline - l_size - 1, false)
         line_offset = -linesize2offset(winid, lines, false)
     end
     -- print('after topline:', topline - line_offset, 'line_offset:', line_offset)

@@ -60,7 +60,7 @@ function M.get_pos(qf_winid, file_winid)
     local nested = layout[2]
     local rel_pos, abs_pos = 'unknown', 'unknown'
     if type(nested) ~= 'table' or #nested < 2 then
-        return rel_pos, abs_pos
+        return {rel_pos, abs_pos}
     end
     local qf_p_ind, qf_level, qf_index = node_info(layout, qf_winid)
     if qf_level == 1 then

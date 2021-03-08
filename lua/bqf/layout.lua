@@ -99,11 +99,10 @@ end
 
 local function update_allfixhei(wfh)
     local holder = qfs.holder()
+    local cur_tab_wins = api.nvim_tabpage_list_wins(0)
     for winid in pairs(holder) do
-        if winid and api.nvim_win_is_valid(winid) then
+        if winid and vim.tbl_contains(cur_tab_wins, winid) then
             vim.wo[winid].winfixheight = wfh
-        else
-            holder[winid] = nil
         end
     end
 end
