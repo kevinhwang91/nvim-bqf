@@ -142,7 +142,7 @@ local function do_syntax(qf_winid, idx, file_winid, preview_winid)
             vim.o.title = false
             title_disabled = true
         end
-        utils.win_execute(preview_winid, function()
+        pcall(utils.win_execute, preview_winid, function()
             cmd('filetype detect')
             cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
         end)
