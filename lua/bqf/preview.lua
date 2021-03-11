@@ -355,7 +355,7 @@ function M.move_curosr()
 end
 
 function M.tabenter_event()
-    if auto_preview then
+    if qftool.validate_qf() and  auto_preview then
         M.open()
     end
 end

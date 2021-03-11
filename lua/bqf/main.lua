@@ -93,10 +93,9 @@ function M.disable()
 end
 
 function M.kill_alone_qf()
-    local file_winid = qftool.filewinid()
-    if file_winid and not api.nvim_win_is_valid(file_winid) then
-        cmd('quit')
-    end
+    pcall(function()
+        qftool.filewinid()
+    end)
 end
 
 function M.close_qf()

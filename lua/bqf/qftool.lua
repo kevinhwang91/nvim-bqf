@@ -7,6 +7,23 @@ local qfs = require('bqf.qfsession')
 
 local cache = {count = 0}
 
+local function close(winid)
+    if not pcall(function()
+        api.nvim_win_close(winid, true)
+    end) then
+        -- Vim:E444: Cannot close last window
+        cmd('quit')
+    end
+end
+
+function M.validate_qf(winid)
+    -- Invalid window id
+    -- Key not found: quickfix_title
+    return pcall(function()
+        api.nvim_win_get_var(winid or api.nvim_get_current_win(), 'quickfix_title')
+    end)
+end
+
 function M.filewinid(winid)
     winid = winid or api.nvim_get_current_win()
     local file_winid = qfs[winid].file_winid
@@ -15,18 +32,22 @@ function M.filewinid(winid)
             file_winid = fn.getloclist(winid, {filewinid = 0}).filewinid
         else
             file_winid = fn.win_getid(fn.winnr('#'))
-        end
-        if file_winid <= 0 or not api.nvim_win_is_valid(file_winid) then
-            for _, w_id in ipairs(api.nvim_list_wins()) do
-                if w_id > 0 and vim.bo[fn.winbufnr(w_id)].buftype ~= 'quickfix' and
-                    api.nvim_win_is_valid(w_id) and api.nvim_win_get_config(w_id).relative == '' then
-                    file_winid = w_id
-                    break
+            if file_winid <= 0 and not api.nvim_win_is_valid(file_winid) or
+                M.validate_qf(file_winid) then
+                local tabpage = api.nvim_win_get_tabpage(winid)
+                for _, w_id in ipairs(api.nvim_tabpage_list_wins(tabpage)) do
+                    if api.nvim_win_is_valid(w_id) and not M.validate_qf(w_id) and
+                        api.nvim_win_get_config(w_id).relative == '' then
+                        file_winid = w_id
+                        break
+                    end
                 end
             end
-            if file_winid <= 0 or not api.nvim_win_is_valid(file_winid) then
-                assert(false, 'A valid file window is not found in current tabpage')
-            end
+        end
+        if file_winid <= 0 or not api.nvim_win_is_valid(file_winid) or M.validate_qf(file_winid) then
+            close(winid)
+            qfs[winid].file_winid = -1
+            -- assert(false, 'A valid file window is not found in current tabpage')
         end
         qfs[winid].file_winid = file_winid
     end
@@ -34,12 +55,9 @@ function M.filewinid(winid)
 end
 
 function M.type(winid)
-    local bufnr = winid and fn.winbufnr(winid) or api.nvim_get_current_buf()
-
-    assert(vim.bo[bufnr].buftype == 'quickfix',
-        'argument #1 winid or current window is not a quickfix window')
-
     winid = winid or api.nvim_get_current_win()
+
+    assert(M.validate_qf(winid), 'argument #1 winid or current window is not a quickfix window')
 
     if not qfs[winid].qf_type then
         qfs[winid].qf_type = fn.getwininfo(winid)[1].loclist == 1 and 'loc' or 'qf'
