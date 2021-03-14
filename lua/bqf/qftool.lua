@@ -17,10 +17,12 @@ local function close(winid)
 end
 
 function M.validate_qf(winid)
+    winid = winid or api.nvim_get_current_win()
+
     -- Invalid window id
     -- Key not found: quickfix_title
     local ret = pcall(function()
-        api.nvim_win_get_var(winid or api.nvim_get_current_win(), 'quickfix_title')
+        api.nvim_win_get_var(winid, 'quickfix_title')
     end)
 
     -- quickfix_title is undefined, copen when quickfix list is empty
