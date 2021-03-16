@@ -142,10 +142,19 @@ local function do_syntax(qf_winid, idx, file_winid, preview_winid)
             vim.o.title = false
             title_disabled = true
         end
-        pcall(utils.win_execute, preview_winid, function()
-            cmd('filetype detect')
-            cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
-        end)
+
+        -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
+        -- fuxx min.js!
+        local lcount = api.nvim_buf_line_count(ps.bufnr)
+        local bytes = api.nvim_buf_get_offset(ps.bufnr, lcount)
+        -- bytes / lcount < 1000 LGTM :)
+        if bytes / lcount < 1000 then
+            pcall(utils.win_execute, preview_winid, function()
+                cmd('filetype detect')
+                cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
+            end)
+        end
+
         if title_disabled then
             vim.o.title = true
         end
@@ -355,7 +364,7 @@ function M.move_curosr()
 end
 
 function M.tabenter_event()
-    if qftool.validate_qf() and  auto_preview then
+    if qftool.validate_qf() and auto_preview then
         M.open()
     end
 end
