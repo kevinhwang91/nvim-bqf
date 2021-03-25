@@ -107,6 +107,27 @@ function M.pattern2pos_list(pattern_hl)
     return pos_list
 end
 
+function M.matchaddpos(higroup, pos_list, prior)
+    assert(type(higroup) == 'string', 'argument higroup #1 expect a string type')
+    assert(type(pos_list) == 'table', 'argument pos_list #2 expect a table type')
+    prior = tonumber(prior) or 10
+    assert(type(prior) == 'number', 'argument prior #3 expect a number type')
+
+    local ids = {}
+    local l = {}
+    for i, p in ipairs(pos_list) do
+        table.insert(l, p)
+        if i % 8 == 0 then
+            table.insert(ids, fn.matchaddpos(higroup, l, prior))
+            l = {}
+        end
+    end
+    if #l > 0 then
+        table.insert(ids, fn.matchaddpos(higroup, l, prior))
+    end
+    return ids
+end
+
 function M.gutter_size(winid, lnum, col)
     assert(type(winid) == 'number', 'argument winid #1 expect a number type')
     if not lnum or not col then

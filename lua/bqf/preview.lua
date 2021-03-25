@@ -101,22 +101,22 @@ local function exec_preview(qf_all, idx, file_winid)
                               qf_all.lsp_ranges_hl[idx] or {}
     local pattern_hl = qf_all.pattern_hl
 
-    local range_id
+    local range_ids
     if not vim.tbl_isempty(lsp_ranges_hl) then
         local pos_list = utils.lsp_range2pos_list(lsp_ranges_hl)
         if not vim.tbl_isempty(pos_list) then
-            range_id = fn.matchaddpos('BqfPreviewRange', pos_list)
+            range_ids = utils.matchaddpos('BqfPreviewRange', pos_list)
         end
     elseif pattern_hl and pattern_hl ~= '' then
         local pos_list = utils.pattern2pos_list(pattern_hl)
         if not vim.tbl_isempty(pos_list) then
-            range_id = fn.matchaddpos('BqfPreviewRange', pos_list)
+            range_ids = utils.matchaddpos('BqfPreviewRange', pos_list)
         end
     end
     if lnum > 0 then
         fn.matchaddpos('BqfPreviewCursor', {{lnum, math.max(1, col)}}, 11)
     end
-    if not range_id then
+    if not range_ids then
         if lnum < 1 then
             fn.matchadd('BqfPreviewRange', pattern)
         elseif col < 1 then
