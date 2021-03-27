@@ -142,26 +142,27 @@ function M.run()
         return
     end
 
-    local padding = utils.gutter_size(qf_winid) - 3
+    local padding = string.rep(' ', utils.gutter_size(qf_winid) - 4)
     local expect_keys = table.concat(vim.tbl_keys(action_for), ',')
-    local escape_signe = utils.render_str(string.format('%%%ds', padding), 'BqfSign', 'cyan')
+    local escape_sign = utils.render_str('^', 'BqfSign', 'cyan')
     local escape_filename = utils.render_str('%s', 'qfFileName', 'blue')
     local escape_linenr = utils.render_str('%d col %d', 'qfLineNr', 'black')
     local escape_seqarator = utils.render_str('|', 'qfSeparator', 'white')
     local escape_error = utils.render_str('%s', 'qfError', 'red')
-    local fmt = string.format('%%d\t%s %s%s%s%s %%s', escape_signe, escape_filename,
-        escape_seqarator, escape_linenr, escape_seqarator)
-    local fmt_e = string.format('%%d\t%s %s%s%s %s%s %%s', escape_signe, escape_filename,
+    local fmt = string.format('%%d\t%s%%s %s%s%s%s %%s', padding, escape_filename, escape_seqarator,
+        escape_linenr, escape_seqarator)
+    local fmt_e = string.format('%%d\t%s%%s %s%s%s %s%s %%s', padding, escape_filename,
         escape_seqarator, escape_linenr, escape_error, escape_seqarator)
     local opts = {
         source = supply.tbl_kv_map(function(key, val)
             local ret
             if not val.type or val.type == '' then
-                ret = string.format(fmt, key, signs[key] and '^' or '', fn.bufname(val.bufnr),
-                    val.lnum, val.col, vim.trim(val.text))
+                ret = string.format(fmt, key, signs[key] and escape_sign or ' ',
+                    fn.bufname(val.bufnr), val.lnum, val.col, vim.trim(val.text))
             else
-                ret = string.format(fmt_e, key, signs[key] and '^' or '', fn.bufname(val.bufnr),
-                    val.lnum, val.col, val.type == 'E' and 'error' or val.type, vim.trim(val.text))
+                ret = string.format(fmt_e, key, signs[key] and escape_sign or ' ',
+                    fn.bufname(val.bufnr), val.lnum, val.col,
+                    val.type == 'E' and 'error' or val.type, vim.trim(val.text))
             end
             return ret
         end, items),
