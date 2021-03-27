@@ -3,7 +3,7 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-cmd('highlight default link BqfSign SignColumn')
+cmd('hi default BqfSign ctermfg=14 guifg=Cyan')
 
 local qftool = require('bqf.qftool')
 

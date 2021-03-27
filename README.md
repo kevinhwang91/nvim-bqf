@@ -129,7 +129,7 @@ fzf also support `ctrl-q` to toggle items' sign.
 
 #### Filter items with signs demo
 
-Key input sequence: `<Tab>j<Tab>zn<zN>zf^^<C-o><C-s>zf<C-o><C-s>`
+Key input sequence: `<Tab>j<Tab>zn<zN>zf^^<C-o><C-q>zf<C-o><C-q>`
 
 <p align="center">
     <img width="864px" src="https://user-images.githubusercontent.com/17562139/105815794-6a95f600-5fee-11eb-9add-003b5e9b5dc0.gif">
@@ -372,11 +372,11 @@ nvim-bqf actually works with context in
 ### Highlight groups
 
 ```vim
-highlight default link BqfPreviewFloat Normal
-highlight default link BqfPreviewBorder Normal
-highlight default link BqfPreviewCursor Cursor
-highlight default link BqfPreviewRange Search
-highlight default link BqfSign SignColumn
+hi default link BqfPreviewFloat Normal
+hi default link BqfPreviewBorder Normal
+hi default link BqfPreviewCursor Cursor
+hi default link BqfPreviewRange Search
+hi default BqfSign ctermfg=14 guifg=Cyan
 ```
 
 - `BqfPreviewFloat`: highlight floating window
@@ -398,8 +398,8 @@ Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 
 call plug#end()
 
-highlight BqfPreviewBorder guifg=#50a14f ctermfg=71
-highlight link BqfPreviewRange IncSearch
+hi BqfPreviewBorder guifg=#50a14f ctermfg=71
+hi link BqfPreviewRange IncSearch
 
 lua <<EOF
 require('bqf').setup({

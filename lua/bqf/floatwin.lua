@@ -10,8 +10,8 @@ local border_winid = -1
 
 local qfpos = require('bqf.qfpos')
 
-cmd('highlight default link BqfPreviewFloat Normal')
-cmd('highlight default link BqfPreviewBorder Normal')
+cmd('hi default link BqfPreviewFloat Normal')
+cmd('hi default link BqfPreviewBorder Normal')
 
 local function get_opts(qf_winid, file_winid)
     local rel_pos, abs_pos = unpack(qfpos.get_pos(qf_winid, file_winid))

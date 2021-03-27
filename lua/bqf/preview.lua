@@ -3,8 +3,8 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-cmd('highlight default link BqfPreviewCursor Cursor')
-cmd('highlight default link BqfPreviewRange Search')
+cmd('hi default link BqfPreviewCursor Cursor')
+cmd('hi default link BqfPreviewRange Search')
 
 api.nvim_exec([[
     augroup BqfPreview
