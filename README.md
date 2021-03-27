@@ -443,6 +443,9 @@ augroup Coc
     autocmd User CocLocationsChange ++nested call Coc_qf_jump2loc(g:coc_jump_locations)
 augroup END
 
+" if you use coc-fzf, you should disable its CocLocationsChange event make
+" bqf work for <Plug>(coc-references)
+" au VimEnter * au! CocFzfLocation User CocLocationsChange
 nmap <silent> gr <Plug>(coc-references)
 nnoremap <silent> <leader>qd <Cmd>call Coc_qf_diagnostic()<CR>
 
