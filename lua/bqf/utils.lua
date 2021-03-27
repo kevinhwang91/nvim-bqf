@@ -37,8 +37,8 @@ function M.render_str(str, group_name, def_fg)
     local escape_prefix = string.format('\x1b[%s%s%s', hl.bold and ';1' or '',
         hl.italic and ';3' or '', hl.underline and ';4' or '')
     local color2csi = gui and color2csi24b or color2csi8b
-    local escape_fg = fg and ';' .. color2csi(fg, true) or ansi[def_fg]
-    local escape_bg = bg and ';' .. color2csi(fg, true) or ''
+    local escape_fg = fg and type(fg) == 'number' and ';' .. color2csi(fg, true) or ansi[def_fg]
+    local escape_bg = bg and type(bg) == 'number' and ';' .. color2csi(bg, false) or ''
     return string.format('%s%s%sm%s\x1b[m', escape_prefix, escape_fg, escape_bg, str)
 end
 
