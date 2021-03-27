@@ -125,7 +125,7 @@ open up an item in a new tab, a new horizontal split, or in a new vertical split
 fzf becomes a quickfix filter and create a new quickfix list when multiple items are selected and
 accepted.
 
-fzf also support `ctrl-s` to toggle items' sign.
+fzf also support `ctrl-q` to toggle items' sign.
 
 #### Filter items with signs demo
 
@@ -213,8 +213,8 @@ root = {
                     description = [[press ctrl-x to open up the item in a new horizontal split]],
                     default = 'split'
                 },
-                ['ctrl-s'] = {
-                    description = [[press ctrl-s to toggle sign for the selected items]],
+                ['ctrl-q'] = {
+                    description = [[press ctrl-q to toggle sign for the selected items]],
                     default = 'signtoggle'
                 }
             },
@@ -417,6 +417,7 @@ require('bqf').setup({
     },
     filter = {
         fzf = {
+            action_for = {['ctrl-s'] = 'split'},
             extra_opts = {'--bind', 'ctrl-o:toggle-all', '--prompt', '> '}
         }
     }

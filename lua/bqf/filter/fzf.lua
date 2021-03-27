@@ -18,7 +18,7 @@ local def_config = {
         ['ctrl-t'] = 'tabedit',
         ['ctrl-x'] = 'split',
         ['ctrl-v'] = 'vsplit',
-        ['ctrl-s'] = 'signtoggle'
+        ['ctrl-q'] = 'signtoggle'
     },
     extra_opts = {'--bind', 'ctrl-o:toggle-all'}
 }
