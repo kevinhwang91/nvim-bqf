@@ -299,14 +299,14 @@ function M.init_window(qf_winid)
         return
     end
 
-    -- bufhidden=hide after vim-patch:8.1.0877
-    if qftool.type(qf_winid) == 'qf' and vim.bo.bufhidden == 'wipe' then
-        vim.bo.bufhidden = 'hide'
-    end
-
     qfs[qf_winid].preview = qfs[qf_winid].preview or {full = false}
     qfs[qf_winid].preview.idx = -1
     if auto_preview and api.nvim_get_current_win() == qf_winid then
+        -- bufhidden=hide after vim-patch:8.1.0877
+        if qftool.type(qf_winid) == 'qf' and vim.bo.bufhidden == 'wipe' then
+            vim.bo.bufhidden = 'hide'
+        end
+
         if qfs[qf_winid].preview.full then
             fix_missing_redraw(qf_winid)
         else
