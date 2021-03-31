@@ -298,6 +298,12 @@ function M.init_window(qf_winid)
     if not api.nvim_win_is_valid(qf_winid) then
         return
     end
+
+    -- bufhidden=hide after vim-patch:8.1.0877
+    if qftool.type(qf_winid) == 'qf' and vim.bo.bufhidden == 'wipe' then
+        vim.bo.bufhidden = 'hide'
+    end
+
     qfs[qf_winid].preview = qfs[qf_winid].preview or {full = false}
     qfs[qf_winid].preview.idx = -1
     if auto_preview and api.nvim_get_current_win() == qf_winid then
@@ -412,7 +418,6 @@ function M.buf_event()
 
         -- bufhidden=hide after vim-patch:8.1.0877
         if vim.bo.bufhidden == 'wipe' then
-            vim.bo.bufhidden = 'hide'
             cmd('autocmd QuitPre <buffer> ++nested bwipeout')
             cmd([[autocmd BufEnter <buffer> lua vim.bo.bufhidden = 'hide']])
             cmd(string.format('autocmd BufLeave <buffer> execute "%s %s"',
