@@ -13,27 +13,15 @@ local base = require('bqf.filter.base')
 local config = require('bqf.config')
 local sign = require('bqf.sign')
 
-local def_config = {
-    action_for = {
-        ['ctrl-t'] = 'tabedit',
-        ['ctrl-x'] = 'split',
-        ['ctrl-v'] = 'vsplit',
-        ['ctrl-q'] = 'signtoggle'
-    },
-    extra_opts = {'--bind', 'ctrl-o:toggle-all'}
-}
-
 local action_for, extra_opts, has_tail
 
 local function setup()
     assert(vim.g.loaded_fzf or fn.exists('*fzf#run') == 1,
         'fzf#run function not found. You also need Vim plugin from the main fzf repository')
-    local filter_conf = config.filter or {}
-    filter_conf.fzf = vim.tbl_deep_extend('force', def_config, filter_conf.fzf or {})
-    action_for, extra_opts = filter_conf.fzf.action_for, filter_conf.fzf.extra_opts
+    local fzf_conf = config.filter.fzf
+    action_for, extra_opts = fzf_conf.action_for, fzf_conf.extra_opts
     assert(type(action_for) == 'table', 'fzf.action_for expect a table type')
     assert(type(extra_opts) == 'table', 'fzf.extra_opts expect a table type')
-    config.filter = filter_conf
     has_tail = fn.executable('tail') == 1
 
     api.nvim_exec([[

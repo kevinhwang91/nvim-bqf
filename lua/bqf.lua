@@ -1,8 +1,7 @@
 local M = {}
 local cmd = vim.cmd
 local initialized = false
-local config = require('bqf.config')
-local auto_enable = true
+local auto_enable
 
 function M.setup(opts)
     if initialized then
@@ -10,12 +9,9 @@ function M.setup(opts)
     end
 
     opts = opts or {}
-    if opts.auto_enable == false then
-        auto_enable = false
-    end
-    opts.auto_enable = auto_enable
-    config.auto_enable = auto_enable
-    config.set_user_config(opts)
+    auto_enable = opts.auto_enable == false and false or true
+    -- M._config will become nil latter
+    M._config = opts
     initialized = true
 end
 

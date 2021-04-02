@@ -227,10 +227,8 @@ root = {
 }
 ```
 
-After loaded any modules, `lua print(vim.inspect(require('bqf.config')))` will show you all about
-the current configuration.
-
-You can set value on the fly without any validation, good luck!
+Before loading any modules, `lua print(vim.inspect(require('bqf.config')))` will show you everything
+about current configuration.
 
 ### Function table
 

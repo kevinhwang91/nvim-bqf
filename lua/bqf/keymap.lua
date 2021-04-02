@@ -5,32 +5,6 @@ local config = require('bqf.config')
 
 local func_map
 
-local def_func_map = {
-    open = '<CR>',
-    openc = 'o',
-    split = '<C-x>',
-    vsplit = '<C-v>',
-    tab = 't',
-    tabb = 'T',
-    ptogglemode = 'zp',
-    ptoggleitem = 'p',
-    ptoggleauto = 'P',
-    pscrollup = '<C-b>',
-    pscrolldown = '<C-f>',
-    pscrollorig = 'zo',
-    prevfile = '<C-p>',
-    nextfile = '<C-n>',
-    prevhist = '<',
-    nexthist = '>',
-    stoggleup = '<S-Tab>',
-    stoggledown = '<Tab>',
-    stogglevm = '<Tab>',
-    sclear = 'z<Tab>',
-    filter = 'zn',
-    filterr = 'zN',
-    fzffilter = 'zf'
-}
-
 local action_funcref = {
     open = {mode = 'n', module = 'jump', funcref = 'open(false)'},
     openc = {mode = 'n', module = 'jump', funcref = 'open(true)'},
@@ -58,9 +32,8 @@ local action_funcref = {
 }
 
 local function setup()
-    func_map = vim.tbl_deep_extend('force', def_func_map, config.func_map or {})
+    func_map = config.func_map
     assert(type(func_map) == 'table', 'func_map expect a table type')
-    config.func_map = func_map
 end
 
 local function funcref_str(tbl_func)

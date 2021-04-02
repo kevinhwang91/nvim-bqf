@@ -12,14 +12,6 @@ api.nvim_exec([[
     augroup END
 ]], false)
 
-local def_config = {
-    auto_preview = true,
-    delay_syntax = 50,
-    win_height = 15,
-    win_vheight = 15,
-    border_chars = {'│', '│', '─', '─', '╭', '╮', '╰', '╯', '█'}
-}
-
 local auto_preview, delay_syntax, keep_preview
 local orig_pos
 
@@ -30,7 +22,7 @@ local floatwin = require('bqf.floatwin')
 local utils = require('bqf.utils')
 
 local function setup()
-    local conf = vim.tbl_deep_extend('force', def_config, config.preview or {})
+    local conf = config.preview
     floatwin.setup({
         win_height = conf.win_height,
         win_vheight = conf.win_vheight,

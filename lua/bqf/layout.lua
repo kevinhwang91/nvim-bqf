@@ -3,8 +3,8 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local auto_resize_height = true
-local magic_window = true
+local auto_resize_height
+local magic_window
 
 local qfs = require('bqf.qfsession')
 local qfpos = require('bqf.qfpos')
@@ -14,14 +14,8 @@ local wmagic = require('bqf.magicwin')
 local utils = require('bqf.utils')
 
 local function setup()
-    if config.magic_window == false then
-        magic_window = false
-    end
-    if config.auto_resize_height == false then
-        auto_resize_height = false
-    end
-    config.magic_window = magic_window
-    config.auto_resize_height = auto_resize_height
+    magic_window = config.magic_window
+    auto_resize_height = config.auto_resize_height
 end
 
 local function store_fwin_opts(qf_winid, file_winid)
