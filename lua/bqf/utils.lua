@@ -25,20 +25,36 @@ local function color2csi8b(color_num, fg)
     return string.format('%d;5;%d', fg and 38 or 48, color_num)
 end
 
-function M.render_str(str, group_name, def_fg)
+function M.render_str(str, group_name, def_fg, def_bg)
     local gui = vim.o.termguicolors
-    local ok, msg = pcall(api.nvim_get_hl_by_name, group_name, gui)
+    local ok, hl = pcall(api.nvim_get_hl_by_name, group_name, gui)
     if not ok then
         return ''
     end
-    local hl = msg
-    local fg = hl.reverse and hl.background or hl.foreground
-    local bg = hl.reverse and hl.foreground or hl.background
+    local fg, bg
+    if hl.reverse then
+        fg = hl.background ~= nil and hl.background or nil
+        bg = hl.foreground ~= nil and hl.foreground or nil
+    else
+        fg = hl.foreground
+        bg = hl.background
+    end
     local escape_prefix = string.format('\x1b[%s%s%s', hl.bold and ';1' or '',
         hl.italic and ';3' or '', hl.underline and ';4' or '')
+
     local color2csi = gui and color2csi24b or color2csi8b
-    local escape_fg = fg and type(fg) == 'number' and ';' .. color2csi(fg, true) or ansi[def_fg]
-    local escape_bg = bg and type(bg) == 'number' and ';' .. color2csi(bg, false) or ''
+    local escape_fg, escape_bg = '', ''
+    if fg and type(fg) == 'number' then
+        escape_fg = ';' .. color2csi(fg, true)
+    elseif def_fg and ansi[def_fg] then
+        escape_fg = ansi[def_fg]
+    end
+    if bg and type(bg) == 'number' then
+        escape_fg = ';' .. color2csi(bg, false)
+    elseif def_bg and ansi[def_bg] then
+        escape_fg = ansi[def_bg]
+    end
+
     return string.format('%s%s%sm%s\x1b[m', escape_prefix, escape_fg, escape_bg, str)
 end
 
@@ -107,8 +123,8 @@ function M.pattern2pos_list(pattern_hl)
     return pos_list
 end
 
-function M.matchaddpos(higroup, pos_list, prior)
-    assert(type(higroup) == 'string', 'argument higroup #1 expect a string type')
+function M.matchaddpos(hl, pos_list, prior)
+    assert(type(hl) == 'string', 'argument hl #1 expect a string type')
     assert(type(pos_list) == 'table', 'argument pos_list #2 expect a table type')
     prior = tonumber(prior) or 10
     assert(type(prior) == 'number', 'argument prior #3 expect a number type')
@@ -118,12 +134,12 @@ function M.matchaddpos(higroup, pos_list, prior)
     for i, p in ipairs(pos_list) do
         table.insert(l, p)
         if i % 8 == 0 then
-            table.insert(ids, fn.matchaddpos(higroup, l, prior))
+            table.insert(ids, fn.matchaddpos(hl, l, prior))
             l = {}
         end
     end
     if #l > 0 then
-        table.insert(ids, fn.matchaddpos(higroup, l, prior))
+        table.insert(ids, fn.matchaddpos(hl, l, prior))
     end
     return ids
 end
