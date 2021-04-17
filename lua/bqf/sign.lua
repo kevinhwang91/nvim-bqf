@@ -3,11 +3,10 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-cmd('hi default BqfSign ctermfg=14 guifg=Cyan')
-
 local qftool = require('bqf.qftool')
 
 local function setup()
+    cmd('hi default BqfSign ctermfg=14 guifg=Cyan')
     fn.sign_define('BqfSign', {text = ' ^', texthl = 'BqfSign'})
 end
 
@@ -50,16 +49,22 @@ function M.toggle(rel, bufnr, lnum)
         place(bufnr, lnum)
     end
     if rel ~= 0 then
-        cmd(string.format('normal! %s', rel > 0 and 'j' or 'k'))
+        cmd(string.format('norm! %s', rel > 0 and 'j' or 'k'))
     end
 end
 
 -- only work under map with <Cmd>
 function M.vm_toggle(bufnr)
     local mode = api.nvim_get_mode().mode
-    assert(mode:lower() == 'v' or mode == string.format('%c', 0x16), 'vm_toggle expect visual mode')
+    vim.validate({
+        mode = {
+            mode, function(m)
+                return m:lower() == 'v' or m == string.format('%c', 0x16)
+            end, 'visual mode'
+        }
+    })
 
-    fn.execute(string.format('normal! %c', 0x1b))
+    fn.execute(string.format('norm! %c', 0x1b))
     bufnr = bufnr or api.nvim_get_current_buf()
     local s_linenr = api.nvim_buf_get_mark(bufnr, '<')[1]
     local e_linenr = api.nvim_buf_get_mark(bufnr, '>')[1]

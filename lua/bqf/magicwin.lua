@@ -82,8 +82,8 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
 
     local bufnr = fn.winbufnr(winid)
 
-    local lnum, col = unpack(api.nvim_win_get_cursor(winid))
-    local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid, lnum, col)
+    local lnum = api.nvim_win_get_cursor(winid)[1]
+    local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid, lnum)
     local e_fraction = cal_fraction(e_bwrow, bheight)
     local e_sline = cal_wrow(e_fraction, aheight)
     if l_bwrow then
@@ -174,7 +174,7 @@ local function enter_revert(qf_winid, winid, qf_pos)
     if f_win_so ~= 0 then
         -- turn off scrolloff and then show us true wrow
         vim.wo[winid].scrolloff = 0
-        cmd(string.format('autocmd Bqf WinLeave * ++once %s',
+        cmd(string.format('au Bqf WinLeave * ++once %s',
             string.format([[lua vim.wo[%d].scrolloff = %d]], winid, f_win_so)))
     end
 
@@ -240,7 +240,7 @@ local function close_revert(qf_winid, winid, qf_pos)
 
         -- The delay of vim.schedule is so visible that the users can feel the screen is redrawing,
         -- use WinEnter event instead
-        cmd(string.format('autocmd Bqf WinEnter * ++once %s', string.format(
+        cmd(string.format('au Bqf WinEnter * ++once %s', string.format(
             [[lua require('bqf.magicwin').defer_restview(%d, %d)]], winid, topline)))
     end
 end

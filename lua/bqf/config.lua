@@ -2,6 +2,7 @@ local config = {}
 
 local function setup()
     local bqf = require('bqf')
+    vim.validate({config = {bqf._config, 'table', true}})
     config = vim.tbl_deep_extend('keep', bqf._config or {}, {
         auto_enable = true,
         magic_window = true,

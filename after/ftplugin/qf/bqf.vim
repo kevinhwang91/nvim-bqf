@@ -1,10 +1,10 @@
 if !has('nvim-0.5')
-    echohl ErrorMsg | echo 'nvim-bqf failed to initialize, RTFM.' | echohl None
+    call nvim_echo([['nvim-bqf failed to initialize, RTFM.', 'ErrorMsg']], v:true, {})
     finish
 endif
 
-command! -buffer BqfEnable lua require('bqf').enable()
-command! -buffer BqfDisable lua require('bqf').disable()
-command! -buffer BqfToggle lua require('bqf').toggle()
+com! -buffer BqfEnable lua require('bqf').enable()
+com! -buffer BqfDisable lua require('bqf').disable()
+com! -buffer BqfToggle lua require('bqf').toggle()
 
 lua require('bqf').bootstrap()

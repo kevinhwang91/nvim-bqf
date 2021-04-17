@@ -10,9 +10,6 @@ local border_winid = -1
 
 local qfpos = require('bqf.qfpos')
 
-cmd('hi default link BqfPreviewFloat Normal')
-cmd('hi default link BqfPreviewBorder Normal')
-
 local function get_opts(qf_winid, file_winid)
     local rel_pos, abs_pos = unpack(qfpos.get_pos(qf_winid, file_winid))
 
@@ -152,14 +149,21 @@ function M.close()
 end
 
 function M.setup(opts)
-    assert(type(opts) == 'table', 'argument opts #1 expect a table type')
+    vim.validate({opts = {opts, 'table'}})
     border_chars = opts.border_chars
     win_height = tonumber(opts.win_height)
     win_vheight = tonumber(opts.win_vheight or win_height)
-    assert(type(border_chars) == 'table' and #border_chars == 9,
-        'border_chars expect a table with 9 chars')
-    assert(type(win_height) == 'number', 'win_height expect a number type')
-    assert(type(win_vheight) == 'number', 'win_vheight expect a number type')
+    vim.validate({
+        border_chars = {
+            border_chars, function(chars)
+                return type(chars) == 'table' and #chars == 9
+            end, 'a table with 9 chars'
+        },
+        win_height = {win_height, 'number'},
+        win_vheight = {win_vheight, 'number'}
+    })
+    cmd('hi default link BqfPreviewFloat Normal')
+    cmd('hi default link BqfPreviewBorder Normal')
 end
 
 function M.open(bufnr, qf_winid, file_winid)

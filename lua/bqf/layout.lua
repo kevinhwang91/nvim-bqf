@@ -40,7 +40,7 @@ local function fix_default_qf(qf_winid, file_winid, qf_type, qf_pos)
         if qf_pos[1] == 'unknown' and qf_pos[2] == 'unknown' then
             local resized_win = fn.winnr('k')
             local resized_hei = fn.winheight(resized_win)
-            cmd('wincmd J')
+            cmd('winc J')
             cmd(string.format('%dresize %d', resized_win, resized_hei))
             qf_pos = qfpos.get_pos(qf_winid, file_winid)
         end
@@ -55,9 +55,9 @@ local function adjust_width(qf_winid, file_winid, qf_pos)
         if qf_pos[1] == 'right' then
             local width = api.nvim_win_get_width(file_winid) -
                               (vim.o.winwidth - api.nvim_win_get_width(qf_winid))
-            cmd(string.format('vertical %dresize %d', file_win, width))
+            cmd(string.format('vert %dresize %d', file_win, width))
         else
-            cmd(string.format('vertical %dresize %d', qf_win, vim.o.winwidth))
+            cmd(string.format('vert %dresize %d', qf_win, vim.o.winwidth))
         end
     end
 end
@@ -163,23 +163,23 @@ function M.close_win(qf_winid)
     if vim.o.equalalways and fn.winnr('$') > 2 then
         -- close quickfix window in tab or floating window can prevent quickfix window make other
         -- windows equal after closing quickfix window
-        cmd('noautocmd tabnew')
-        cmd(string.format('noautocmd call nvim_win_close(%d, v:false)', qf_winid))
-        cmd('noautocmd bwipeout')
+        cmd('noa tabnew')
+        cmd(string.format('noa call nvim_win_close(%d, v:false)', qf_winid))
+        cmd('noa bw')
     else
-        cmd(string.format('noautocmd call nvim_win_close(%d, v:false)', qf_winid))
+        cmd(string.format('noa call nvim_win_close(%d, v:false)', qf_winid))
     end
 
     if api.nvim_win_is_valid(file_winid) and cur_winid == qf_winid then
         -- current window is a quickfix window, go back file window
-        cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
+        cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
     else
-        cmd(string.format('noautocmd call nvim_set_current_win(%d)', cur_winid))
+        cmd(string.format('noa call nvim_set_current_win(%d)', cur_winid))
     end
 
     local rel_pos = qf_pos[1]
     if rel_pos == 'right' and qf_win_l ~= qf_win then
-        cmd(string.format('vertical %dresize +%d', file_win, qf_wid + 1))
+        cmd(string.format('vert %dresize +%d', file_win, qf_wid + 1))
     elseif rel_pos == 'below' and qf_win_j ~= qf_win then
         cmd(string.format('%dresize +%d', file_win, qf_hei + 1))
     end

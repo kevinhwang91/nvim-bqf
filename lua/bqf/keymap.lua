@@ -33,7 +33,7 @@ local action_funcref = {
 
 local function setup()
     func_map = config.func_map
-    assert(type(func_map) == 'table', 'func_map expect a table type')
+    vim.validate({func_map = {func_map, 'table'}})
 end
 
 local function funcref_str(tbl_func)

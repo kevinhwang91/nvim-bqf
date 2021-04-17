@@ -12,7 +12,7 @@ local function close(winid)
         api.nvim_win_close(winid, true)
     end) then
         -- Vim:E444: Cannot close last window
-        cmd('quit')
+        cmd('q')
     end
 end
 
@@ -67,7 +67,7 @@ end
 function M.type(winid)
     winid = winid or api.nvim_get_current_win()
 
-    assert(M.validate_qf(winid), 'argument #1 winid or current window is not a quickfix window')
+    vim.validate({winid = {winid, M.validate_qf, 'a valid quickfix window'}})
 
     if not qfs[winid].qf_type then
         qfs[winid].qf_type = fn.getwininfo(winid)[1].loclist == 1 and 'loc' or 'qf'
@@ -156,7 +156,7 @@ function M.file(next)
             return
         end
     end
-    cmd([[echohl WarningMsg | echo 'No more items' | echohl None]])
+    api.nvim_echo({{'No more items', 'WarningMsg'}}, true, {})
 end
 
 function M.history(direction)
@@ -166,13 +166,13 @@ function M.history(direction)
         return
     end
 
-    local ok, msg = pcall(cmd, string.format([[silent execute '%d%s%s']], vim.v.count1, prefix,
+    local ok, msg = pcall(cmd, string.format([[sil exe '%d%s%s']], vim.v.count1, prefix,
         direction and 'newer' or 'older'))
     if not ok then
         if msg:match('^Vim%(%a+%):E380') then
-            cmd(string.format([[silent execute '%d%snewer']], last_nr - cur_nr, prefix))
+            cmd(string.format([[sil exe '%d%snewer']], last_nr - cur_nr, prefix))
         elseif msg:match('^Vim%(%a+%):E381') then
-            cmd(string.format([[silent execute '%d%solder']], last_nr - 1, prefix))
+            cmd(string.format([[sil exe '%d%solder']], last_nr - 1, prefix))
         end
     end
 
@@ -181,11 +181,10 @@ function M.history(direction)
 
     -- delay to cooperate with preview.fix_missing_redraw
     vim.defer_fn(function()
-        cmd(string.format([[echon '(' | echohl Identifier | echon %d | echohl None | echon ' of ']],
-            nr))
-        cmd(string.format([[echohl Identifier | echon %d | echohl None | echon ') ']], last_nr))
-        cmd(string.format([[echon '[' | echohl Type | echon %d | echohl None | echon '] ']], size))
-        cmd(string.format([[echohl Title | echon ' >> ' . %q | echohl None]], title))
+        api.nvim_echo({
+            {'('}, {tostring(nr), 'Identifier'}, {' of '}, {tostring(last_nr), 'Identifier'},
+            {') ['}, {tostring(size), 'Type'}, {'] '}, {' >> ' .. title, 'Title'}
+        }, false, {})
     end, 100)
 end
 

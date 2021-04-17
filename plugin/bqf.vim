@@ -6,4 +6,4 @@ let g:loaded_bqf = 1
 
 lua require('bqf').setup()
 
-command! BqfAutoToggle lua require('bqf').toggle_auto()
+com! BqfAutoToggle lua require('bqf').toggle_auto()

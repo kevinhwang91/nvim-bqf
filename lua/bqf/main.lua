@@ -12,9 +12,9 @@ local sign = require('bqf.sign')
 
 local function setup()
     api.nvim_exec([[
-        augroup Bqf
-            autocmd!
-        augroup END
+        aug Bqf
+            au!
+        aug END
     ]], false)
 end
 
@@ -68,11 +68,11 @@ function M.enable()
     keymap.buf_map()
 
     api.nvim_exec([[
-        augroup Bqf
-            autocmd! WinEnter,WinLeave,WinClosed <buffer>
-            autocmd WinEnter <buffer> lua require('bqf.main').kill_alone_qf()
-            autocmd WinClosed <buffer> lua require('bqf.main').close_qf()
-        augroup END
+        aug Bqf
+            au! WinEnter,WinLeave,WinClosed <buffer>
+            au WinEnter <buffer> lua require('bqf.main').kill_alone_qf()
+            au WinClosed <buffer> lua require('bqf.main').close_qf()
+        aug END
     ]], false)
 end
 
@@ -83,9 +83,9 @@ function M.disable()
     local qf_winid = api.nvim_get_current_win()
     preview.close(qf_winid)
     vim.b.bqf_enabled = false
-    cmd('autocmd! Bqf')
-    cmd('silent! autocmd! BqfPreview * <buffer>')
-    cmd('silent! autocmd! BqfFilterFzf * <buffer>')
+    cmd('au! Bqf')
+    cmd('sil! au! BqfPreview * <buffer>')
+    cmd('sil! au! BqfFilterFzf * <buffer>')
     if qfs[qf_winid].bufhidden then
         vim.bo.bufhidden = qfs[qf_winid].bufhidden
     end

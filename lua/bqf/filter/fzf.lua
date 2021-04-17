@@ -20,14 +20,13 @@ local function setup()
         'fzf#run function not found. You also need Vim plugin from the main fzf repository')
     local fzf_conf = config.filter.fzf
     action_for, extra_opts = fzf_conf.action_for, fzf_conf.extra_opts
-    assert(type(action_for) == 'table', 'fzf.action_for expect a table type')
-    assert(type(extra_opts) == 'table', 'fzf.extra_opts expect a table type')
+    vim.validate({action_for = {action_for, 'table'}, extra_opts = {extra_opts, 'table'}})
     has_tail = fn.executable('tail') == 1
 
     api.nvim_exec([[
-        augroup BqfFilterFzf
-            autocmd!
-        augroup END
+        aug BqfFilterFzf
+            au!
+        aug END
     ]], false)
 end
 
@@ -102,21 +101,21 @@ local function create_job(qf_winid, tmpfile)
 end
 
 function M.prepare(qf_winid, pid)
-    local row, col = unpack(api.nvim_win_get_position(qf_winid))
     local line_count = api.nvim_buf_line_count(fn.winbufnr(qf_winid))
     api.nvim_win_set_config(0, {
-        relative = 'editor',
+        relative = 'win',
+        win = qf_winid,
         width = api.nvim_win_get_width(qf_winid),
         height = math.min(api.nvim_win_get_height(qf_winid) + 1, line_count + 1),
-        col = col,
-        row = row
+        row = 0,
+        col = 0
     })
 
     if pid then
-        cmd('augroup BqfFilterFzf')
-        cmd(string.format('autocmd BufWipeout <buffer> %s',
+        cmd('aug BqfFilterFzf')
+        cmd(string.format('au BufWipeout <buffer> %s',
             string.format('lua vim.loop.kill(%d, 15)', pid)))
-        cmd('augroup END')
+        cmd('aug END')
     end
 end
 
@@ -177,7 +176,7 @@ function M.run()
         api.nvim_err_writeln([[preview need 'tail' command]])
     end
 
-    cmd(string.format('autocmd BqfFilterFzf FileType fzf ++once %s', string.format(
+    cmd(string.format('au BqfFilterFzf FileType fzf ++once %s', string.format(
         [[lua require('bqf.filter.fzf').prepare(%d, %s)]], qf_winid, tostring(pid))))
 
     -- TODO lua can't translate nested table data to vimscript

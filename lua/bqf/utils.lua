@@ -26,6 +26,12 @@ local function color2csi8b(color_num, fg)
 end
 
 function M.render_str(str, group_name, def_fg, def_bg)
+    vim.validate({
+        str = {str, 'string'},
+        group_name = {group_name, 'string'},
+        def_fg = {def_fg, 'string', true},
+        def_bg = {def_bg, 'string', true}
+    })
     local gui = vim.o.termguicolors
     local ok, hl = pcall(api.nvim_get_hl_by_name, group_name, gui)
     if not ok then
@@ -61,18 +67,18 @@ end
 function M.zz()
     local lnum1, lcount = api.nvim_win_get_cursor(0)[1], api.nvim_buf_line_count(0)
     if lnum1 == lcount then
-        fn.execute(string.format('keepjumps normal! %dzb', lnum1))
+        fn.execute(string.format('keepj norm! %dzb', lnum1))
         return
     end
-    cmd('normal! zvzz')
+    cmd('norm! zvzz')
     lnum1 = api.nvim_win_get_cursor(0)[1]
-    cmd('normal! L')
+    cmd('norm! L')
     local lnum2 = api.nvim_win_get_cursor(0)[1]
     if lnum2 + fn.getwinvar(0, '&scrolloff') >= lcount then
-        fn.execute(string.format('keepjumps normal! %dzb', lnum2))
+        fn.execute(string.format('keepj norm! %dzb', lnum2))
     end
     if lnum1 ~= lnum2 then
-        cmd('keepjumps normal! ``')
+        cmd('keepj norm! ``')
     end
 end
 
@@ -123,15 +129,13 @@ function M.pattern2pos_list(pattern_hl)
     return pos_list
 end
 
-function M.matchaddpos(hl, pos_list, prior)
-    assert(type(hl) == 'string', 'argument hl #1 expect a string type')
-    assert(type(pos_list) == 'table', 'argument pos_list #2 expect a table type')
-    prior = tonumber(prior) or 10
-    assert(type(prior) == 'number', 'argument prior #3 expect a number type')
+function M.matchaddpos(hl, plist, prior)
+    vim.validate({hl = {hl, 'string'}, plist = {plist, 'table'}, prior = {prior, 'number', true}})
+    prior = prior or 10
 
     local ids = {}
     local l = {}
-    for i, p in ipairs(pos_list) do
+    for i, p in ipairs(plist) do
         table.insert(l, p)
         if i % 8 == 0 then
             table.insert(ids, fn.matchaddpos(hl, l, prior))
@@ -144,31 +148,29 @@ function M.matchaddpos(hl, pos_list, prior)
     return ids
 end
 
-function M.gutter_size(winid, lnum, col)
-    assert(type(winid) == 'number', 'argument winid #1 expect a number type')
-    if not lnum or not col then
-        lnum, col = unpack(api.nvim_win_get_cursor(winid))
-    end
-    local size
-    M.win_execute(winid, function()
-        api.nvim_win_set_cursor(winid, {lnum, 0})
-        size = fn.wincol() - 1
-        api.nvim_win_set_cursor(winid, {lnum, col})
-    end)
-    return size
+function M.gutter_size(winid, lnum)
+    vim.validate({winid = {winid, 'number'}, lnum = {lnum, 'number', true}})
+    lnum = lnum or api.nvim_win_get_cursor(winid)[1]
+    return fn.screenpos(winid, lnum, 1).curscol - fn.win_screenpos(winid)[2]
 end
 
 function M.win_execute(winid, func)
-    assert(winid and api.nvim_win_is_valid(winid), 'argument winid #1 expect an available window')
-    assert(type(func) == 'function', 'argument func #2 expect a function type')
+    vim.validate({
+        winid = {
+            winid, function(w)
+                return w and api.nvim_win_is_valid(w)
+            end, 'an valid window'
+        },
+        func = {func, 'function'}
+    })
 
     local cur_winid = api.nvim_get_current_win()
     if cur_winid ~= winid then
-        cmd(string.format('noautocmd call nvim_set_current_win(%d)', winid))
+        cmd(string.format('noa call nvim_set_current_win(%d)', winid))
     end
     func()
     if cur_winid ~= winid then
-        cmd(string.format('noautocmd call nvim_set_current_win(%d)', cur_winid))
+        cmd(string.format('noa call nvim_set_current_win(%d)', cur_winid))
     end
 end
 

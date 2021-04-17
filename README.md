@@ -436,10 +436,10 @@ Plug 'neoclide/coc.nvim'
 
 " :h CocLocationsChange for detail
 let g:coc_enable_locationlist = 0
-augroup Coc
-    autocmd!
-    autocmd User CocLocationsChange ++nested call Coc_qf_jump2loc(g:coc_jump_locations)
-augroup END
+aug Coc
+    au!
+    au User CocLocationsChange ++nested call Coc_qf_jump2loc(g:coc_jump_locations)
+aug END
 
 " if you use coc-fzf, you should disable its CocLocationsChange event make
 " bqf work for <Plug>(coc-references)
@@ -478,12 +478,12 @@ endfunction
 
 Plug 'mhinz/vim-grepper'
 
-augroup Grepper
-    autocmd!
-    autocmd User Grepper call setqflist([], 'r',
+aug Grepper
+    au!
+    au User Grepper call setqflist([], 'r',
                 \ {'context': {'bqf': {'pattern_hl': histget('/')}}}) |
                 \ botright copen
-augroup END
+aug END
 
 let g:grepper = {
             \ 'open': 0,

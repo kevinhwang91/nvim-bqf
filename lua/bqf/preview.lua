@@ -3,17 +3,8 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-cmd('hi default link BqfPreviewCursor Cursor')
-cmd('hi default link BqfPreviewRange Search')
-
-api.nvim_exec([[
-    augroup BqfPreview
-    autocmd!
-    augroup END
-]], false)
-
-local auto_preview, delay_syntax, keep_preview
-local orig_pos
+local auto_preview, delay_syntax
+local keep_preview, orig_pos
 
 local config = require('bqf.config')
 local qfs = require('bqf.qfsession')
@@ -22,20 +13,28 @@ local floatwin = require('bqf.floatwin')
 local utils = require('bqf.utils')
 
 local function setup()
-    local conf = config.preview
+    local pconf = config.preview
+    vim.validate({preview = {pconf, 'table'}})
     floatwin.setup({
-        win_height = conf.win_height,
-        win_vheight = conf.win_vheight,
-        border_chars = conf.border_chars
+        win_height = pconf.win_height,
+        win_vheight = pconf.win_vheight,
+        border_chars = pconf.border_chars
     })
-    auto_preview = conf.auto_preview
-    delay_syntax = tonumber(conf.delay_syntax)
-    assert(type(delay_syntax) == 'number', 'delay_syntax expect a number type')
-    config.preview = conf
+    auto_preview = pconf.auto_preview
+    delay_syntax = tonumber(pconf.delay_syntax)
+    vim.validate({auto_preview = {auto_preview, 'boolean'}, delay_syntax = {delay_syntax, 'number'}})
+
+    api.nvim_exec([[
+        aug BqfPreview
+            au!
+        aug END
+    ]], false)
+
+    cmd('hi default link BqfPreviewCursor Cursor')
+    cmd('hi default link BqfPreviewRange Search')
 end
 
 local function update_border(border_width, qf_items, idx)
-    -- TODO should I expose this function to users for customizing?
     local pos_str = string.format('[%d/%d]', idx, #qf_items)
     local pbufnr = qf_items[idx].bufnr
     local buf_str = string.format('buf %d:', pbufnr)
@@ -76,8 +75,8 @@ local function exec_preview(qf_all, idx, file_winid)
     vim.wo.foldmethod = 'manual'
 
     if lnum < 1 then
-        cmd('normal! gg')
-        cmd(string.format('keepjumps call search(%q)', pattern))
+        api.nvim_win_set_cursor(0, {1, 0})
+        fn.search(pattern, 'c')
     else
         if not pcall(api.nvim_win_set_cursor, 0, {lnum, math.max(0, col - 1)}) then
             return
@@ -115,7 +114,7 @@ local function exec_preview(qf_all, idx, file_winid)
             fn.matchaddpos('BqfPreviewRange', {{lnum}})
         end
     end
-    cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
+    cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
 end
 
 local function do_syntax(qf_winid, idx, file_winid, preview_winid)
@@ -143,7 +142,7 @@ local function do_syntax(qf_winid, idx, file_winid, preview_winid)
         if bytes / lcount < 1000 then
             pcall(utils.win_execute, preview_winid, function()
                 cmd('filetype detect')
-                cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
+                cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
             end)
         end
 
@@ -158,7 +157,7 @@ local function clean_preview_buf(bufnr, loaded_before)
         return
     end
     if not loaded_before and api.nvim_buf_is_loaded(bufnr) and fn.buflisted(bufnr) == 0 then
-        cmd('bdelete! ' .. bufnr)
+        cmd('bd! ' .. bufnr)
     end
 end
 
@@ -171,7 +170,7 @@ local function fire_restore_buf_opts(bufnr, loaded_before, fwin_opts)
     if loaded_before and fn.bufwinid(bufnr) == -1 then
         if not pcall(api.nvim_buf_get_var, bufnr, 'bqf_fwin_opts') then
             api.nvim_buf_set_var(bufnr, 'bqf_fwin_opts', fwin_opts)
-            cmd(string.format('autocmd Bqf BufWinEnter <buffer=%d> ++once %s', bufnr,
+            cmd(string.format('au Bqf BufWinEnter <buffer=%d> ++once %s', bufnr,
                 string.format([[lua require('bqf.layout').restore_fwin_opts()]])))
         end
     end
@@ -318,10 +317,10 @@ function M.scroll(direction)
             api.nvim_win_set_cursor(preview_winid, orig_pos)
         else
             -- ^D = 0x04, ^U = 0x15
-            fn.execute(string.format('normal! %c', direction > 0 and 0x04 or 0x15))
+            fn.execute(string.format('norm! %c', direction > 0 and 0x04 or 0x15))
         end
         utils.zz()
-        cmd(string.format('noautocmd call nvim_set_current_win(%d)', file_winid))
+        cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
     end)
     floatwin.update_scrollbar()
 end
@@ -329,10 +328,10 @@ end
 function M.toggle()
     auto_preview = auto_preview ~= true
     if auto_preview then
-        cmd([[echohl WarningMsg | echo 'Enable preview automatically' | echohl None]])
+        api.nvim_echo({{'Enable preview automatically', 'WarningMsg'}}, true, {})
         M.open()
     else
-        cmd([[echohl WarningMsg | echo 'Disable preview automatically' | echohl None]])
+        api.nvim_echo({{'Disable preview automatically', 'WarningMsg'}}, true, {})
         M.close()
     end
 end
@@ -394,30 +393,28 @@ function M.buf_event()
     -- I hate these autocmd string!!!!!!!!!!!!!!!!!!!!!
     local bufnr = api.nvim_get_current_buf()
     api.nvim_exec([[
-        augroup BqfPreview
-            autocmd! BufLeave,WinLeave,CursorMoved,TabEnter,BufHidden,VimResized <buffer>
-            autocmd! BufEnter,QuitPre <buffer>
-            autocmd VimResized <buffer> lua require('bqf.preview').redraw_win()
-            autocmd TabEnter <buffer> lua require('bqf.preview').tabenter_event()
-            autocmd CursorMoved <buffer> lua require('bqf.preview').move_curosr()
+        aug BqfPreview
+            au! * <buffer>
+            au VimResized <buffer> lua require('bqf.preview').redraw_win()
+            au TabEnter <buffer> lua require('bqf.preview').tabenter_event()
+            au CursorMoved <buffer> lua require('bqf.preview').move_curosr()
     ]], false)
-    cmd(string.format('autocmd BufLeave,WinLeave <buffer> %s', string.format(
+    cmd(string.format('au BufLeave,WinLeave <buffer> %s', string.format(
         [[lua require('bqf.preview').close(vim.fn.bufwinid(%d))]], bufnr)))
     if qftool.type() == 'qf' then
-        cmd(string.format('autocmd BufHidden <buffer> execute "%s %s"',
-            'autocmd BqfPreview BufEnter * ++once ++nested',
+        cmd(string.format('au BufHidden <buffer> exe "%s %s"',
+            'au BqfPreview BufEnter * ++once ++nested',
             string.format([[lua require('bqf.preview').fix_qf_jump(%d)]], bufnr)))
 
         -- bufhidden=hide after vim-patch:8.1.0877
         if vim.bo.bufhidden == 'wipe' then
-            cmd('autocmd QuitPre <buffer> ++nested bwipeout')
-            cmd([[autocmd BufEnter <buffer> lua vim.bo.bufhidden = 'hide']])
-            cmd(string.format('autocmd BufLeave <buffer> execute "%s %s"',
-                'autocmd BqfPreview BufEnter * ++once', string.format(
-                    [[silent! lua vim.bo[%d].bufhidden = 'wipe']], bufnr)))
+            cmd('au QuitPre <buffer> ++nested bw')
+            cmd([[au BufEnter <buffer> lua vim.bo.bufhidden = 'hide']])
+            cmd(string.format('au BufLeave <buffer> exe "%s %s"', 'au BqfPreview BufEnter * ++once',
+                string.format([[sil! lua vim.bo[%d].bufhidden = 'wipe']], bufnr)))
         end
     end
-    cmd('augroup END')
+    cmd('aug END')
 end
 
 setup()

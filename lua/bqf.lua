@@ -1,5 +1,5 @@
 local M = {}
-local cmd = vim.cmd
+local api = vim.api
 local initialized = false
 local auto_enable
 
@@ -36,9 +36,9 @@ end
 function M.toggle_auto()
     auto_enable = auto_enable ~= true
     if auto_enable then
-        cmd([[echohl WarningMsg | echo 'Enable nvim-bqf automatically' | echohl None]])
+        api.nvim_echo({{'Enable nvim-bqf automatically', 'WarningMsg'}}, true, {})
     else
-        cmd([[echohl WarningMsg | echo 'Disable nvim-bqf automatically' | echohl None]])
+        api.nvim_echo({{'Disable nvim-bqf automatically', 'WarningMsg'}}, true, {})
     end
 end
 

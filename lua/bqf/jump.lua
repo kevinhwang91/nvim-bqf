@@ -46,7 +46,7 @@ function M.open(close, qf_winid, idx)
         api.nvim_win_close(qf_winid, true)
     end
 
-    cmd(string.format([[silent execute '%d%s']], idx, suffix))
+    cmd(string.format([[sil exe '%d%s']], idx, suffix))
 
     if last_bufnr ~= api.nvim_get_current_buf() then
         utils.zz()
@@ -71,8 +71,8 @@ function M.split(vertical, qf_winid, idx)
     api.nvim_set_current_win(file_winid)
     api.nvim_win_close(qf_winid, true)
 
-    cmd(string.format('%ssplit', vertical and 'v' or ''))
-    cmd(string.format([[silent execute '%d%s']], idx, suffix))
+    cmd(string.format('%ssp', vertical and 'v' or ''))
+    cmd(string.format([[sil exe '%d%s']], idx, suffix))
     utils.zz()
 end
 
@@ -90,15 +90,15 @@ function M.tabedit(stay, qf_winid, idx)
     api.nvim_set_current_win(file_winid)
     set_opts_around(function()
         api.nvim_set_current_win(qf_winid)
-        cmd(string.format('%s tabedit', stay and 'noautocmd' or ''))
-        cmd(string.format([[%s silent execute '%d%s']], stay and 'noautocmd' or '', idx, suffix))
+        cmd(string.format('%s tabedit', stay and 'noa' or ''))
+        cmd(string.format([[%s sil exe '%d%s']], stay and 'noa' or '', idx, suffix))
     end)
 
     utils.zz()
-    cmd('noautocmd bwipeout #')
+    cmd('noa bw #')
 
     if stay then
-        cmd('noautocmd tabprevious')
+        cmd('noa tabp')
     end
 end
 
