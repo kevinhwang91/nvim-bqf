@@ -38,7 +38,7 @@ local function update_border(border_width, qf_items, idx)
     local pos_str = string.format('[%d/%d]', idx, #qf_items)
     local pbufnr = qf_items[idx].bufnr
     local buf_str = string.format('buf %d:', pbufnr)
-    local name = fn.bufname(pbufnr):gsub('^' .. vim.env.HOME, '~')
+    local name = api.nvim_buf_get_name(pbufnr):gsub('^' .. vim.env.HOME, '~')
     local pad_fit = border_width - 8 - fn.strwidth(buf_str) - fn.strwidth(pos_str)
     if pad_fit - fn.strwidth(name) < 0 then
         name = fn.pathshorten(name)

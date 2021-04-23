@@ -69,7 +69,7 @@ function M.enable()
 
     api.nvim_exec([[
         aug Bqf
-            au! WinEnter,WinLeave,WinClosed <buffer>
+            au! * <buffer>
             au WinEnter <buffer> lua require('bqf.main').kill_alone_qf()
             au WinClosed <buffer> lua require('bqf.main').close_qf()
         aug END

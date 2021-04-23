@@ -15,6 +15,8 @@ local sign = require('bqf.sign')
 
 local action_for, extra_opts, has_tail
 
+local qf_types
+
 local function setup()
     assert(vim.g.loaded_fzf or fn.exists('*fzf#run') == 1,
         'fzf#run function not found. You also need Vim plugin from the main fzf repository')
@@ -23,6 +25,8 @@ local function setup()
     vim.validate({action_for = {action_for, 'table'}, extra_opts = {extra_opts, 'table'}})
     has_tail = fn.executable('tail') == 1
 
+    local w, i, n, e = 'warning', 'info', 'note', 'error'
+    qf_types = {w = w, W = w, i = i, I = i, n = n, N = n, e = e, E = e}
     api.nvim_exec([[
         aug BqfFilterFzf
             au!
@@ -145,11 +149,11 @@ function M.run()
             local ret
             if not val.type or val.type == '' then
                 ret = string.format(fmt, key, signs[key] and escape_sign or ' ',
-                    fn.bufname(val.bufnr), val.lnum, val.col, vim.trim(val.text))
+                    api.nvim_buf_get_name(val.bufnr), val.lnum, val.col, vim.trim(val.text))
             else
                 ret = string.format(fmt_e, key, signs[key] and escape_sign or ' ',
-                    fn.bufname(val.bufnr), val.lnum, val.col,
-                    val.type == 'E' and 'error' or val.type, vim.trim(val.text))
+                    api.nvim_buf_get_name(val.bufnr), val.lnum, val.col, qf_types[val.type] or val.type,
+                    vim.trim(val.text))
             end
             return ret
         end, items),
