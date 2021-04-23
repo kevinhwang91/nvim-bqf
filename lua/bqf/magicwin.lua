@@ -41,27 +41,51 @@ local function process_sline(fraction, aheight, lnum, lines_size)
     return sline
 end
 
+local function do_filter(tbl_info, height, lnum, lines_size)
+    local t = {}
+    for _, info in ipairs(tbl_info) do
+        local sline = process_sline(info.fraction, height, lnum, lines_size)
+        if fn.winline() - 1 == sline then
+            table.insert(t, info)
+        end
+    end
+    return t
+end
+
 -- If the lnum hasn't been changed, even if the window is resized, the fraction is still a constant.
 -- And we can use this feature to find out the possible bwrows until the window height reach 1.
 -- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
-local function process_tbl_info(tbl_info, lnum, lines_size)
+local function filter_info(tbl_info, lnum, lines_size)
     local function recursion(t_info)
-        -- we are in file window
+        -- we are in adjacent window
         local height = api.nvim_win_get_height(0)
         if #t_info < 2 or height == 1 then
             return t_info
         else
             cmd('resize -1')
-            local processed = {}
-            for _, info in ipairs(t_info) do
-                local sline = process_sline(info.fraction, height - 1, lnum, lines_size)
-                if fn.winline() - 1 == sline then
-                    table.insert(processed, info)
-                end
-            end
-            processed = recursion(processed)
+            local filtered = recursion(do_filter(tbl_info, height - 1, lnum, lines_size))
             cmd('resize +1')
-            return processed
+            return filtered
+        end
+    end
+    return recursion(tbl_info)
+end
+
+-- TODO ugly code.
+-- If window height is small, we may encounter multiple table result, increase window to guess result.
+local function filter_info_inc(tbl_info, lnum, lines_size, max_hei)
+    local function recursion(t_info)
+        local height = api.nvim_win_get_height(0)
+        if #t_info < 2 or height == max_hei then
+            return t_info
+        else
+            cmd('resize +1')
+            if height == api.nvim_win_get_height(0) then
+                return t_info
+            end
+            local filtered = recursion(do_filter(tbl_info, height + 1, lnum, lines_size))
+            cmd('resize -1')
+            return filtered
         end
     end
     return recursion(tbl_info)
@@ -84,15 +108,19 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
 
     local lnum = api.nvim_win_get_cursor(winid)[1]
     local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid, lnum)
+
     local e_fraction = cal_fraction(e_bwrow, bheight)
     local e_sline = cal_wrow(e_fraction, aheight)
+
     if l_bwrow then
         e_sline = math.max(cal_wrow(l_fraction, aheight), e_sline)
     end
-    local read_from = math.max(0, lnum - e_sline - 1)
-    local lines = api.nvim_buf_get_lines(bufnr, read_from, lnum, false)
+
+    -- use 5 as additional compensation
+    local read_from = math.max(0, lnum - e_sline - 5)
+    local lines = api.nvim_buf_get_lines(bufnr, read_from - 1, lnum, false)
     local lines_size = {}
-    for i = read_from + 1, lnum - 1 do
+    for i = read_from, lnum - 1 do
         local line = table.remove(lines, 1) or ''
         lines_size[i] = math.ceil(math.max(fn.strdisplaywidth(line), 1) / per_l_wid)
     end
@@ -105,10 +133,20 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
     for bwrow = s_bwrow, e_bwrow do
         table.insert(tbl_info, {bwrow = bwrow, fraction = cal_fraction(bwrow, bheight)})
     end
-    local info = process_tbl_info(tbl_info, lnum, lines_size)
-    -- print('info:', info and vim.inspect(info))
-    if not vim.tbl_isempty(info) then
+
+    local info = filter_info(tbl_info, lnum, lines_size)
+    -- print('info:', vim.inspect(info))
+
+    if #info == 0 then
+        return
+    elseif #info == 1 then
         return info[1].bwrow, info[1].fraction
+    else
+        -- up to 5 recursions
+        info = filter_info_inc(info, lnum, lines_size, aheight + 5)
+        if #info > 0 then
+            return info[1].bwrow, info[1].fraction
+        end
     end
 end
 
@@ -138,7 +176,7 @@ local function linesize2offset(winid, lines, revert)
             return offset
         end
     end
-    assert(false, 'It is impossible to go here')
+    error('It is impossible to go here')
 end
 
 local function resetview(topline)
