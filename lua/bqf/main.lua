@@ -71,7 +71,7 @@ function M.enable()
         aug Bqf
             au! * <buffer>
             au WinEnter <buffer> lua require('bqf.main').kill_alone_qf()
-            au WinClosed <buffer> lua require('bqf.main').close_qf()
+            au WinClosed <buffer> ++nested lua require('bqf.main').close_qf()
         aug END
     ]], false)
 end

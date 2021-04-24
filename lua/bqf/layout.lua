@@ -111,7 +111,7 @@ function M.init(qf_winid, file_winid, qf_type)
 
     if magic_window then
         update_allfixhei(false)
-        wmagic.revert_adjacent_wins(qf_winid, file_winid, qf_pos, true)
+        wmagic.revert_enter_adjacent_wins(qf_winid, file_winid, qf_pos)
         update_allfixhei(true)
     end
     -- store file winodw's options for subsequent use
@@ -153,28 +153,38 @@ function M.close_win(qf_winid)
         qf_hei, qf_wid = api.nvim_win_get_height(0), api.nvim_win_get_width(0)
     end)
 
+    local wmagic_defer_cb
     if magic_window then
         update_allfixhei(false)
-        wmagic.revert_adjacent_wins(qf_winid, file_winid, qf_pos, false)
+        wmagic_defer_cb = wmagic.revert_close_adjacent_wins(qf_winid, file_winid, qf_pos)
         update_allfixhei(true)
     end
 
     local cur_winid = api.nvim_get_current_win()
+
     if vim.o.equalalways and fn.winnr('$') > 2 then
-        -- close quickfix window in tab or floating window can prevent quickfix window make other
-        -- windows equal after closing quickfix window
-        cmd('noa tabnew')
-        cmd(string.format('noa call nvim_win_close(%d, v:false)', qf_winid))
-        cmd('noa bw')
+        -- close quickfix window in other tab or floating window can prevent nvim make windows equal
+        -- after closing quickfix window, but in other tab can't run
+        -- 'win_enter_ext(wp, false, true, false, true, true)' which triggers 'WinEnter', 'BufEnter'
+        -- and 'CursorMoved' events. Search 'do_autocmd_winclosed' in src/nvim/window.c for details.
+        local scratch = api.nvim_create_buf(false, true)
+        api.nvim_open_win(scratch, true, {
+            relative = 'win',
+            width = 1,
+            height = 1,
+            row = 0,
+            col = 0,
+            style = 'minimal'
+        })
+        api.nvim_win_close(qf_winid, false)
+        cmd(string.format('noa bw %d', scratch))
     else
-        cmd(string.format('noa call nvim_win_close(%d, v:false)', qf_winid))
+        api.nvim_win_close(qf_winid, false)
     end
 
     if api.nvim_win_is_valid(file_winid) and cur_winid == qf_winid then
         -- current window is a quickfix window, go back file window
-        cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
-    else
-        cmd(string.format('noa call nvim_set_current_win(%d)', cur_winid))
+        api.nvim_set_current_win(file_winid)
     end
 
     local rel_pos = qf_pos[1]
@@ -184,7 +194,9 @@ function M.close_win(qf_winid)
         cmd(string.format('%dresize +%d', file_win, qf_hei + 1))
     end
 
-    cmd('doautocmd WinEnter')
+    if wmagic_defer_cb then
+        wmagic_defer_cb()
+    end
 end
 
 function M.valid_qf_win()

@@ -203,7 +203,7 @@ local function tune_topline(winid, topline, l_size)
     return math.max(1, topline - line_offset)
 end
 
-local function enter_revert(qf_winid, winid, qf_pos)
+local function do_enter_revert(qf_winid, winid, qf_pos)
     -- TODO upstream bug
     -- local f_win_so = vim.wo[winid].scrolloff
     -- return a big number like '1.4014575443238e+14' if window option is absent
@@ -268,19 +268,16 @@ local function enter_revert(qf_winid, winid, qf_pos)
     end)
 end
 
-local function close_revert(qf_winid, winid, qf_pos)
+local function prefetch_close_revert_topline(qf_winid, winid, qf_pos)
+    local topline
     local ok, msg = pcall(fn.getwininfo, winid)
     if ok then
-        local topline = msg[1].topline
+        topline = msg[1].topline
         if qf_pos[1] == 'above' or qf_pos[2] == 'top' then
             topline = tune_topline(winid, topline, api.nvim_win_get_height(qf_winid) + 1)
         end
-
-        -- The delay of vim.schedule is so visible that the users can feel the screen is redrawing,
-        -- use WinEnter event instead
-        cmd(string.format('au Bqf WinEnter * ++once %s', string.format(
-            [[lua require('bqf.magicwin').defer_restview(%d, %d)]], winid, topline)))
     end
+    return topline
 end
 
 local function need_revert(qf_pos)
@@ -288,23 +285,35 @@ local function need_revert(qf_pos)
     return rel_pos == 'above' or rel_pos == 'below' or abs_pos == 'top' or abs_pos == 'bottom'
 end
 
-function M.revert_adjacent_wins(qf_winid, file_winid, qf_pos, enter_event)
-    if not need_revert(qf_pos) then
-        return
-    end
-
-    for _, winid in ipairs(qfpos.find_adjacent_wins(qf_winid, file_winid)) do
-        if api.nvim_win_is_valid(winid) then
-            local revert_func = enter_event and enter_revert or close_revert
-            revert_func(qf_winid, winid, qf_pos)
+function M.revert_enter_adjacent_wins(qf_winid, file_winid, qf_pos)
+    if need_revert(qf_pos) then
+        for _, winid in ipairs(qfpos.find_adjacent_wins(qf_winid, file_winid)) do
+            if api.nvim_win_is_valid(winid) then
+                do_enter_revert(qf_winid, winid, qf_pos)
+            end
         end
     end
 end
 
-function M.defer_restview(winid, topline)
-    utils.win_execute(winid, function()
-        resetview(topline)
-    end)
+function M.revert_close_adjacent_wins(qf_winid, file_winid, qf_pos)
+    local defer_data = {}
+    if need_revert(qf_pos) then
+        for _, winid in ipairs(qfpos.find_adjacent_wins(qf_winid, file_winid)) do
+            local topline = prefetch_close_revert_topline(qf_winid, winid, qf_pos)
+            if topline then
+                table.insert(defer_data, {winid = winid, topline = topline})
+            end
+        end
+    end
+
+    return function()
+        for _, info in pairs(defer_data) do
+            local winid, topline = info.winid, info.topline
+            utils.win_execute(winid, function()
+                resetview(topline)
+            end)
+        end
+    end
 end
 
 return M
