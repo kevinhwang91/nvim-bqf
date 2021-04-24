@@ -344,7 +344,7 @@ function M.toggle_item()
     end
 end
 
-function M.move_curosr()
+function M.move_cursor()
     local qf_winid = api.nvim_get_current_win()
     local ps = qfs[qf_winid].preview
     if not ps then
@@ -397,7 +397,7 @@ function M.buf_event()
             au! * <buffer>
             au VimResized <buffer> lua require('bqf.preview').redraw_win()
             au TabEnter <buffer> lua require('bqf.preview').tabenter_event()
-            au CursorMoved <buffer> lua require('bqf.preview').move_curosr()
+            au CursorMoved <buffer> lua require('bqf.preview').move_cursor()
     ]], false)
     cmd(string.format('au BufLeave,WinLeave <buffer> %s', string.format(
         [[lua require('bqf.preview').close(vim.fn.bufwinid(%d))]], bufnr)))
