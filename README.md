@@ -30,7 +30,7 @@ So why not nvim-bqf?
   * [Usage](#usage)
     * [filter with signs](#filter-with-signs)
     * [fzf mode](#fzf-mode)
-    * [Search and replace example](#search-and-replace-example)
+    * [Search and replace demo](#search-and-replace-demo)
 * [Documentation](#documentation)
   * [Setup and description](#setup-and-description)
   * [Function table](#function-table)
@@ -241,7 +241,7 @@ about current configuration.
 | ----------- | -------------------------------------------------- | --------- |
 | open        | open the item under the cursor                     | `<CR>`    |
 | openc       | like `open`, and close quickfix window             | `o`       |
-| tab         | open the item under the curosr in a new tab        | `t`       |
+| tab         | open the item under the cursor in a new tab        | `t`       |
 | tabb        | like `tab`, but stay at quickfix window            | `T`       |
 | split       | open the item under the cursor in vertical split   | `<C-x>`   |
 | vsplit      | open the item under the cursor in horizontal split | `<C-v>`   |
