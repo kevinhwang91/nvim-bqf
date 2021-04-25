@@ -95,8 +95,8 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
     -- s_bwrow: the minimum bwrow value
     -- Below formula we can derive from the known conditions
     local s_bwrow = math.ceil(awrow * bheight / aheight - 0.5)
-    if s_bwrow <= 0 or bheight == aheight then
-        return nil
+    if s_bwrow < 0 or bheight == aheight then
+        return
     end
     -- e_bwrow: the maximum bwrow value
     -- There are not enough conditions to derive e_bwrow, so we have to figure it out by guessing,
@@ -116,8 +116,8 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
         e_sline = math.max(cal_wrow(l_fraction, aheight), e_sline)
     end
 
-    -- use 5 as additional compensation
-    local read_from = math.max(0, lnum - e_sline - 5)
+    -- use 9 as additional compensation
+    local read_from = math.max(0, lnum - e_sline - 9)
     local lines = api.nvim_buf_get_lines(bufnr, read_from - 1, lnum, false)
     local lines_size = {}
     for i = read_from, lnum - 1 do
@@ -130,23 +130,21 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
     end
 
     local tbl_info = {}
-    for bwrow = s_bwrow, e_bwrow do
+    for bwrow = math.max(s_bwrow, 1), e_bwrow do
         table.insert(tbl_info, {bwrow = bwrow, fraction = cal_fraction(bwrow, bheight)})
     end
 
     local info = filter_info(tbl_info, lnum, lines_size)
     -- print('info:', vim.inspect(info))
 
-    if #info == 0 then
-        return
-    elseif #info == 1 then
+    if #info > 1 and s_bwrow == 0 then
+        table.insert(info, 1, {bwrow = 0, fraction = cal_fraction(0, bheight)})
+    end
+    -- up to 9 recursions
+    info = filter_info_inc(info, lnum, lines_size, aheight + 9)
+    -- print('after info', vim.inspect(info))
+    if #info > 0 then
         return info[1].bwrow, info[1].fraction
-    else
-        -- up to 5 recursions
-        info = filter_info_inc(info, lnum, lines_size, aheight + 5)
-        if #info > 0 then
-            return info[1].bwrow, info[1].fraction
-        end
     end
 end
 
