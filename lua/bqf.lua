@@ -16,6 +16,7 @@ function M.setup(opts)
 end
 
 function M.bootstrap()
+    M.setup()
     if auto_enable then
         require('bqf.main').enable()
     end
