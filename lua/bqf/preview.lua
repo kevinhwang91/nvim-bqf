@@ -76,7 +76,9 @@ local function exec_preview(qf_all, idx, file_winid)
 
     if lnum < 1 then
         api.nvim_win_set_cursor(0, {1, 0})
-        fn.search(pattern, 'c')
+        if pattern ~= '' then
+            fn.search(pattern, 'c')
+        end
     else
         if not pcall(api.nvim_win_set_cursor, 0, {lnum, math.max(0, col - 1)}) then
             return
@@ -117,7 +119,7 @@ local function exec_preview(qf_all, idx, file_winid)
     cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
 end
 
-local function do_syntax(qf_winid, idx, file_winid, preview_winid)
+local function do_syntax(qf_winid, idx)
     local ps = qfs[qf_winid].preview
     if not ps then
         return
@@ -128,26 +130,20 @@ local function do_syntax(qf_winid, idx, file_winid, preview_winid)
     end
 
     if not ps.buf_loaded and vim.bo[ps.bufnr].filetype == '' then
-        local title_disabled = false
-        if vim.o.title then
-            vim.o.title = false
-            title_disabled = true
-        end
-
-        -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
-        -- fuxx min.js!
-        local lcount = api.nvim_buf_line_count(ps.bufnr)
-        local bytes = api.nvim_buf_get_offset(ps.bufnr, lcount)
-        -- bytes / lcount < 1000 LGTM :)
-        if bytes / lcount < 1000 then
-            pcall(utils.win_execute, preview_winid, function()
-                cmd('filetype detect')
-                cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
-            end)
-        end
-
-        if title_disabled then
-            vim.o.title = true
+        local preview_winid = floatwin.winid()
+        if fn.bufwinid(ps.bufnr) == preview_winid then
+            -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
+            -- fuxx min.js!
+            local lcount = api.nvim_buf_line_count(ps.bufnr)
+            local bytes = api.nvim_buf_get_offset(ps.bufnr, lcount)
+            -- bytes / lcount < 1000 LGTM :)
+            if bytes / lcount < 1000 then
+                -- nvim_buf_call is less side-effects than changing window
+                -- make sure that buffer in preview window must not in normal window
+                api.nvim_buf_call(ps.bufnr, function()
+                    cmd('filetype detect')
+                end)
+            end
         end
     end
 end
@@ -252,9 +248,9 @@ function M.open(qf_winid, qf_idx)
         return
     end
 
-    local pbufnr, lnum, pattern = entry.bufnr, entry.lnum, entry.pattern
+    local pbufnr, valid = entry.bufnr, entry.valid
 
-    if not api.nvim_buf_is_valid(pbufnr) or lnum < 1 and pattern == '' then
+    if not valid or not api.nvim_buf_is_valid(pbufnr) then
         M.close(qf_winid)
         return
     end
@@ -280,7 +276,7 @@ function M.open(qf_winid, qf_idx)
     update_border(api.nvim_win_get_width(preview_winid), qf_items, qf_idx)
 
     vim.defer_fn(function()
-        do_syntax(qf_winid, qf_idx, file_winid, preview_winid)
+        do_syntax(qf_winid, qf_idx)
     end, delay_syntax)
 end
 

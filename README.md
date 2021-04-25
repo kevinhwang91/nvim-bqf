@@ -8,10 +8,10 @@ The goal of nvim-bqf is to make Neovim's quickfix window better.
 
 ---
 
-In today's era of floating windows, are you afraid to toggle quickfix window to make your eyes uncomfortable?
-Are you constantly jumping between the edit window and the quickfix window when you use quickfix window
-to refactor because of lacking a sustainability preview window? Do you think quickfix window lacks a
-fuzzy search function? At present, nvim-bqf can solve the above problems.
+In today's era of floating windows, are you afraid to toggle quickfix window to make your eyes
+uncomfortable?  Are you constantly jumping between the edit window and the quickfix window when you
+use quickfix window to refactor because of lacking a sustainable preview window? Do you think
+quickfix window lacks a fuzzy search function? At present, nvim-bqf can solve the above problems.
 
 You really don't need any search and replace plugins, because nvim-bqf with the built-in function of
 the quickfix window allows you to easily search and replace targets.

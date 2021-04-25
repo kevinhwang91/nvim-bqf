@@ -159,7 +159,7 @@ function M.win_execute(winid, func)
         winid = {
             winid, function(w)
                 return w and api.nvim_win_is_valid(w)
-            end, 'an valid window'
+            end, 'a valid window'
         },
         func = {func, 'function'}
     })
