@@ -91,7 +91,7 @@ local function filter_info_inc(tbl_info, lnum, lines_size, max_hei)
     return recursion(tbl_info)
 end
 
-local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
+local function guess_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
     -- s_bwrow: the minimum bwrow value
     -- Below formula we can derive from the known conditions
     local s_bwrow = math.ceil(awrow * bheight / aheight - 0.5)
@@ -104,8 +104,6 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
     -- It seems that 10 as a minimum and 1.2 as a scale is good to balance performance and accuracy
     local e_bwrow = math.max(10, math.ceil(awrow * 1.2 * bheight / aheight - 0.25))
 
-    local bufnr = fn.winbufnr(winid)
-
     local lnum = api.nvim_win_get_cursor(winid)[1]
     local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid, lnum)
 
@@ -116,13 +114,10 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
         e_sline = math.max(cal_wrow(l_fraction, aheight), e_sline)
     end
 
-    -- use 9 as additional compensation
-    local read_from = math.max(0, lnum - e_sline - 9)
-    local lines = api.nvim_buf_get_lines(bufnr, read_from - 1, lnum, false)
     local lines_size = {}
-    for i = read_from, lnum - 1 do
-        local line = table.remove(lines, 1) or ''
-        lines_size[i] = math.ceil(math.max(fn.strdisplaywidth(line), 1) / per_l_wid)
+    -- use 9 as additional compensation
+    for i = math.max(1, lnum - e_sline - 9), lnum - 1 do
+        lines_size[i] = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
     end
 
     if l_bwrow and awrow == process_sline(l_fraction, aheight, lnum, lines_size) then
@@ -148,29 +143,27 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
     end
 end
 
-local function linesize2offset(winid, lines, revert)
-    local len = #lines
+local function lsize2off(winid, lnum_s, lnum_e, revert)
+    local len = lnum_e - lnum_s
     if len == 0 then
         return 0
     end
     local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
-    local iter_i, iter_e, iter_s
+    local iter_start, iter_end, iter_step
     if revert then
-        iter_i, iter_e, iter_s = len, 1, -1
+        iter_start, iter_end, iter_step = lnum_e, lnum_s, -1
     else
-        iter_i, iter_e, iter_s = 1, len, 1
+        iter_start, iter_end, iter_step = lnum_s, lnum_e, 1
     end
     local offset, l_size_sum = 0, 0
-    for i = iter_i, iter_e, iter_s do
-        local line = lines[i] or ''
-        local per_l_size = math.ceil(math.max(fn.strdisplaywidth(line), 1) / per_l_wid)
-        -- print('============================================')
-        -- print('l_size_sum:', l_size_sum, 'per_l_size:', per_l_size)
-        -- print('line:', line)
-        -- print('============================================')
+    for i = iter_start, iter_end, iter_step do
+        local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
+        -- -- print('============================================')
+        -- -- print('l_size_sum:', l_size_sum, 'per_l_size:', per_l_size, 'lnum:', i)
+        -- -- print('============================================')
         l_size_sum = l_size_sum + per_l_size
         offset = offset + 1
-        if l_size_sum >= len then
+        if l_size_sum > len then
             return offset
         end
     end
@@ -188,14 +181,15 @@ local function tune_topline(winid, topline, l_size)
         return topline - l_size
     end
     -- print('before topline:', topline, 'l_size:', l_size)
-    local lines, line_offset
-    local bufnr = fn.winbufnr(winid)
+    local line_offset
     if l_size > 0 then
-        lines = api.nvim_buf_get_lines(bufnr, math.max(0, topline - l_size - 1), topline - 1, false)
-        line_offset = linesize2offset(winid, lines, true)
+        local lnum_s = math.max(1, topline - l_size)
+        local lnum_e = topline - 1
+        line_offset = lsize2off(winid, lnum_s, lnum_e, true)
     else
-        lines = api.nvim_buf_get_lines(bufnr, topline - 1, topline - l_size - 1, false)
-        line_offset = -linesize2offset(winid, lines, false)
+        local lnum_s = topline
+        local lnum_e = topline - l_size - 1
+        line_offset = -lsize2off(winid, lnum_s, lnum_e, false)
     end
     -- print('after topline:', topline - line_offset, 'line_offset:', line_offset)
     return math.max(1, topline - line_offset)
@@ -241,7 +235,7 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
 
             -- print('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
             -- print('l_bwrow:', l_bwrow, 'l_fraction:', l_fraction)
-            bwrow, fraction = build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
+            bwrow, fraction = guess_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
             if not bwrow then
                 return
             end
