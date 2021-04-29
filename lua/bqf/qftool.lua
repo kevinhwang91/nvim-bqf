@@ -8,11 +8,13 @@ local qfs = require('bqf.qfsession')
 local cache = {count = 0}
 
 local function close(winid)
-    if not pcall(function()
-        api.nvim_win_close(winid, true)
-    end) then
+    local ok, msg = pcall(api.nvim_win_close, winid, false)
+    if not ok then
         -- Vim:E444: Cannot close last window
-        cmd('q')
+        if msg:match('^Vim:E444') then
+            cmd('new')
+            api.nvim_win_close(winid, true)
+        end
     end
 end
 
