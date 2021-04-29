@@ -89,7 +89,6 @@ function M.tabedit(stay, qf_winid, idx)
     local file_winid = qftool.filewinid(qf_winid)
     api.nvim_set_current_win(file_winid)
     set_opts_around(function()
-        api.nvim_set_current_win(qf_winid)
         cmd(string.format('%s tabedit', stay and 'noa' or ''))
         cmd(string.format([[%s sil exe '%d%s']], stay and 'noa' or '', idx, suffix))
     end)
@@ -97,8 +96,9 @@ function M.tabedit(stay, qf_winid, idx)
     utils.zz()
     cmd('noa bw #')
 
-    if stay then
-        cmd('noa tabp')
+    api.nvim_set_current_win(qf_winid)
+    if not stay then
+        cmd('tabn')
     end
 end
 
