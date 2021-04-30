@@ -9,7 +9,11 @@ function M.setup(opts)
     end
 
     opts = opts or {}
-    auto_enable = opts.auto_enable == false and false or true
+    if opts.auto_enable == false then
+        auto_enable = false
+    else
+        auto_enable = true
+    end
     -- M._config will become nil latter
     M._config = opts
     initialized = true
