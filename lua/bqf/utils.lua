@@ -18,11 +18,11 @@ local function color2csi24b(color_num, fg)
     local r = math.floor(color_num / 2 ^ 16)
     local g = math.floor(math.floor(color_num / 2 ^ 8) % 2 ^ 8)
     local b = math.floor(color_num % 2 ^ 8)
-    return string.format('%d;2;%d;%d;%d', fg and 38 or 48, r, g, b)
+    return ('%d;2;%d;%d;%d'):format(fg and 38 or 48, r, g, b)
 end
 
 local function color2csi8b(color_num, fg)
-    return string.format('%d;5;%d', fg and 38 or 48, color_num)
+    return ('%d;5;%d'):format(fg and 38 or 48, color_num)
 end
 
 function M.render_str(str, group_name, def_fg, def_bg)
@@ -45,8 +45,8 @@ function M.render_str(str, group_name, def_fg, def_bg)
         fg = hl.foreground
         bg = hl.background
     end
-    local escape_prefix = string.format('\x1b[%s%s%s', hl.bold and ';1' or '',
-        hl.italic and ';3' or '', hl.underline and ';4' or '')
+    local escape_prefix = ('\x1b[%s%s%s'):format(hl.bold and ';1' or '', hl.italic and ';3' or '',
+        hl.underline and ';4' or '')
 
     local color2csi = gui and color2csi24b or color2csi8b
     local escape_fg, escape_bg = '', ''
@@ -61,13 +61,14 @@ function M.render_str(str, group_name, def_fg, def_bg)
         escape_fg = ansi[def_bg]
     end
 
-    return string.format('%s%s%sm%s\x1b[m', escape_prefix, escape_fg, escape_bg, str)
+    return ('%s%s%sm%s\x1b[m'):format(escape_prefix, escape_fg, escape_bg, str)
 end
 
 function M.zz()
     local lnum1, lcount = api.nvim_win_get_cursor(0)[1], api.nvim_buf_line_count(0)
+    local zb = 'keepj norm! %dzb'
     if lnum1 == lcount then
-        fn.execute(string.format('keepj norm! %dzb', lnum1))
+        fn.execute(zb:format(lnum1))
         return
     end
     cmd('norm! zvzz')
@@ -75,7 +76,7 @@ function M.zz()
     cmd('norm! L')
     local lnum2 = api.nvim_win_get_cursor(0)[1]
     if lnum2 + fn.getwinvar(0, '&scrolloff') >= lcount then
-        fn.execute(string.format('keepj norm! %dzb', lnum2))
+        fn.execute(zb:format(lnum2))
     end
     if lnum1 ~= lnum2 then
         cmd('keepj norm! ``')
@@ -165,12 +166,13 @@ function M.win_execute(winid, func)
     })
 
     local cur_winid = api.nvim_get_current_win()
+    local noa_set_win = 'noa call nvim_set_current_win(%d)'
     if cur_winid ~= winid then
-        cmd(string.format('noa call nvim_set_current_win(%d)', winid))
+        cmd(noa_set_win:format(winid))
     end
     func()
     if cur_winid ~= winid then
-        cmd(string.format('noa call nvim_set_current_win(%d)', cur_winid))
+        cmd(noa_set_win:format(cur_winid))
     end
 end
 

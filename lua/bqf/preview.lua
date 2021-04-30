@@ -35,9 +35,9 @@ local function setup()
 end
 
 local function update_border(border_width, qf_items, idx)
-    local pos_str = string.format('[%d/%d]', idx, #qf_items)
+    local pos_str = ('[%d/%d]'):format(idx, #qf_items)
     local pbufnr = qf_items[idx].bufnr
-    local buf_str = string.format('buf %d:', pbufnr)
+    local buf_str = ('buf %d:'):format(pbufnr)
     local name = fn.bufname(pbufnr):gsub('^' .. vim.env.HOME, '~')
     local pad_fit = border_width - 8 - fn.strwidth(buf_str) - fn.strwidth(pos_str)
     if pad_fit - fn.strwidth(name) < 0 then
@@ -46,7 +46,7 @@ local function update_border(border_width, qf_items, idx)
             name = ''
         end
     end
-    local title = string.format(' %s %s %s ', pos_str, buf_str, name)
+    local title = (' %s %s %s '):format(pos_str, buf_str, name)
     floatwin.update_title(title)
     floatwin.update_scrollbar()
 end
@@ -116,7 +116,7 @@ local function exec_preview(qf_all, idx, file_winid)
             fn.matchaddpos('BqfPreviewRange', {{lnum}})
         end
     end
-    cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
+    cmd(('noa call nvim_set_current_win(%d)'):format(file_winid))
 end
 
 local function do_syntax(qf_winid, idx)
@@ -166,8 +166,8 @@ local function fire_restore_buf_opts(bufnr, loaded_before, fwin_opts)
     if loaded_before and fn.bufwinid(bufnr) == -1 then
         if not pcall(api.nvim_buf_get_var, bufnr, 'bqf_fwin_opts') then
             api.nvim_buf_set_var(bufnr, 'bqf_fwin_opts', fwin_opts)
-            cmd(string.format('au Bqf BufWinEnter <buffer=%d> ++once %s', bufnr,
-                string.format([[lua require('bqf.layout').restore_fwin_opts()]])))
+            cmd(('au Bqf BufWinEnter <buffer=%d> ++once %s'):format(bufnr,
+                [[lua require('bqf.layout').restore_fwin_opts()]]))
         end
     end
 end
@@ -313,10 +313,10 @@ function M.scroll(direction)
             api.nvim_win_set_cursor(preview_winid, orig_pos)
         else
             -- ^D = 0x04, ^U = 0x15
-            fn.execute(string.format('norm! %c', direction > 0 and 0x04 or 0x15))
+            fn.execute(('norm! %c'):format(direction > 0 and 0x04 or 0x15))
         end
         utils.zz()
-        cmd(string.format('noa call nvim_set_current_win(%d)', file_winid))
+        cmd(('noa call nvim_set_current_win(%d)'):format(file_winid))
     end)
     floatwin.update_scrollbar()
 end
@@ -386,7 +386,7 @@ function M.fix_qf_jump(qf_bufnr)
 end
 
 function M.buf_event()
-    -- I hate these autocmd string!!!!!!!!!!!!!!!!!!!!!
+    -- TODO I hate these autocmd string!!!!!!!!!!!!!!!!!!!!!
     local bufnr = api.nvim_get_current_buf()
     api.nvim_exec([[
         aug BqfPreview
@@ -395,19 +395,18 @@ function M.buf_event()
             au TabEnter <buffer> lua require('bqf.preview').tabenter_event()
             au CursorMoved <buffer> lua require('bqf.preview').move_cursor()
     ]], false)
-    cmd(string.format('au BufLeave,WinLeave <buffer> %s', string.format(
-        [[lua require('bqf.preview').close(vim.fn.bufwinid(%d))]], bufnr)))
+    cmd(('au BufLeave,WinLeave <buffer> %s'):format(
+        ([[lua require('bqf.preview').close(vim.fn.bufwinid(%d))]]):format(bufnr)))
     if qftool.type() == 'qf' then
-        cmd(string.format('au BufHidden <buffer> exe "%s %s"',
-            'au BqfPreview BufEnter * ++once ++nested',
-            string.format([[lua require('bqf.preview').fix_qf_jump(%d)]], bufnr)))
+        cmd(('au BufHidden <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once ++nested',
+            ([[lua require('bqf.preview').fix_qf_jump(%d)]]):format(bufnr)))
 
         -- bufhidden=hide after vim-patch:8.1.0877
         if vim.bo.bufhidden == 'wipe' then
             cmd('au QuitPre <buffer> ++nested bw')
             cmd([[au BufEnter <buffer> lua vim.bo.bufhidden = 'hide']])
-            cmd(string.format('au BufLeave <buffer> exe "%s %s"', 'au BqfPreview BufEnter * ++once',
-                string.format([[sil! lua vim.bo[%d].bufhidden = 'wipe']], bufnr)))
+            cmd(('au BufLeave <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once',
+                ([[sil! lua vim.bo[%d].bufhidden = 'wipe']]):format(bufnr)))
         end
     end
     cmd('aug END')

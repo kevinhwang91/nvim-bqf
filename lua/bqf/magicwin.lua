@@ -212,8 +212,8 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
     if f_win_so ~= 0 then
         -- turn off scrolloff and then show us true wrow
         vim.wo[winid].scrolloff = 0
-        cmd(string.format('au Bqf WinLeave * ++once %s',
-            string.format([[lua vim.wo[%d].scrolloff = %d]], winid, f_win_so)))
+        cmd(('au Bqf WinLeave * ++once %s'):format(
+            ([[lua vim.wo[%d].scrolloff = %d]]):format(winid, f_win_so)))
     end
 
     utils.win_execute(winid, function()

@@ -37,7 +37,7 @@ local function setup()
 end
 
 local function funcref_str(tbl_func)
-    return string.format([[<Cmd>lua require('bqf.%s').%s<CR>]], tbl_func.module, tbl_func.funcref)
+    return ([[<Cmd>lua require('bqf.%s').%s<CR>]]):format(tbl_func.module, tbl_func.funcref)
 end
 
 function M.buf_map()

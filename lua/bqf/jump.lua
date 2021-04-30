@@ -46,7 +46,7 @@ function M.open(close, qf_winid, idx)
         api.nvim_win_close(qf_winid, true)
     end
 
-    cmd(string.format([[sil exe '%d%s']], idx, suffix))
+    cmd(([[sil exe '%d%s']]):format(idx, suffix))
 
     if last_bufnr ~= api.nvim_get_current_buf() then
         utils.zz()
@@ -71,8 +71,8 @@ function M.split(vertical, qf_winid, idx)
     api.nvim_set_current_win(file_winid)
     api.nvim_win_close(qf_winid, true)
 
-    cmd(string.format('%ssp', vertical and 'v' or ''))
-    cmd(string.format([[sil exe '%d%s']], idx, suffix))
+    cmd(('%ssp'):format(vertical and 'v' or ''))
+    cmd(([[sil exe '%d%s']]):format(idx, suffix))
     utils.zz()
 end
 
@@ -89,8 +89,8 @@ function M.tabedit(stay, qf_winid, idx)
     local file_winid = qftool.filewinid(qf_winid)
     api.nvim_set_current_win(file_winid)
     set_opts_around(function()
-        cmd(string.format('%s tabedit', stay and 'noa' or ''))
-        cmd(string.format([[%s sil exe '%d%s']], stay and 'noa' or '', idx, suffix))
+        cmd(('%s tabedit'):format(stay and 'noa' or ''))
+        cmd(([[%s sil exe '%d%s']]):format(stay and 'noa' or '', idx, suffix))
     end)
 
     utils.zz()

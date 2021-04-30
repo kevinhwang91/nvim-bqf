@@ -117,8 +117,7 @@ function M.prepare(qf_winid, pid)
 
     if pid then
         cmd('aug BqfFilterFzf')
-        cmd(string.format('au BufWipeout <buffer> %s',
-            string.format('lua vim.loop.kill(%d, 15)', pid)))
+        cmd(('au BufWipeout <buffer> %s'):format(('lua vim.loop.kill(%d, 15)'):format(pid)))
         cmd('aug END')
     end
 end
@@ -133,27 +132,27 @@ function M.run()
         return
     end
 
-    local padding = string.rep(' ', utils.gutter_size(qf_winid) - 4)
+    local padding = (' '):rep(utils.gutter_size(qf_winid) - 4)
     local expect_keys = table.concat(vim.tbl_keys(action_for), ',')
     local escape_sign = utils.render_str('^', 'BqfSign', 'cyan')
     local escape_filename = utils.render_str('%s', 'qfFileName', 'blue')
     local escape_linenr = utils.render_str('%d col %d', 'qfLineNr', 'black')
     local escape_seqarator = utils.render_str('|', 'qfSeparator', 'white')
     local escape_error = utils.render_str('%s', 'qfError', 'red')
-    local fmt = string.format('%%d\t%s%%s %s%s%s%s %%s', padding, escape_filename, escape_seqarator,
+    local fmt = ('%%d\t%s%%s %s%s%s%s %%s'):format(padding, escape_filename, escape_seqarator,
         escape_linenr, escape_seqarator)
-    local fmt_e = string.format('%%d\t%s%%s %s%s%s %s%s %%s', padding, escape_filename,
-        escape_seqarator, escape_linenr, escape_error, escape_seqarator)
+    local fmt_e = ('%%d\t%s%%s %s%s%s %s%s %%s'):format(padding, escape_filename, escape_seqarator,
+        escape_linenr, escape_error, escape_seqarator)
     local opts = {
         source = supply.tbl_kv_map(function(key, val)
             local ret
             if not val.type or val.type == '' then
-                ret = string.format(fmt, key, signs[key] and escape_sign or ' ',
+                ret = fmt:format(key, signs[key] and escape_sign or ' ',
                     fn.bufname(val.bufnr), val.lnum, val.col, vim.trim(val.text))
             else
-                ret = string.format(fmt_e, key, signs[key] and escape_sign or ' ',
-                    fn.bufname(val.bufnr), val.lnum, val.col, qf_types[val.type] or val.type,
-                    vim.trim(val.text))
+                ret = fmt_e:format(key, signs[key] and escape_sign or ' ',
+                    fn.bufname(val.bufnr), val.lnum, val.col,
+                    qf_types[val.type] or val.type, vim.trim(val.text))
             end
             return ret
         end, items),
@@ -180,8 +179,8 @@ function M.run()
         api.nvim_err_writeln([[preview need 'tail' command]])
     end
 
-    cmd(string.format('au BqfFilterFzf FileType fzf ++once %s', string.format(
-        [[lua require('bqf.filter.fzf').prepare(%d, %s)]], qf_winid, tostring(pid))))
+    cmd(('au BqfFilterFzf FileType fzf ++once %s'):format(
+        ([[lua require('bqf.filter.fzf').prepare(%d, %s)]]):format(qf_winid, tostring(pid))))
 
     -- TODO lua can't translate nested table data to vimscript
     local fzf_wrap = fn['fzf#wrap'](opts)

@@ -76,7 +76,7 @@ end
 local function update_border_buf(border_opts, border_buf)
     local width, height = border_opts.width, border_opts.height
     local top = border_chars[5] .. border_chars[3]:rep(width - 2) .. border_chars[6]
-    local mid = border_chars[1] .. string.rep(' ', width - 2) .. border_chars[2]
+    local mid = border_chars[1] .. (' '):rep(width - 2) .. border_chars[2]
     local bot = border_chars[7] .. border_chars[4]:rep(width - 2) .. border_chars[8]
     local lines = {top}
     for _ = 1, height - 2 do
@@ -129,7 +129,7 @@ function M.update_title(title)
     local top = api.nvim_buf_get_lines(border_buf, 0, 1, 0)[1]
     local prefix = fn.strcharpart(top, 0, 3)
     local suffix = fn.strcharpart(top, fn.strwidth(title) + 3, fn.strwidth(top))
-    title = string.format('%s%s%s', prefix, title, suffix)
+    title = ('%s%s%s'):format(prefix, title, suffix)
     api.nvim_buf_set_lines(border_buf, 0, 1, 1, {title})
 end
 

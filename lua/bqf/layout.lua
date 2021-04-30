@@ -41,7 +41,7 @@ local function fix_default_qf(qf_winid, file_winid, qf_type, qf_pos)
             local resized_win = fn.winnr('k')
             local resized_hei = fn.winheight(resized_win)
             cmd('winc J')
-            cmd(string.format('%dresize %d', resized_win, resized_hei))
+            cmd(('%dresize %d'):format(resized_win, resized_hei))
             qf_pos = qfpos.get_pos(qf_winid, file_winid)
         end
     end
@@ -55,9 +55,9 @@ local function adjust_width(qf_winid, file_winid, qf_pos)
         if qf_pos[1] == 'right' then
             local width = api.nvim_win_get_width(file_winid) -
                               (vim.o.winwidth - api.nvim_win_get_width(qf_winid))
-            cmd(string.format('vert %dresize %d', file_win, width))
+            cmd(('vert %dresize %d'):format(file_win, width))
         else
-            cmd(string.format('vert %dresize %d', qf_win, vim.o.winwidth))
+            cmd(('vert %dresize %d'):format(qf_win, vim.o.winwidth))
         end
     end
 end
@@ -83,10 +83,10 @@ local function adjust_height(qf_winid, file_winid, qf_pos)
 
     local rel_pos, abs_pos = unpack(qf_pos)
     if rel_pos == 'above' or abs_pos == 'top' or abs_pos == 'bottom' then
-        cmd(string.format('%dresize %s%d', qf_win, inc_hei > 0 and '+' or '', inc_hei))
+        cmd(('%dresize %s%d'):format(qf_win, inc_hei > 0 and '+' or '', inc_hei))
     elseif rel_pos == 'below' then
         vim.wo[qf_winid].winfixheight = false
-        cmd(string.format('%dresize %s%d', file_win, inc_hei > 0 and '' or '+', -inc_hei))
+        cmd(('%dresize %s%d'):format(file_win, inc_hei > 0 and '' or '+', -inc_hei))
         vim.wo[qf_winid].winfixheight = true
     end
 end
@@ -177,7 +177,7 @@ function M.close_win(qf_winid)
             style = 'minimal'
         })
         api.nvim_win_close(qf_winid, false)
-        cmd(string.format('noa bw %d', scratch))
+        cmd(('noa bw %d'):format(scratch))
     else
         api.nvim_win_close(qf_winid, false)
     end
@@ -189,9 +189,9 @@ function M.close_win(qf_winid)
 
     local rel_pos = qf_pos[1]
     if rel_pos == 'right' and qf_win_l ~= qf_win then
-        cmd(string.format('vert %dresize +%d', file_win, qf_wid + 1))
+        cmd(('vert %dresize +%d'):format(file_win, qf_wid + 1))
     elseif rel_pos == 'below' and qf_win_j ~= qf_win then
-        cmd(string.format('%dresize +%d', file_win, qf_hei + 1))
+        cmd(('%dresize +%d'):format(file_win, qf_hei + 1))
     end
 
     if wmagic_defer_cb then
