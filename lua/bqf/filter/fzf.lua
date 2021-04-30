@@ -149,10 +149,10 @@ function M.run()
             local ret
             if not val.type or val.type == '' then
                 ret = string.format(fmt, key, signs[key] and escape_sign or ' ',
-                    api.nvim_buf_get_name(val.bufnr), val.lnum, val.col, vim.trim(val.text))
+                    fn.bufname(val.bufnr), val.lnum, val.col, vim.trim(val.text))
             else
                 ret = string.format(fmt_e, key, signs[key] and escape_sign or ' ',
-                    api.nvim_buf_get_name(val.bufnr), val.lnum, val.col, qf_types[val.type] or val.type,
+                    fn.bufname(val.bufnr), val.lnum, val.col, qf_types[val.type] or val.type,
                     vim.trim(val.text))
             end
             return ret
