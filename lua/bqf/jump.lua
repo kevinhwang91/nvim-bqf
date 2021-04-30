@@ -40,7 +40,7 @@ function M.open(close, qf_winid, idx)
     local file_w_info = fn.getwininfo(file_winid)[1]
     local topline, botline = file_w_info.topline, file_w_info.botline
 
-    local last_bufnr = fn.winbufnr(file_winid)
+    local last_bufnr = api.nvim_win_get_buf(file_winid)
     api.nvim_set_current_win(file_winid)
     if close then
         api.nvim_win_close(qf_winid, true)

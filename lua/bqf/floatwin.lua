@@ -96,8 +96,8 @@ function M.set_win_height(p_hei, p_vhei)
 end
 
 function M.update_scrollbar()
-    local buf = fn.winbufnr(preview_winid)
-    local border_buf = fn.winbufnr(border_winid)
+    local buf = api.nvim_win_get_buf(preview_winid)
+    local border_buf = api.nvim_win_get_buf(border_winid)
     local line_count = api.nvim_buf_line_count(buf)
 
     local win_info = fn.getwininfo(preview_winid)[1]
@@ -125,7 +125,7 @@ function M.update_scrollbar()
 end
 
 function M.update_title(title)
-    local border_buf = fn.winbufnr(border_winid)
+    local border_buf = api.nvim_win_get_buf(border_winid)
     local top = api.nvim_buf_get_lines(border_buf, 0, 1, 0)[1]
     local prefix = fn.strcharpart(top, 0, 3)
     local suffix = fn.strcharpart(top, fn.strwidth(title) + 3, fn.strwidth(top))
@@ -174,7 +174,7 @@ function M.open(bufnr, qf_winid, file_winid)
 
     local border_buf
     if M.validate_window() then
-        border_buf = fn.winbufnr(border_winid)
+        border_buf = api.nvim_win_get_buf(border_winid)
         update_border_buf(border_opts, border_buf)
         api.nvim_win_set_config(border_winid, border_opts)
         api.nvim_win_set_config(preview_winid, preview_opts)

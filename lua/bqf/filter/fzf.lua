@@ -60,7 +60,7 @@ local function handler(qf_winid, ret)
 
     if action == 'signtoggle' then
         for _, i in ipairs(selected_index) do
-            sign.toggle(0, fn.winbufnr(qf_winid), i)
+            sign.toggle(0, api.nvim_win_get_buf(qf_winid), i)
         end
     else
         if #selected_index == 1 then
@@ -107,7 +107,7 @@ local function create_job(qf_winid, tmpfile)
 end
 
 function M.prepare(qf_winid, pid)
-    local line_count = api.nvim_buf_line_count(fn.winbufnr(qf_winid))
+    local line_count = api.nvim_buf_line_count(api.nvim_win_get_buf(qf_winid))
     api.nvim_win_set_config(0, {
         relative = 'win',
         win = qf_winid,

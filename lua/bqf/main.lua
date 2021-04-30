@@ -51,7 +51,7 @@ function M.enable()
 
     layout.init(qf_winid, file_winid, qf_type)
 
-    local qf_bufnr = fn.winbufnr(qf_winid)
+    local qf_bufnr = api.nvim_win_get_buf(qf_winid)
     sign.reset(qf_bufnr)
     -- some plugins will change the quickfix window, preview window should init later
     vim.defer_fn(function()
@@ -101,7 +101,7 @@ end
 function M.close_qf()
     local winid = tonumber(fn.expand('<afile>'))
     if qfs[winid].bufhidden then
-        local qf_bufnr = fn.winbufnr(winid)
+        local qf_bufnr = api.nvim_win_get_buf(winid)
         vim.bo[qf_bufnr].bufhidden = qfs[winid].bufhidden
     end
     if winid and api.nvim_win_is_valid(winid) then
