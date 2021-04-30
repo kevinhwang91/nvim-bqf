@@ -46,6 +46,8 @@ local function handler(qf_winid, ret)
     if #selected_index == 1 then
         idx = selected_index[1]
         if action == 'tabedit' then
+            local col = api.nvim_win_get_cursor(qf_winid)[2]
+            api.nvim_win_set_cursor(qf_winid, {idx, col})
             jump.tabedit(false, qf_winid, idx)
         elseif action == 'split' then
             jump.split(false, qf_winid, idx)
