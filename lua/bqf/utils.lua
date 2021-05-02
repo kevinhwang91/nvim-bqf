@@ -170,10 +170,11 @@ function M.win_execute(winid, func)
     if cur_winid ~= winid then
         cmd(noa_set_win:format(winid))
     end
-    func()
+    local ret = func()
     if cur_winid ~= winid then
         cmd(noa_set_win:format(cur_winid))
     end
+    return ret
 end
 
 return M

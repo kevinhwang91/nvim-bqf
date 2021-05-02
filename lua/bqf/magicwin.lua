@@ -15,7 +15,6 @@ local utils = require('bqf.utils')
 
 -- FRACTION_MULT = 16384L
 -- wp->w_fraction = ((long)wp->w_wrow * FRACTION_MULT + FRACTION_MULT / 2) / (long)wp->w_height_inner;
-
 local function cal_fraction(wrow, height)
     return math.floor((wrow * 16384 + 8192) / height)
 end
@@ -26,8 +25,8 @@ local function cal_wrow(fraction, height)
 end
 
 -- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
-local function process_sline(fraction, aheight, lnum, lines_size)
-    local sline = cal_wrow(fraction, aheight)
+local function evaluate_sline(fraction, height, lnum, lines_size)
+    local sline = cal_wrow(fraction, height)
     local i = sline
     for j = lnum - 1, math.max(1, lnum - sline), -1 do
         i = i - lines_size[j]
@@ -44,7 +43,7 @@ end
 local function do_filter(tbl_info, height, lnum, lines_size)
     local t = {}
     for _, info in ipairs(tbl_info) do
-        local sline = process_sline(info.fraction, height, lnum, lines_size)
+        local sline = evaluate_sline(info, height, lnum, lines_size)
         if fn.winline() - 1 == sline then
             table.insert(t, info)
         end
@@ -53,50 +52,41 @@ local function do_filter(tbl_info, height, lnum, lines_size)
 end
 
 -- If the lnum hasn't been changed, even if the window is resized, the fraction is still a constant.
--- And we can use this feature to find out the possible bwrows until the window height reach 1.
+-- And we can use this feature to find out the possible fraction with changing window height.
 -- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
-local function filter_info(tbl_info, lnum, lines_size)
-    local function recursion(t_info)
-        -- we are in adjacent window
-        local height = api.nvim_win_get_height(0)
-        if #t_info < 2 or height == 1 then
-            return t_info
-        else
-            cmd('resize -1')
-            local filtered = recursion(do_filter(tbl_info, height - 1, lnum, lines_size))
-            cmd('resize +1')
-            return filtered
-        end
+local function filter_fraction(tbl_info, lnum, lines_size, max_hei)
+    local asc
+    local height = api.nvim_win_get_height(0)
+    local h = height
+    local min_hei = math.max(vim.o.wmh, 1)
+    if max_hei then
+        asc = true
+    else
+        asc = false
+        max_hei = vim.o.lines
     end
-    return recursion(tbl_info)
+
+    while #tbl_info > 1 do
+        if h <= min_hei or h > max_hei then
+            break
+        end
+        h = asc and h + 1 or h - 1
+        api.nvim_win_set_height(0, h)
+        if asc and api.nvim_win_get_height(0) ~= h then
+            break
+        end
+        tbl_info = do_filter(tbl_info, h, lnum, lines_size)
+    end
+    api.nvim_win_set_height(0, height)
+    return tbl_info
 end
 
--- TODO ugly code.
--- If window height is small, we may encounter multiple table result, increase window to guess result.
-local function filter_info_inc(tbl_info, lnum, lines_size, max_hei)
-    local function recursion(t_info)
-        local height = api.nvim_win_get_height(0)
-        if #t_info < 2 or height == max_hei then
-            return t_info
-        else
-            cmd('resize +1')
-            if height == api.nvim_win_get_height(0) then
-                return t_info
-            end
-            local filtered = recursion(do_filter(tbl_info, height + 1, lnum, lines_size))
-            cmd('resize -1')
-            return filtered
-        end
-    end
-    return recursion(tbl_info)
-end
-
-local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
+local function evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfraction)
     -- s_bwrow: the minimum bwrow value
     -- Below formula we can derive from the known conditions
     local s_bwrow = math.ceil(awrow * bheight / aheight - 0.5)
-    if s_bwrow <= 0 or bheight == aheight then
-        return nil
+    if s_bwrow < 0 or bheight == aheight then
+        return
     end
     -- e_bwrow: the maximum bwrow value
     -- There are not enough conditions to derive e_bwrow, so we have to figure it out by guessing,
@@ -104,79 +94,43 @@ local function build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
     -- It seems that 10 as a minimum and 1.2 as a scale is good to balance performance and accuracy
     local e_bwrow = math.max(10, math.ceil(awrow * 1.2 * bheight / aheight - 0.25))
 
-    local bufnr = fn.winbufnr(winid)
-
     local lnum = api.nvim_win_get_cursor(winid)[1]
     local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid, lnum)
 
     local e_fraction = cal_fraction(e_bwrow, bheight)
     local e_sline = cal_wrow(e_fraction, aheight)
 
-    if l_bwrow then
-        e_sline = math.max(cal_wrow(l_fraction, aheight), e_sline)
+    if lbwrow then
+        e_sline = math.max(cal_wrow(lfraction, aheight), e_sline)
     end
 
-    -- use 5 as additional compensation
-    local read_from = math.max(0, lnum - e_sline - 5)
-    local lines = api.nvim_buf_get_lines(bufnr, read_from - 1, lnum, false)
     local lines_size = {}
-    for i = read_from, lnum - 1 do
-        local line = table.remove(lines, 1) or ''
-        lines_size[i] = math.ceil(math.max(fn.strdisplaywidth(line), 1) / per_l_wid)
+    -- use 9 as additional compensation
+    for i = math.max(1, lnum - e_sline - 9), lnum - 1 do
+        lines_size[i] = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
     end
 
-    if l_bwrow and awrow == process_sline(l_fraction, aheight, lnum, lines_size) then
-        return l_bwrow, l_fraction
+    if lbwrow and awrow == evaluate_sline(lfraction, aheight, lnum, lines_size) then
+        return lbwrow, lfraction
     end
 
-    local tbl_info = {}
-    for bwrow = s_bwrow, e_bwrow do
-        table.insert(tbl_info, {bwrow = bwrow, fraction = cal_fraction(bwrow, bheight)})
+    local t_frac = {}
+    for bw = math.max(s_bwrow, 1), e_bwrow do
+        table.insert(t_frac, cal_fraction(bw, bheight))
     end
 
-    local info = filter_info(tbl_info, lnum, lines_size)
-    -- print('info:', vim.inspect(info))
+    t_frac = filter_fraction(t_frac, lnum, lines_size)
+    -- print('t_frac:', vim.inspect(t_frac))
 
-    if #info == 0 then
-        return
-    elseif #info == 1 then
-        return info[1].bwrow, info[1].fraction
-    else
-        -- up to 5 recursions
-        info = filter_info_inc(info, lnum, lines_size, aheight + 5)
-        if #info > 0 then
-            return info[1].bwrow, info[1].fraction
-        end
+    if #t_frac > 1 and s_bwrow == 0 then
+        table.insert(t_frac, 1, cal_fraction(0, bheight))
     end
-end
 
-local function linesize2offset(winid, lines, revert)
-    local len = #lines
-    if len == 0 then
-        return 0
+    t_frac = filter_fraction(t_frac, lnum, lines_size, aheight + 9)
+    -- print('after t_frac', vim.inspect(t_frac))
+    if #t_frac > 0 then
+        return t_frac[1]
     end
-    local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
-    local iter_i, iter_e, iter_s
-    if revert then
-        iter_i, iter_e, iter_s = len, 1, -1
-    else
-        iter_i, iter_e, iter_s = 1, len, 1
-    end
-    local offset, l_size_sum = 0, 0
-    for i = iter_i, iter_e, iter_s do
-        local line = lines[i] or ''
-        local per_l_size = math.ceil(math.max(fn.strdisplaywidth(line), 1) / per_l_wid)
-        -- print('============================================')
-        -- print('l_size_sum:', l_size_sum, 'per_l_size:', per_l_size)
-        -- print('line:', line)
-        -- print('============================================')
-        l_size_sum = l_size_sum + per_l_size
-        offset = offset + 1
-        if l_size_sum >= len then
-            return offset
-        end
-    end
-    error('It is impossible to go here')
 end
 
 local function resetview(topline)
@@ -185,22 +139,37 @@ local function resetview(topline)
     fn.winline()
 end
 
-local function tune_topline(winid, topline, l_size)
+local function tune_line(winid, topline, l_size)
     if not vim.wo[winid].wrap or l_size == 0 then
         return topline - l_size
     end
-    -- print('before topline:', topline, 'l_size:', l_size)
-    local lines, line_offset
-    local bufnr = fn.winbufnr(winid)
+    -- print('l_size:', l_size)
+    local iter_start, iter_end, iter_step, len
     if l_size > 0 then
-        lines = api.nvim_buf_get_lines(bufnr, math.max(0, topline - l_size - 1), topline - 1, false)
-        line_offset = linesize2offset(winid, lines, true)
+        iter_start, iter_end, iter_step = math.max(1, topline - l_size), topline - 1, 1
+        len = iter_end - iter_start
     else
-        lines = api.nvim_buf_get_lines(bufnr, topline - 1, topline - l_size - 1, false)
-        line_offset = -linesize2offset(winid, lines, false)
+        iter_start, iter_end, iter_step = topline - l_size - 1, topline, -1
+        len = iter_start - iter_end
     end
-    -- print('after topline:', topline - line_offset, 'line_offset:', line_offset)
-    return math.max(1, topline - line_offset)
+
+    return utils.win_execute(winid, function()
+        local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
+        local off, l_size_sum = 0, 0
+        for i = iter_start, iter_end, iter_step do
+            local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
+            -- print('============================================')
+            -- print('l_size_sum:', l_size_sum, 'per_l_size:', per_l_size, 'lnum:', i)
+            -- print('============================================')
+            l_size_sum = l_size_sum + per_l_size
+            off = off + 1
+            if l_size_sum > len then
+                break
+            end
+        end
+        -- print('line_offset:', l_size > 0 and off or -off)
+        return l_size > 0 and off or -off
+    end)
 end
 
 local function do_enter_revert(qf_winid, winid, qf_pos)
@@ -227,13 +196,14 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
         local mgw = qfs[qf_winid].magicwin[winid] or {}
         local def_hei = qf_hei + win_hei + 1
         local bheight, aheight = mgw.aheight or def_hei, win_hei
-        local l_bwrow, l_fraction = mgw.bwrow, mgw.fraction
-        local bwrow, fraction, l_size
+        local lbwrow, lfraction = mgw.bwrow, mgw.fraction
+        local bwrow, fraction, delta_lsize
+
+        local awrow = fn.winline() - 1
 
         if topline == 1 and line_count <= win_hei then
-            l_size = 0
+            delta_lsize = 0
         else
-            local awrow = fn.winline() - 1
             if f_win_so >= awrow and awrow > 0 and win_hei > 1 then
                 -- get the true wrow
                 cmd('resize -1 | resize +1')
@@ -242,26 +212,30 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
             end
 
             -- print('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
-            -- print('l_bwrow:', l_bwrow, 'l_fraction:', l_fraction)
-            bwrow, fraction = build_info(winid, awrow, aheight, bheight, l_bwrow, l_fraction)
-            if not bwrow then
+            -- print('lbwrow:', lbwrow, 'lfraction:', lfraction)
+            fraction = evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfraction)
+            if not fraction then
                 return
             end
-            l_size = bwrow - awrow
+            bwrow = cal_wrow(fraction, bheight)
+            delta_lsize = bwrow - awrow
         end
 
         if qf_pos[1] == 'above' or qf_pos[2] == 'top' then
-            if l_bwrow == bwrow and l_fraction == fraction then
+            if lbwrow == bwrow and lfraction == fraction then
                 bheight = mgw.bheight or def_hei
             end
-            l_size = l_size - bheight + aheight
+            delta_lsize = delta_lsize - bheight + aheight
         end
 
-        if l_size == 0 then
+        if delta_lsize == 0 then
             return
         end
 
-        resetview(tune_topline(winid, topline, l_size))
+        local line_offset = tune_line(winid, topline, delta_lsize)
+        line_offset = line_offset > 0 and math.min(line_offset, aheight - awrow - 1) or
+                          math.max(line_offset, -awrow)
+        resetview(math.max(1, topline - line_offset))
 
         mgw.bwrow, mgw.fraction, mgw.bheight, mgw.aheight = bwrow, fraction, bheight, aheight
         qfs[qf_winid].magicwin[winid] = mgw
@@ -274,7 +248,7 @@ local function prefetch_close_revert_topline(qf_winid, winid, qf_pos)
     if ok then
         topline = msg[1].topline
         if qf_pos[1] == 'above' or qf_pos[2] == 'top' then
-            topline = tune_topline(winid, topline, api.nvim_win_get_height(qf_winid) + 1)
+            topline = topline - tune_line(winid, topline, api.nvim_win_get_height(qf_winid) + 1)
         end
     end
     return topline
