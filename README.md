@@ -307,7 +307,7 @@ in context of the quickfix window.
 context = {
     bqf = {
         pattern_hl = {
-            description = [[search pattern from current poistion]],
+            description = [[search pattern from current position]],
             type = 'string'
         },
         lsp_ranges_hl = {
