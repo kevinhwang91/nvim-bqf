@@ -139,36 +139,40 @@ local function resetview(topline)
     fn.winline()
 end
 
-local function tune_line(winid, topline, l_size)
-    if not vim.wo[winid].wrap or l_size == 0 then
-        return topline - l_size
+local function tune_line(winid, topline, lsizes)
+    if not vim.wo[winid].wrap or lsizes == 0 then
+        return topline - lsizes
     end
-    -- print('l_size:', l_size)
+    -- print('lsizes:', lsizes)
     local iter_start, iter_end, iter_step, len
-    if l_size > 0 then
-        iter_start, iter_end, iter_step = math.max(1, topline - l_size), topline - 1, 1
-        len = iter_end - iter_start
-    else
-        iter_start, iter_end, iter_step = topline - l_size - 1, topline, -1
+    if lsizes > 0 then
+        iter_start, iter_end, iter_step = topline - 1, math.max(1, topline - lsizes), -1
         len = iter_start - iter_end
+    else
+        iter_start, iter_end, iter_step = topline, topline - lsizes - 1, 1
+        len = iter_end - iter_start
     end
+    -- print(iter_start, iter_end, iter_step)
 
     return utils.win_execute(winid, function()
         local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
-        local off, l_size_sum = 0, 0
+        local loff, lsize_sum = 0, 0
         for i = iter_start, iter_end, iter_step do
             local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
             -- print('============================================')
-            -- print('l_size_sum:', l_size_sum, 'per_l_size:', per_l_size, 'lnum:', i)
+            -- print('lsize_sum:', lsize_sum, 'per_l_size:', per_l_size, 'lnum:', i)
             -- print('============================================')
-            l_size_sum = l_size_sum + per_l_size
-            off = off + 1
-            if l_size_sum > len then
+            lsize_sum = lsize_sum + per_l_size
+            loff = loff + 1
+            if lsize_sum > len then
+                if lsize_sum > len + 1 then
+                    loff = loff - 1
+                end
                 break
             end
         end
-        -- print('line_offset:', l_size > 0 and off or -off)
-        return l_size > 0 and off or -off
+        -- print('line_offset:', lsizes > 0 and loff or -loff)
+        return lsizes > 0 and loff or -loff
     end)
 end
 
