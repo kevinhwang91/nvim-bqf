@@ -252,6 +252,7 @@ about current configuration.
 | stoggleup   | toggle sign and move cursor up                     | `<S-Tab>` |
 | stoggledown | toggle sign and move cursor down                   | `<Tab>`   |
 | stogglevm   | toggle multiple signs in visual mode               | `<Tab>`   |
+| stogglebuf  | toggle signs for same buffers under the cursor     | `'<Tab>`  |
 | sclear      | clear the signs in current quickfix list           | `z<Tab>`  |
 | pscrollup   | scroll up half-page in preview window              | `<C-b>`   |
 | pscrolldown | scroll down half-page in preview window            | `<C-f>`   |

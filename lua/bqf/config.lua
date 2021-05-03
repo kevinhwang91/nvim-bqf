@@ -34,6 +34,7 @@ local function setup()
             stoggleup = '<S-Tab>',
             stoggledown = '<Tab>',
             stogglevm = '<Tab>',
+            stogglebuf = [['<Tab>]],
             sclear = 'z<Tab>',
             filter = 'zn',
             filterr = 'zN',

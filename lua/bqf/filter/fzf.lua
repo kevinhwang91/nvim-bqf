@@ -60,7 +60,7 @@ local function handler(qf_winid, ret)
 
     if action == 'signtoggle' then
         for _, i in ipairs(selected_index) do
-            sign.toggle(0, api.nvim_win_get_buf(qf_winid), i)
+            sign.toggle(0, i, api.nvim_win_get_buf(qf_winid))
         end
     else
         if #selected_index == 1 then

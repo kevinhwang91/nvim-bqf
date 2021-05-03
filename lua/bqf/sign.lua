@@ -39,9 +39,9 @@ local function unplace(bufnr, id)
     end
 end
 
-function M.toggle(rel, bufnr, lnum)
-    bufnr = bufnr or api.nvim_get_current_buf()
+function M.toggle(rel, lnum, bufnr)
     lnum = lnum or api.nvim_win_get_cursor(0)[1]
+    bufnr = bufnr or api.nvim_get_current_buf()
     local signs = fn.sign_getplaced(bufnr, {group = 'BqfSignGroup', lnum = lnum})[1].signs
     if signs and #signs > 0 then
         unplace(bufnr, signs[1].id)
@@ -50,6 +50,19 @@ function M.toggle(rel, bufnr, lnum)
     end
     if rel ~= 0 then
         cmd(('norm! %s'):format(rel > 0 and 'j' or 'k'))
+    end
+end
+
+function M.toggle_buf(lnum, bufnr)
+    bufnr = bufnr or api.nvim_get_current_buf()
+    lnum = lnum or api.nvim_win_get_cursor(0)[1]
+    local qf_all = qftool.getall()
+    local items = qf_all.items
+    local entry_bufnr = items[lnum].bufnr
+    for idx, entry in ipairs(items) do
+        if entry.bufnr == entry_bufnr then
+            M.toggle(0, idx, bufnr)
+        end
     end
 end
 
@@ -70,7 +83,7 @@ function M.vm_toggle(bufnr)
     local s_linenr = api.nvim_buf_get_mark(bufnr, '<')[1]
     local e_linenr = api.nvim_buf_get_mark(bufnr, '>')[1]
     for lnum = s_linenr, e_linenr do
-        M.toggle(0, bufnr, lnum)
+        M.toggle(0, lnum, bufnr)
     end
 end
 

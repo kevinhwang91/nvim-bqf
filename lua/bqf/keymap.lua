@@ -25,6 +25,7 @@ local action_funcref = {
     stoggleup = {mode = 'n', module = 'sign', funcref = 'toggle(-1)'},
     stoggledown = {mode = 'n', module = 'sign', funcref = 'toggle(1)'},
     stogglevm = {mode = 'x', module = 'sign', funcref = 'vm_toggle()'},
+    stogglebuf = {mode = 'n', module = 'sign', funcref = 'toggle_buf()'},
     sclear = {mode = 'n', module = 'sign', funcref = 'clear()'},
     filter = {mode = 'n', module = 'filter.base', funcref = 'run()'},
     filterr = {mode = 'n', module = 'filter.base', funcref = 'run(true)'},
