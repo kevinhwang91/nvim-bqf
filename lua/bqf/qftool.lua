@@ -145,16 +145,16 @@ function M.update(what, winid)
 end
 
 function M.file(next)
-    local cur_idx = api.nvim_win_get_cursor(0)[1]
+    local lnum, col = unpack(api.nvim_win_get_cursor(0))
     local qf_all = M.getall()
     local items, size = qf_all.items, qf_all.size
-    local cur_bufnr = items[cur_idx].bufnr
-    local start, stop, step = unpack(next and {cur_idx + 1, size, 1} or {cur_idx - 1, 1, -1})
+    local cur_bufnr = items[lnum].bufnr
+    local start, stop, step = unpack(next and {lnum + 1, size, 1} or {lnum - 1, 1, -1})
 
     for i = start, stop, step do
         if items[i].valid == 1 and items[i].bufnr ~= cur_bufnr then
-            cmd(tostring(i))
             M.update({idx = i})
+            api.nvim_win_set_cursor(0, {i, col})
             return
         end
     end
