@@ -116,17 +116,14 @@ local function evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfracti
     end
 
     local t_frac = {}
-    for bw = math.max(s_bwrow, 1), e_bwrow do
+    for bw = s_bwrow, e_bwrow do
         table.insert(t_frac, cal_fraction(bw, bheight))
     end
+    log.debug('before t_frac', t_frac)
 
     t_frac = filter_fraction(t_frac, lnum, lines_size)
 
     log.debug('first t_frac:', t_frac)
-
-    if #t_frac > 1 and s_bwrow == 0 then
-        table.insert(t_frac, 1, cal_fraction(0, bheight))
-    end
 
     t_frac = filter_fraction(t_frac, lnum, lines_size, aheight + 9)
 
@@ -185,11 +182,11 @@ local function tune_line(winid, topline, lsizes)
 end
 
 local function do_enter_revert(qf_winid, winid, qf_pos)
+    log.debug('do_enter_revert start')
     -- TODO upstream bug
     -- local f_win_so = vim.wo[winid].scrolloff
     -- return a big number like '1.4014575443238e+14' if window option is absent
     -- Use getwinvar to workaround
-    log.debug('do_enter_revert start')
     local f_win_so = fn.getwinvar(winid, '&scrolloff')
     if f_win_so ~= 0 then
         -- turn off scrolloff and then show us true wrow
