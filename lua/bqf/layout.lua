@@ -38,10 +38,10 @@ local function fix_default_qf(qf_winid, file_winid, qf_type, qf_pos)
     local qf_win = fn.win_id2win(qf_winid)
     if qf_type == 'qf' and fn.winnr('$') == qf_win then
         if qf_pos[1] == 'unknown' and qf_pos[2] == 'unknown' then
-            local resized_win = fn.winnr('k')
-            local resized_hei = fn.winheight(resized_win)
+            local above_winid = fn.win_getid(fn.winnr('k'))
+            local hei = api.nvim_win_get_height(above_winid)
             cmd('winc J')
-            cmd(('%dresize %d'):format(resized_win, resized_hei))
+            api.nvim_win_set_height(above_winid, hei)
             qf_pos = qfpos.get_pos(qf_winid, file_winid)
         end
     end
@@ -51,21 +51,18 @@ end
 local function adjust_width(qf_winid, file_winid, qf_pos)
     local qf_wid = api.nvim_win_get_width(qf_winid)
     if vim.o.winwidth > qf_wid then
-        local qf_win, file_win = fn.win_id2win(qf_winid), fn.win_id2win(file_winid)
         if qf_pos[1] == 'right' then
-            local width = api.nvim_win_get_width(file_winid) -
-                              (vim.o.winwidth - api.nvim_win_get_width(qf_winid))
-            cmd(('vert %dresize %d'):format(file_win, width))
+            local width = api.nvim_win_get_width(file_winid) - (vim.o.winwidth - qf_wid)
+            api.nvim_win_set_width(file_winid, width)
         else
-            cmd(('vert %dresize %d'):format(qf_win, vim.o.winwidth))
+            api.nvim_win_set_width(qf_winid, vim.o.winwidth)
         end
     end
 end
 
 local function adjust_height(qf_winid, file_winid, qf_pos)
-    local qf_win, file_win = fn.win_id2win(qf_winid), fn.win_id2win(file_winid)
     local size = math.max(qftool.get({size = 0}).size, 1)
-    local qf_hei = api.nvim_win_get_height(qf_winid)
+    local qf_hei, f_hei = api.nvim_win_get_height(qf_winid), api.nvim_win_get_height(file_winid)
     local inc_hei = 0
     qfs[qf_winid].init_height = qfs[qf_winid].init_height or qf_hei
     if qf_hei < qfs[qf_winid].init_height then
@@ -83,10 +80,10 @@ local function adjust_height(qf_winid, file_winid, qf_pos)
 
     local rel_pos, abs_pos = unpack(qf_pos)
     if rel_pos == 'above' or abs_pos == 'top' or abs_pos == 'bottom' then
-        cmd(('%dresize %s%d'):format(qf_win, inc_hei > 0 and '+' or '', inc_hei))
+        api.nvim_win_set_height(qf_winid, qf_hei + inc_hei)
     elseif rel_pos == 'below' then
         vim.wo[qf_winid].winfixheight = false
-        cmd(('%dresize %s%d'):format(file_win, inc_hei > 0 and '' or '+', -inc_hei))
+        api.nvim_win_set_height(file_winid, f_hei - inc_hei)
         vim.wo[qf_winid].winfixheight = true
     end
 end
@@ -146,12 +143,19 @@ function M.close_win(qf_winid)
 
     local file_winid = qftool.filewinid(qf_winid)
     local qf_pos = qfpos.get_pos(qf_winid, file_winid)
-    local qf_win, file_win = fn.win_id2win(qf_winid), fn.win_id2win(file_winid)
-    local qf_win_j, qf_win_l, qf_hei, qf_wid
+    local qf_win = fn.win_id2win(qf_winid)
+    local qf_win_j, qf_win_l
     utils.win_execute(qf_winid, function()
         qf_win_j, qf_win_l = fn.winnr('j'), fn.winnr('l')
-        qf_hei, qf_wid = api.nvim_win_get_height(0), api.nvim_win_get_width(0)
     end)
+
+    local qf_hei, qf_wid, f_hei, f_wid
+    local rel_pos = qf_pos[1]
+    if rel_pos == 'right' and qf_win_l ~= qf_win then
+        qf_wid, f_wid = api.nvim_win_get_width(qf_winid), api.nvim_win_get_width(file_winid)
+    elseif rel_pos == 'below' and qf_win_j ~= qf_win then
+        qf_hei, f_hei = api.nvim_win_get_height(qf_winid), api.nvim_win_get_height(file_winid)
+    end
 
     local wmagic_defer_cb
     if magic_window then
@@ -187,11 +191,10 @@ function M.close_win(qf_winid)
         api.nvim_set_current_win(file_winid)
     end
 
-    local rel_pos = qf_pos[1]
     if rel_pos == 'right' and qf_win_l ~= qf_win then
-        cmd(('vert %dresize +%d'):format(file_win, qf_wid + 1))
+        api.nvim_win_set_width(file_winid, qf_wid + f_wid + 1)
     elseif rel_pos == 'below' and qf_win_j ~= qf_win then
-        cmd(('%dresize +%d'):format(file_win, qf_hei + 1))
+        api.nvim_win_set_height(file_winid, qf_hei + f_hei + 1)
     end
 
     if wmagic_defer_cb then
