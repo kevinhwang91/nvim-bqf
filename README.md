@@ -374,7 +374,7 @@ nvim-bqf actually works with context in
 hi default link BqfPreviewFloat Normal
 hi default link BqfPreviewBorder Normal
 hi default link BqfPreviewCursor Cursor
-hi default link BqfPreviewRange Search
+hi default link BqfPreviewRange IncSearch
 hi default BqfSign ctermfg=14 guifg=Cyan
 ```
 
@@ -398,7 +398,7 @@ Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 call plug#end()
 
 hi BqfPreviewBorder guifg=#50a14f ctermfg=71
-hi link BqfPreviewRange IncSearch
+hi link BqfPreviewRange Search
 
 lua <<EOF
 require('bqf').setup({

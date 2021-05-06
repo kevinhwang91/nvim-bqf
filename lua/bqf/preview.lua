@@ -31,7 +31,7 @@ local function setup()
     ]], false)
 
     cmd('hi default link BqfPreviewCursor Cursor')
-    cmd('hi default link BqfPreviewRange Search')
+    cmd('hi default link BqfPreviewRange IncSearch')
 end
 
 local function update_border(border_width, qf_items, idx)
