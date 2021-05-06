@@ -6,6 +6,7 @@ local cmd = vim.cmd
 local qfs = require('bqf.qfsession')
 local qfpos = require('bqf.qfpos')
 local utils = require('bqf.utils')
+local log = require('bqf.log')
 
 -- Code in this file relates to source code
 -- https://github.com/neovim/neovim/blob/master/src/nvim/window.c
@@ -120,14 +121,17 @@ local function evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfracti
     end
 
     t_frac = filter_fraction(t_frac, lnum, lines_size)
-    -- print('t_frac:', vim.inspect(t_frac))
+
+    log.debug('first t_frac:', t_frac)
 
     if #t_frac > 1 and s_bwrow == 0 then
         table.insert(t_frac, 1, cal_fraction(0, bheight))
     end
 
     t_frac = filter_fraction(t_frac, lnum, lines_size, aheight + 9)
-    -- print('after t_frac', vim.inspect(t_frac))
+
+    log.debug('second t_frac:', t_frac)
+
     if #t_frac > 0 then
         return t_frac[1]
     end
@@ -143,7 +147,9 @@ local function tune_line(winid, topline, lsizes)
     if not vim.wo[winid].wrap or lsizes == 0 then
         return topline - lsizes
     end
-    -- print('lsizes:', lsizes)
+
+    log.debug('lsizes:', lsizes)
+
     local iter_start, iter_end, iter_step, len
     if lsizes > 0 then
         iter_start, iter_end, iter_step = topline - 1, math.max(1, topline - lsizes), -1
@@ -152,16 +158,18 @@ local function tune_line(winid, topline, lsizes)
         iter_start, iter_end, iter_step = topline, topline - lsizes - 1, 1
         len = iter_end - iter_start
     end
-    -- print(iter_start, iter_end, iter_step)
+    log.debug(iter_start, iter_end, iter_step)
 
     return utils.win_execute(winid, function()
         local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
         local loff, lsize_sum = 0, 0
         for i = iter_start, iter_end, iter_step do
             local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
-            -- print('============================================')
-            -- print('lsize_sum:', lsize_sum, 'per_l_size:', per_l_size, 'lnum:', i)
-            -- print('============================================')
+            if log.is_enabled('debug') then
+                log.debug('=====================================================')
+                log.debug('lsize_sum:', lsize_sum, 'per_l_size:', per_l_size, 'lnum:', i)
+                log.debug('=====================================================')
+            end
             lsize_sum = lsize_sum + per_l_size
             loff = loff + 1
             if lsize_sum > len then
@@ -171,7 +179,7 @@ local function tune_line(winid, topline, lsizes)
                 break
             end
         end
-        -- print('line_offset:', lsizes > 0 and loff or -loff)
+        log.debug('line_offset:', lsizes > 0 and loff or -loff)
         return lsizes > 0 and loff or -loff
     end)
 end
@@ -181,6 +189,7 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
     -- local f_win_so = vim.wo[winid].scrolloff
     -- return a big number like '1.4014575443238e+14' if window option is absent
     -- Use getwinvar to workaround
+    log.debug('do_enter_revert start')
     local f_win_so = fn.getwinvar(winid, '&scrolloff')
     if f_win_so ~= 0 then
         -- turn off scrolloff and then show us true wrow
@@ -215,8 +224,9 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
                 topline = fn.line('w0')
             end
 
-            -- print('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
-            -- print('lbwrow:', lbwrow, 'lfraction:', lfraction)
+            log.debug('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
+            log.debug('lbwrow:', lbwrow, 'lfraction:', lfraction)
+
             fraction = evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfraction)
             if not fraction then
                 return
@@ -236,6 +246,8 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
             return
         end
 
+        log.debug('before topline:', topline, 'delta_lsize:', delta_lsize)
+
         local line_offset = tune_line(winid, topline, delta_lsize)
         line_offset = line_offset > 0 and math.min(line_offset, aheight - awrow - 1) or
                           math.max(line_offset, -awrow)
@@ -244,6 +256,8 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
         mgw.bwrow, mgw.fraction, mgw.bheight, mgw.aheight = bwrow, fraction, bheight, aheight
         qfs[qf_winid].magicwin[winid] = mgw
     end)
+
+    log.debug('do_enter_revert end', '\n')
 end
 
 local function prefetch_close_revert_topline(qf_winid, winid, qf_pos)
