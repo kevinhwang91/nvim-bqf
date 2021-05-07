@@ -82,7 +82,7 @@ local function filter_fraction(tbl_info, lnum, lines_size, max_hei)
     return tbl_info
 end
 
-local function evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfraction)
+local function evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow, lfraction)
     -- s_bwrow: the minimum bwrow value
     -- Below formula we can derive from the known conditions
     local s_bwrow = math.ceil(awrow * bheight / aheight - 0.5)
@@ -95,7 +95,6 @@ local function evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfracti
     -- It seems that 10 as a minimum and 1.2 as a scale is good to balance performance and accuracy
     local e_bwrow = math.max(10, math.ceil(awrow * 1.2 * bheight / aheight - 0.25))
 
-    local lnum = api.nvim_win_get_cursor(winid)[1]
     local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid, lnum)
 
     local e_fraction = cal_fraction(e_bwrow, bheight)
@@ -134,8 +133,8 @@ local function evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfracti
     end
 end
 
-local function resetview(topline)
-    fn.winrestview({topline = topline})
+local function resetview(topline, lnum, col)
+    fn.winrestview({topline = topline, lnum = lnum, col = col})
     -- topline seemly can't be changed sometimes without winline()
     fn.winline()
 end
@@ -181,6 +180,17 @@ local function tune_line(winid, topline, lsizes)
     end)
 end
 
+local function register_winenter()
+    if fn.exists('#BqfMagicWin#WinEnter') == 0 then
+        cmd(('au BqfMagicWin WinEnter * %s'):format(([[lua require('bqf.magicwin').clear_pos()]])))
+    end
+end
+
+local function unregister_winenter()
+    -- TODO multiple quickfix windows map multiple file windows!!!!
+    cmd('sil! au! BqfMagicWin WinEnter')
+end
+
 local function do_enter_revert(qf_winid, winid, qf_pos)
     log.debug('do_enter_revert start')
     -- TODO upstream bug
@@ -191,13 +201,14 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
     if f_win_so ~= 0 then
         -- turn off scrolloff and then show us true wrow
         vim.wo[winid].scrolloff = 0
-        cmd(('au Bqf WinLeave * ++once %s'):format(
+        cmd(('au BqfMagicWin WinLeave * ++once %s'):format(
             ([[lua vim.wo[%d].scrolloff = %d]]):format(winid, f_win_so)))
     end
 
     utils.win_execute(winid, function()
         local qf_hei, win_hei = api.nvim_win_get_height(qf_winid), api.nvim_win_get_height(winid)
-        local topline = fn.line('w0')
+        local wv = fn.winsaveview()
+        local topline, lnum = wv.topline, wv.lnum
         local line_count = api.nvim_buf_line_count(0)
 
         -- qf winodw height might be changed by user adds new qf items or navigates history
@@ -224,7 +235,7 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
             log.debug('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
             log.debug('lbwrow:', lbwrow, 'lfraction:', lfraction)
 
-            fraction = evaluate_fraction(winid, awrow, aheight, bheight, lbwrow, lfraction)
+            fraction = evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow, lfraction)
             if not fraction then
                 return
             end
@@ -246,9 +257,34 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
         log.debug('before topline:', topline, 'delta_lsize:', delta_lsize)
 
         local line_offset = tune_line(winid, topline, delta_lsize)
-        line_offset = line_offset > 0 and math.min(line_offset, aheight - awrow - 1) or
-                          math.max(line_offset, -awrow)
-        resetview(math.max(1, topline - line_offset))
+        topline = math.max(1, topline - line_offset)
+        local flag = 0
+        if line_offset > 0 then
+            local reminder = aheight - awrow - 1
+            if line_offset > reminder then
+                flag = 1
+                lnum = topline
+            end
+        else
+            if -line_offset > awrow then
+                flag = 2
+                lnum = topline
+            end
+        end
+
+        resetview(topline, lnum)
+
+        if flag > 0 then
+            if flag == 1 then
+                resetview(topline, fn.line('w$'))
+            end
+            wv.topline = topline
+            log.debug(wv)
+            mgw.pos = {wv.lnum, wv.col}
+            register_winenter()
+        else
+            mgw.pos = nil
+        end
 
         mgw.bwrow, mgw.fraction, mgw.bheight, mgw.aheight = bwrow, fraction, bheight, aheight
         qfs[qf_winid].magicwin[winid] = mgw
@@ -274,6 +310,21 @@ local function need_revert(qf_pos)
     return rel_pos == 'above' or rel_pos == 'below' or abs_pos == 'top' or abs_pos == 'bottom'
 end
 
+function M.clear_pos()
+    local holder = qfs.holder()
+    for _, qfsession in pairs(holder) do
+        local mgwins = qfsession.magicwin
+        log.debug('mgwins:', mgwins)
+        if mgwins then
+            local cur_winid = api.nvim_get_current_win()
+            if mgwins[cur_winid] then
+                mgwins[cur_winid].pos = nil
+            end
+            log.debug('cur_winid:', cur_winid)
+        end
+    end
+end
+
 function M.revert_enter_adjacent_wins(qf_winid, file_winid, qf_pos)
     if need_revert(qf_pos) then
         for _, winid in ipairs(qfpos.find_adjacent_wins(qf_winid, file_winid)) do
@@ -287,22 +338,40 @@ end
 function M.revert_close_adjacent_wins(qf_winid, file_winid, qf_pos)
     local defer_data = {}
     if need_revert(qf_pos) then
+        local mgwins = qfs[qf_winid].magicwin
         for _, winid in ipairs(qfpos.find_adjacent_wins(qf_winid, file_winid)) do
             local topline = prefetch_close_revert_topline(qf_winid, winid, qf_pos)
             if topline then
-                table.insert(defer_data, {winid = winid, topline = topline})
+                local info = {winid = winid, topline = topline}
+                local mgw = mgwins[winid]
+                if mgw and mgw.pos then
+                    info.lnum, info.col = unpack(mgw.pos)
+                end
+                table.insert(defer_data, info)
             end
         end
     end
+    unregister_winenter()
 
     return function()
         for _, info in pairs(defer_data) do
-            local winid, topline = info.winid, info.topline
+            local winid, topline, lnum, col = info.winid, info.topline, info.lnum, info.col
+            log.debug('revert_callback:', info, '\n')
             utils.win_execute(winid, function()
-                resetview(topline)
+                resetview(topline, lnum, col)
             end)
         end
     end
 end
+
+local function setup()
+    api.nvim_exec([[
+        aug BqfMagicWin
+            au!
+        aug END
+    ]], false)
+end
+
+setup()
 
 return M

@@ -3,7 +3,7 @@
 The goal of nvim-bqf is to make Neovim's quickfix window better.
 
 <p align="center">
-    <img width="864px" src=https://user-images.githubusercontent.com/17562139/105016283-6b260e00-5a7d-11eb-8e5f-cd4e034e2d14.gif>
+    <img width="864px" src=https://user-images.githubusercontent.com/17562139/117401587-70796c80-af37-11eb-9ee7-b43a5f4c296a.gif>
 </p>
 
 ---
