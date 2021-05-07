@@ -86,6 +86,7 @@ function M.disable()
     cmd('au! Bqf')
     cmd('sil! au! BqfPreview * <buffer>')
     cmd('sil! au! BqfFilterFzf * <buffer>')
+    cmd('sil! au! BqfMagicWin')
     if qfs[qf_winid].bufhidden then
         vim.bo.bufhidden = qfs[qf_winid].bufhidden
     end

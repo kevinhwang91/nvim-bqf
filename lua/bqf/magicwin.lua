@@ -318,6 +318,10 @@ function M.clear_pos()
         if mgwins then
             local cur_winid = api.nvim_get_current_win()
             if mgwins[cur_winid] then
+                local pos = mgwins[cur_winid].pos
+                if pos then
+                    fn.setpos([['']], {0, pos[1], pos[2] + 1, 0})
+                end
                 mgwins[cur_winid].pos = nil
             end
             log.debug('cur_winid:', cur_winid)
