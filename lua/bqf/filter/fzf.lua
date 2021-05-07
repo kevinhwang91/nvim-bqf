@@ -149,12 +149,11 @@ function M.run()
         source = supply.tbl_kv_map(function(key, val)
             local ret
             if not val.type or val.type == '' then
-                ret = fmt:format(key, signs[key] and escape_sign or ' ',
-                    fn.bufname(val.bufnr), val.lnum, val.col, vim.trim(val.text))
+                ret = fmt:format(key, signs[key] and escape_sign or ' ', fn.bufname(val.bufnr),
+                    val.lnum, val.col, vim.trim(val.text))
             else
-                ret = fmt_e:format(key, signs[key] and escape_sign or ' ',
-                    fn.bufname(val.bufnr), val.lnum, val.col,
-                    qf_types[val.type] or val.type, vim.trim(val.text))
+                ret = fmt_e:format(key, signs[key] and escape_sign or ' ', fn.bufname(val.bufnr),
+                    val.lnum, val.col, qf_types[val.type] or val.type, vim.trim(val.text))
             end
             return ret
         end, items),

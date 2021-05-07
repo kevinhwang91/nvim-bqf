@@ -62,7 +62,7 @@ end
 
 local function adjust_height(qf_winid, file_winid, qf_pos)
     local size = math.max(qftool.get({size = 0}).size, 1)
-    local qf_hei, f_hei = api.nvim_win_get_height(qf_winid), api.nvim_win_get_height(file_winid)
+    local qf_hei = api.nvim_win_get_height(qf_winid)
     local inc_hei = 0
     qfs[qf_winid].init_height = qfs[qf_winid].init_height or qf_hei
     if qf_hei < qfs[qf_winid].init_height then
@@ -80,10 +80,10 @@ local function adjust_height(qf_winid, file_winid, qf_pos)
 
     local rel_pos, abs_pos = unpack(qf_pos)
     if rel_pos == 'above' or abs_pos == 'top' or abs_pos == 'bottom' then
-        api.nvim_win_set_height(qf_winid, qf_hei + inc_hei)
+        api.nvim_win_set_height(qf_winid, api.nvim_win_get_height(qf_winid) + inc_hei)
     elseif rel_pos == 'below' then
         vim.wo[qf_winid].winfixheight = false
-        api.nvim_win_set_height(file_winid, f_hei - inc_hei)
+        api.nvim_win_set_height(file_winid, api.nvim_win_get_height(file_winid) - inc_hei)
         vim.wo[qf_winid].winfixheight = true
     end
 end
