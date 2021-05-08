@@ -395,7 +395,7 @@ function M.buf_event()
             au TabEnter <buffer> lua require('bqf.preview').tabenter_event()
             au CursorMoved <buffer> lua require('bqf.preview').move_cursor()
     ]], false)
-    cmd(('au BufLeave,WinLeave <buffer> %s'):format(
+    cmd(('au WinLeave <buffer> %s'):format(
         ([[lua require('bqf.preview').close(vim.fn.bufwinid(%d))]]):format(bufnr)))
     if qftool.type() == 'qf' then
         cmd(('au BufHidden <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once ++nested',

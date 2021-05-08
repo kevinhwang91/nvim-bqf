@@ -179,12 +179,12 @@ function M.open(bufnr, qf_winid, file_winid)
         update_border_buf(border_opts, border_buf)
         api.nvim_win_set_config(border_winid, border_opts)
         api.nvim_win_set_config(preview_winid, preview_opts)
-        api.nvim_win_set_buf(preview_winid, bufnr)
     else
-        preview_winid = api.nvim_open_win(bufnr, false, preview_opts)
         border_buf = update_border_buf(border_opts)
+        preview_winid = api.nvim_open_win(border_buf, false, preview_opts)
         border_winid = api.nvim_open_win(border_buf, false, border_opts)
     end
+    cmd(('noa call nvim_win_set_buf(%d, %d)'):format(preview_winid, bufnr))
     api.nvim_win_set_option(border_winid, 'winhighlight', 'Normal:BqfPreviewBorder')
     api.nvim_win_set_option(preview_winid, 'winhighlight', 'Normal:BqfPreviewFloat')
     return preview_winid, border_winid
