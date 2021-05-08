@@ -134,7 +134,8 @@ function M.update_title(title)
 end
 
 function M.validate_window()
-    return preview_winid > 0 and api.nvim_win_is_valid(preview_winid)
+    return preview_winid > 0 and api.nvim_win_is_valid(preview_winid) and border_winid > 0 and
+               api.nvim_win_is_valid(border_winid)
 end
 
 function M.winid()
