@@ -259,14 +259,14 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
         local line_offset = tune_line(winid, topline, delta_lsize)
         topline = math.max(1, topline - line_offset)
         local flag = 0
-        if line_offset > 0 then
+        if delta_lsize > 0 then
             local reminder = aheight - awrow - 1
-            if line_offset > reminder then
+            if delta_lsize > reminder then
                 flag = 1
                 lnum = topline
             end
         else
-            if -line_offset > awrow then
+            if -delta_lsize > awrow then
                 flag = 2
                 lnum = topline
             end
