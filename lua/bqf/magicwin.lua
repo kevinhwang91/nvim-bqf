@@ -133,8 +133,8 @@ local function evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow, l
     end
 end
 
-local function resetview(topline, lnum, col)
-    fn.winrestview({topline = topline, lnum = lnum, col = col})
+local function resetview(topline, lnum, col, curswant)
+    fn.winrestview({topline = topline, lnum = lnum, col = col, curswant = curswant})
     -- topline seemly can't be changed sometimes without winline()
     fn.winline()
 end
@@ -182,7 +182,8 @@ end
 
 local function register_winenter()
     if fn.exists('#BqfMagicWin#WinEnter') == 0 then
-        cmd(('au BqfMagicWin WinEnter * %s'):format(([[lua require('bqf.magicwin').clear_pos()]])))
+        cmd(('au BqfMagicWin WinEnter * %s'):format(
+            ([[lua require('bqf.magicwin').clear_winview()]])))
     end
 end
 
@@ -280,10 +281,10 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
             end
             wv.topline = topline
             log.debug(wv)
-            mgw.pos = {wv.lnum, wv.col}
+            mgw.wv = {wv.lnum, wv.col, wv.curswant}
             register_winenter()
         else
-            mgw.pos = nil
+            mgw.wv = nil
         end
 
         mgw.bwrow, mgw.fraction, mgw.bheight, mgw.aheight = bwrow, fraction, bheight, aheight
@@ -310,7 +311,7 @@ local function need_revert(qf_pos)
     return rel_pos == 'above' or rel_pos == 'below' or abs_pos == 'top' or abs_pos == 'bottom'
 end
 
-function M.clear_pos()
+function M.clear_winview()
     local holder = qfs.holder()
     for _, qfsession in pairs(holder) do
         local mgwins = qfsession.magicwin
@@ -318,11 +319,11 @@ function M.clear_pos()
         if mgwins then
             local cur_winid = api.nvim_get_current_win()
             if mgwins[cur_winid] then
-                local pos = mgwins[cur_winid].pos
-                if pos then
-                    fn.setpos([['']], {0, pos[1], pos[2] + 1, 0})
+                local wv = mgwins[cur_winid].wv
+                if wv then
+                    fn.setpos([['']], {0, wv[1], wv[2] + 1, 0})
                 end
-                mgwins[cur_winid].pos = nil
+                mgwins[cur_winid].wv = nil
             end
             log.debug('cur_winid:', cur_winid)
         end
@@ -348,8 +349,8 @@ function M.revert_close_adjacent_wins(qf_winid, file_winid, qf_pos)
             if topline then
                 local info = {winid = winid, topline = topline}
                 local mgw = mgwins[winid]
-                if mgw and mgw.pos then
-                    info.lnum, info.col = unpack(mgw.pos)
+                if mgw and mgw.wv then
+                    info.lnum, info.col, info.curswant = unpack(mgw.wv)
                 end
                 table.insert(defer_data, info)
             end
@@ -359,10 +360,11 @@ function M.revert_close_adjacent_wins(qf_winid, file_winid, qf_pos)
 
     return function()
         for _, info in pairs(defer_data) do
-            local winid, topline, lnum, col = info.winid, info.topline, info.lnum, info.col
+            local winid, topline, lnum, col, curswant = info.winid, info.topline, info.lnum,
+                info.col, info.curswant
             log.debug('revert_callback:', info, '\n')
             utils.win_execute(winid, function()
-                resetview(topline, lnum, col)
+                resetview(topline, lnum, col, curswant)
             end)
         end
     end
