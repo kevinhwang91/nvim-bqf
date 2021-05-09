@@ -311,41 +311,39 @@ local function need_revert(qf_pos)
     return rel_pos == 'above' or rel_pos == 'below' or abs_pos == 'top' or abs_pos == 'bottom'
 end
 
--- maybe get multiple mgws, but only return the lastest one
-local function cur_mgw()
-    local mgw = {}
+local function lastest_mgwin()
+    local mgwin = {}
     local holder = qfs.holder()
-    local cur_win = api.nvim_get_current_win()
     for winid, qfsession in pairs(holder) do
         if api.nvim_win_is_valid(winid) then
-            local mgwins = qfsession.magicwin
-            if mgwins then
-                mgw = mgwins[cur_win]
-            end
+            --- maybe get multiple mgws, but only return the lastest one
+            mgwin = qfsession.magicwin or {}
         else
             qfs[winid] = nil
         end
     end
-    return mgw
+    return mgwin
 end
 
 function M.clear_winview()
-    local mgw = cur_mgw()
-    if mgw.wv then
-        local wv = mgw.wv
-        local lnum, col, _, hrtime, flag = unpack(wv)
-        if uv.hrtime() - hrtime > 100000000 then
-            fn.setpos([['']], {0, lnum, col + 1, 0})
-        else
-            api.nvim_win_set_cursor(0, {lnum, col})
-            if flag == 1 then
-                cmd('noa norm! zb')
+    local mgwin = lastest_mgwin()
+    local cur_winid = api.nvim_get_current_win()
+    if mgwin[cur_winid] then
+        if mgwin[cur_winid].wv then
+            local wv = mgwin[cur_winid].wv
+            local lnum, col, _, hrtime, flag = unpack(wv)
+            if uv.hrtime() - hrtime > 100000000 then
+                fn.setpos([['']], {0, lnum, col + 1, 0})
             else
-                cmd('noa norm! zt')
+                api.nvim_win_set_cursor(0, {lnum, col})
+                if flag == 1 then
+                    cmd('noa norm! zb')
+                else
+                    cmd('noa norm! zt')
+                end
             end
+            mgwin[cur_winid].wv = nil
         end
-    else
-        mgw.wv = nil
     end
 end
 
