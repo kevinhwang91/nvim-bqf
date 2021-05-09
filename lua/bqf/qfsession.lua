@@ -1,6 +1,8 @@
 local M = {}
 local holder = {}
 
+local api = vim.api
+
 setmetatable(M, {
     __index = function(_, k)
         if type(k) ~= 'number' then
@@ -22,6 +24,11 @@ end
 function M.release(winid)
     if winid then
         holder[winid] = nil
+    end
+    for w_id in pairs(holder) do
+        if not api.nvim_win_is_valid(w_id) then
+            holder[w_id] = nil
+        end
     end
 end
 
