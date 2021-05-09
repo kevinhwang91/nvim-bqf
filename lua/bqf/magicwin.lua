@@ -2,6 +2,7 @@ local M = {}
 local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
+local uv = vim.loop
 
 local qfs = require('bqf.qfsession')
 local qfpos = require('bqf.qfpos')
@@ -276,12 +277,11 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
         resetview(topline, lnum)
 
         if flag > 0 then
+            mgw.wv = {wv.lnum, wv.col, wv.curswant, uv.hrtime(), flag}
             if flag == 1 then
                 resetview(topline, fn.line('w$'))
             end
-            wv.topline = topline
-            log.debug(wv)
-            mgw.wv = {wv.lnum, wv.col, wv.curswant}
+            log.debug(mgw.wv)
             register_winenter()
         else
             mgw.wv = nil
@@ -311,22 +311,41 @@ local function need_revert(qf_pos)
     return rel_pos == 'above' or rel_pos == 'below' or abs_pos == 'top' or abs_pos == 'bottom'
 end
 
-function M.clear_winview()
+-- maybe get multiple mgws, but only return the lastest one
+local function cur_mgw()
+    local mgw = {}
     local holder = qfs.holder()
-    for _, qfsession in pairs(holder) do
-        local mgwins = qfsession.magicwin
-        log.debug('mgwins:', mgwins)
-        if mgwins then
-            local cur_winid = api.nvim_get_current_win()
-            if mgwins[cur_winid] then
-                local wv = mgwins[cur_winid].wv
-                if wv then
-                    fn.setpos([['']], {0, wv[1], wv[2] + 1, 0})
-                end
-                mgwins[cur_winid].wv = nil
+    local cur_win = api.nvim_get_current_win()
+    for winid, qfsession in pairs(holder) do
+        if api.nvim_win_is_valid(winid) then
+            local mgwins = qfsession.magicwin
+            if mgwins then
+                mgw = mgwins[cur_win]
             end
-            log.debug('cur_winid:', cur_winid)
+        else
+            qfs[winid] = nil
         end
+    end
+    return mgw
+end
+
+function M.clear_winview()
+    local mgw = cur_mgw()
+    if mgw.wv then
+        local wv = mgw.wv
+        local lnum, col, _, hrtime, flag = unpack(wv)
+        if uv.hrtime() - hrtime > 100000000 then
+            fn.setpos([['']], {0, lnum, col + 1, 0})
+        else
+            api.nvim_win_set_cursor(0, {lnum, col})
+            if flag == 1 then
+                cmd('noa norm! zb')
+            else
+                cmd('noa norm! zt')
+            end
+        end
+    else
+        mgw.wv = nil
     end
 end
 
