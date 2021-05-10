@@ -41,7 +41,7 @@ function M.enable()
 
     local file_winid = qftool.filewinid(qf_winid)
 
-    if qf_type == 'qf' and vim.bo.bufhidden == 'wipe' then
+    if vim.bo.bufhidden == 'wipe' then
         qfs[qf_winid].bufhidden = 'wipe'
     end
 

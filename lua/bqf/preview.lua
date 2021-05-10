@@ -290,8 +290,12 @@ function M.init_window(qf_winid)
     qfs[qf_winid].preview.idx = -1
     if auto_preview and api.nvim_get_current_win() == qf_winid then
         -- bufhidden=hide after vim-patch:8.1.0877
-        if qftool.type(qf_winid) == 'qf' and vim.bo.bufhidden == 'wipe' then
-            vim.bo.bufhidden = 'hide'
+        if vim.bo.bufhidden == 'wipe' then
+            -- TODO I don't know why must use vim.schedule, defer_fn is already wrapped
+            local bufnr = api.nvim_win_get_buf(qf_winid)
+            vim.schedule(function()
+                vim.bo[bufnr].bufhidden = 'hide'
+            end)
         end
 
         if qfs[qf_winid].preview.full then
@@ -397,17 +401,15 @@ function M.buf_event()
     ]], false)
     cmd(('au WinLeave <buffer> %s'):format(
         ([[lua require('bqf.preview').close(vim.fn.bufwinid(%d))]]):format(bufnr)))
-    if qftool.type() == 'qf' then
-        cmd(('au BufHidden <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once ++nested',
-            ([[lua require('bqf.preview').fix_qf_jump(%d)]]):format(bufnr)))
+    cmd(('au BufHidden <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once ++nested',
+        ([[lua require('bqf.preview').fix_qf_jump(%d)]]):format(bufnr)))
 
-        -- bufhidden=hide after vim-patch:8.1.0877
-        if vim.bo.bufhidden == 'wipe' then
-            cmd('au QuitPre <buffer> ++nested bw')
-            cmd([[au BufEnter <buffer> lua vim.bo.bufhidden = 'hide']])
-            cmd(('au BufLeave <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once',
-                ([[sil! lua vim.bo[%d].bufhidden = 'wipe']]):format(bufnr)))
-        end
+    -- bufhidden=hide after vim-patch:8.1.0877
+    if vim.bo.bufhidden == 'wipe' then
+        cmd('au QuitPre <buffer> ++nested bw')
+        cmd([[au BufEnter <buffer> lua vim.bo.bufhidden = 'hide']])
+        cmd(('au BufLeave <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once',
+            ([[sil! lua vim.bo[%d].bufhidden = 'wipe']]):format(bufnr)))
     end
     cmd('aug END')
 end
