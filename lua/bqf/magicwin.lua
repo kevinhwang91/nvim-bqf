@@ -142,7 +142,7 @@ end
 
 local function tune_line(winid, topline, lsizes)
     if not vim.wo[winid].wrap or lsizes == 0 then
-        return topline - lsizes
+        return lsizes
     end
 
     log.debug('lsizes:', lsizes)
