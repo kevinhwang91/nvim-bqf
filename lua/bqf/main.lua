@@ -110,6 +110,7 @@ function M.close_qf()
         vim.bo[qf_bufnr].bufhidden = qfs[winid].bufhidden
     end
     if winid and api.nvim_win_is_valid(winid) then
+        preview.close(winid)
         layout.close_win(winid)
         qfs.release(winid)
     end
