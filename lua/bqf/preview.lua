@@ -5,6 +5,7 @@ local cmd = vim.cmd
 
 local auto_preview, delay_syntax
 local keep_preview, orig_pos
+local last_idx
 
 local config = require('bqf.config')
 local qfs = require('bqf.qfsession')
@@ -121,11 +122,7 @@ end
 
 local function do_syntax(qf_winid, idx)
     local ps = qfs[qf_winid].preview
-    if not ps then
-        return
-    end
-    local last_idx = ps.idx or -1
-    if idx ~= last_idx then
+    if not ps or idx ~= last_idx then
         return
     end
 
@@ -199,22 +196,25 @@ function M.toggle_mode()
     local qf_winid = api.nvim_get_current_win()
     local ps = qfs[qf_winid].preview
     ps.full = ps.full ~= true
-    ps.idx = -1
+    last_idx = -1
     fix_missing_redraw(qf_winid)
 end
 
 function M.close(qf_winid)
-    qf_winid = qf_winid or api.nvim_get_current_win()
-    local ps = qfs[qf_winid].preview
-    if not ps or keep_preview then
+    if keep_preview then
         keep_preview = nil
         return
     end
 
+    last_idx = -1
     floatwin.close()
-    clean_preview_buf(ps.bufnr, ps.buf_loaded)
-    fire_restore_buf_opts(ps.bufnr, ps.buf_loaded, qfs[qf_winid].fwin_opts)
-    ps.idx = -1
+
+    qf_winid = qf_winid or api.nvim_get_current_win()
+    local ps = qfs[qf_winid].preview
+    if ps then
+        clean_preview_buf(ps.bufnr, ps.buf_loaded)
+        fire_restore_buf_opts(ps.bufnr, ps.buf_loaded, qfs[qf_winid].fwin_opts)
+    end
 end
 
 function M.open(qf_winid, qf_idx)
@@ -226,14 +226,12 @@ function M.open(qf_winid, qf_idx)
         return
     end
 
-    local last_idx = ps.idx or -1
-
     qf_idx = qf_idx or api.nvim_win_get_cursor(qf_winid)[1]
     if qf_idx == last_idx then
         return
     end
 
-    ps.idx = qf_idx
+    last_idx = qf_idx
 
     local qf_all = qftool.getall(qf_winid)
 
@@ -286,8 +284,8 @@ function M.init_window(qf_winid)
         return
     end
 
+    last_idx = -1
     qfs[qf_winid].preview = qfs[qf_winid].preview or {full = false}
-    qfs[qf_winid].preview.idx = -1
     if auto_preview and api.nvim_get_current_win() == qf_winid then
         -- bufhidden=hide after vim-patch:8.1.0877
         if vim.bo.bufhidden == 'wipe' then
@@ -353,7 +351,6 @@ function M.move_cursor()
     if auto_preview then
         M.open()
     else
-        local last_idx = ps.idx
         if api.nvim_win_get_cursor(qf_winid)[1] ~= last_idx then
             M.close()
         end
