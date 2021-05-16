@@ -246,9 +246,9 @@ function M.open(qf_winid, qf_idx)
         return
     end
 
-    local pbufnr, valid = entry.bufnr, entry.valid
+    local pbufnr = entry.bufnr
 
-    if valid == 0 or not api.nvim_buf_is_valid(pbufnr) then
+    if pbufnr == 0 or not api.nvim_buf_is_valid(pbufnr) then
         M.close(qf_winid)
         return
     end
