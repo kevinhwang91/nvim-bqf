@@ -181,13 +181,10 @@ function M.history(direction)
     local qf_list = M.get({nr = 0, size = 0, title = 0})
     local nr, size, title = qf_list.nr, qf_list.size, qf_list.title
 
-    -- delay to cooperate with preview.fix_missing_redraw
-    vim.defer_fn(function()
-        api.nvim_echo({
-            {'('}, {tostring(nr), 'Identifier'}, {' of '}, {tostring(last_nr), 'Identifier'},
-            {') ['}, {tostring(size), 'Type'}, {'] '}, {' >> ' .. title, 'Title'}
-        }, false, {})
-    end, 100)
+    api.nvim_echo({
+        {'('}, {tostring(nr), 'Identifier'}, {' of '}, {tostring(last_nr), 'Identifier'}, {') ['},
+        {tostring(size), 'Type'}, {'] '}, {' >> ' .. title, 'Title'}
+    }, false, {})
 end
 
 return M

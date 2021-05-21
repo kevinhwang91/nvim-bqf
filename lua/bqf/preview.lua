@@ -169,15 +169,6 @@ local function fire_restore_buf_opts(bufnr, loaded_before, fwin_opts)
     end
 end
 
--- upstream bug
--- https://github.com/neovim/neovim/issues/11597
-local function fix_missing_redraw(qf_winid)
-    M.open(qf_winid)
-    vim.defer_fn(function()
-        cmd('mode')
-    end, 20)
-end
-
 local function reopen(qf_winid)
     qf_winid = qf_winid or api.nvim_get_current_win()
     M.close(qf_winid)
@@ -197,7 +188,7 @@ function M.toggle_mode()
     local ps = qfs[qf_winid].preview
     ps.full = ps.full ~= true
     last_idx = -1
-    fix_missing_redraw(qf_winid)
+    M.open(qf_winid)
 end
 
 function M.close(qf_winid)
@@ -295,12 +286,7 @@ function M.init_window(qf_winid)
                 vim.bo[bufnr].bufhidden = 'hide'
             end)
         end
-
-        if qfs[qf_winid].preview.full then
-            fix_missing_redraw(qf_winid)
-        else
-            M.open(qf_winid)
-        end
+        M.open(qf_winid)
     end
 end
 
