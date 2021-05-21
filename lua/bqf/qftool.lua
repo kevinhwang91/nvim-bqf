@@ -171,9 +171,9 @@ function M.history(direction)
     local ok, msg = pcall(cmd, ([[sil exe '%d%s%s']]):format(vim.v.count1, prefix,
         direction and 'newer' or 'older'))
     if not ok then
-        if msg:match('^Vim%(%a+%):E380') then
+        if msg:match(':E380: At bottom') then
             cmd(([[sil exe '%d%snewer']]):format(last_nr - cur_nr, prefix))
-        elseif msg:match('^Vim%(%a+%):E381') then
+        elseif msg:match(':E381: At top') then
             cmd(([[sil exe '%d%solder']]):format(last_nr - 1, prefix))
         end
     end
