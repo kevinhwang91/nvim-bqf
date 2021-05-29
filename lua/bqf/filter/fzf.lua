@@ -55,7 +55,7 @@ end
 local function source_list(qf_winid, signs)
     local ret = {}
     local function hl_ansi(name, str)
-        return headless and headless.hl_ansi[name] or utils.render_str(str or '%s', name)
+        return headless and headless.hl_ansi[name:upper()] or utils.render_str(str or '%s', name)
     end
 
     local hl_id2ansi = setmetatable({}, {
@@ -134,6 +134,7 @@ local function source_cmd(qf_winid, signs)
 
     local ansi_tbl = {['BqfSign'] = utils.render_str('^', 'BqfSign')}
     for _, name in ipairs(utils.syntax_list(bufnr)) do
+        name = name:upper()
         ansi_tbl[name] = utils.render_str('%s', name)
     end
     for _, path in ipairs(api.nvim_get_runtime_file('syntax/qf.vim', true)) do
