@@ -110,7 +110,7 @@ local function source_list(qf_winid, signs)
             j = j + 1
         end
         local hl_fmt = last_hl_id and hl_id2ansi[last_hl_id] or '%s'
-        table.insert(line_sect, hl_fmt:format(line:sub(last_col, #line):match('%C*')))
+        table.insert(line_sect, hl_fmt:format(line:sub(last_col, #line):gsub('%c*$', '')))
         local processed_line = line_fmt:format(i, padding, signed, table.concat(line_sect, ''))
         if headless then
             io.write(processed_line)
@@ -273,9 +273,9 @@ function M.run()
         source = source(qf_winid, signs),
         ['sink*'] = nil,
         options = supply.tbl_concat({
-            '--multi', '--ansi', '--with-nth', '2..', '--delimiter', '\t', '--header-lines', 0,
-            '--tiebreak', 'index', '--info', 'inline', '--prompt', prompt, '--no-border',
-            '--layout', 'reverse-list', '--expect', expect_keys
+            '--multi', '--ansi', '--tabstop', vim.bo.ts, '--with-nth', '2..', '--delimiter', '\t',
+            '--header-lines', 0, '--tiebreak', 'index', '--info', 'inline', '--prompt', prompt,
+            '--no-border', '--layout', 'reverse-list', '--expect', expect_keys
         }, extra_opts),
         window = {width = 2, height = 2, xoffset = 1, yoffset = 0, border = 'none'}
     }
