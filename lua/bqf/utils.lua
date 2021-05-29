@@ -25,6 +25,20 @@ local function color2csi8b(color_num, fg)
     return ('%d;5;%d'):format(fg and 38 or 48, color_num)
 end
 
+function M.syntax_list(bufnr)
+    local list = {}
+    local syn_info = api.nvim_buf_call(bufnr, function()
+        return api.nvim_exec('syn', true)
+    end)
+    for line in vim.gsplit(syn_info, '\n') do
+        local name = line:match('^(%a+)%s*xxx ')
+        if name then
+            table.insert(list, name)
+        end
+    end
+    return list
+end
+
 function M.render_str(str, group_name, def_fg, def_bg)
     vim.validate({
         str = {str, 'string'},
@@ -35,7 +49,7 @@ function M.render_str(str, group_name, def_fg, def_bg)
     local gui = vim.o.termguicolors
     local ok, hl = pcall(api.nvim_get_hl_by_name, group_name, gui)
     if not ok then
-        return ''
+        return str
     end
     local fg, bg
     if hl.reverse then
@@ -175,6 +189,110 @@ function M.win_execute(winid, func)
         cmd(noa_set_win:format(cur_winid))
     end
     return ret
+end
+
+local function syn_keyword(bufnr)
+    local syn_info = api.nvim_buf_call(bufnr, function()
+        return api.nvim_exec('syn iskeyword', true)
+    end)
+    local is_keyword = syn_info:match('^syntax iskeyword (.+)')
+    if is_keyword == 'not set' then
+        is_keyword = vim.bo[bufnr].iskeyword
+    end
+    return is_keyword
+end
+
+function M.gen_is_keyword(bufnr)
+    local str = syn_keyword(bufnr)
+    -- :h isfname get the edge cases
+    -- ^a-z,#,^
+    -- _,-,128-140,#-43
+    -- @,^a-z
+    -- a-z,A-Z,@-@
+    -- 48-57,,,_
+    -- -~,^,,9
+    local len = #str
+    local tbl = {}
+    local exclusive = false
+
+    local function insert_tbl(bs, be)
+        if be then
+            for i = bs, be do
+                tbl[i] = not exclusive
+            end
+        else
+            tbl[bs] = not exclusive
+        end
+    end
+
+    local function process(s)
+        local function to_byte(char)
+            local b
+            if char then
+                b = tonumber(char)
+                if not b then
+                    b = char:byte()
+                end
+            end
+            return b
+        end
+
+        local ok = false
+        if s == '@' then
+            insert_tbl(('a'):byte(), ('z'):byte())
+            insert_tbl(('A'):byte(), ('Z'):byte())
+            ok = true
+        elseif #s == 1 or s:match('^%d+$') then
+            insert_tbl(to_byte(s))
+            ok = true
+        else
+            local range_s, range_e = s:match('([^-]+)%-([^-]+)')
+            range_s, range_e = to_byte(range_s), to_byte(range_e)
+            if range_s and range_e then
+                if range_e == range_s and range_s == ('@'):byte() then
+                    insert_tbl(range_s)
+                    ok = true
+                elseif range_e > range_s then
+                    insert_tbl(range_s, range_e)
+                    ok = true
+                end
+            end
+        end
+        return ok
+    end
+
+    for i = 0, 255 do
+        tbl[i] = false
+    end
+
+    local start = 1
+    local i = 1
+    while i <= len do
+        local c = str:sub(i, i)
+        if c == '^' then
+            if i == len then
+                insert_tbl(('^'):byte())
+                start = start + 1
+            elseif i == start then
+                start = start + 1
+                exclusive = true
+            end
+        elseif c == ',' then
+            if process(str:sub(start, i - 1)) then
+                start = i + 1
+                exclusive = false
+            end
+        end
+        i = i + 1
+    end
+    process(str:sub(start))
+    return function(b)
+        return tbl[b]
+    end
+end
+
+function M.is_special(b)
+    return b <= 32
 end
 
 return M
