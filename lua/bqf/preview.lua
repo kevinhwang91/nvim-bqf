@@ -146,11 +146,13 @@ local function do_syntax(qf_winid, idx)
 end
 
 local function clean_preview_buf(bufnr, loaded_before)
-    if not bufnr then
-        return
-    end
-    if not loaded_before and api.nvim_buf_is_loaded(bufnr) and fn.buflisted(bufnr) == 0 then
-        cmd('bd! ' .. bufnr)
+    if bufnr and not loaded_before then
+        if api.nvim_buf_is_loaded(bufnr) and fn.buflisted(bufnr) == 0 then
+            api.nvim_buf_call(bufnr, function()
+                cmd([[delm \"]])
+            end)
+            cmd('bd! ' .. bufnr)
+        end
     end
 end
 
