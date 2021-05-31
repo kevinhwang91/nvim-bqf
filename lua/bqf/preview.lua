@@ -249,8 +249,14 @@ function M.open(qf_winid, qf_idx)
     local pbuf_loaded = api.nvim_buf_is_loaded(pbufnr)
 
     update_mode(qf_winid)
+
+    local ml = vim.bo[pbufnr].ml
+    vim.bo[pbufnr].ml = false
+
     local preview_winid, border_winid = floatwin.open(pbufnr, qf_winid, file_winid)
+
     if preview_winid < 0 or border_winid < 0 then
+        vim.bo[pbufnr].ml = ml
         return
     end
 
@@ -268,6 +274,7 @@ function M.open(qf_winid, qf_idx)
 
     vim.defer_fn(function()
         do_syntax(qf_winid, qf_idx)
+        vim.bo[pbufnr].ml = ml
     end, delay_syntax)
 end
 
