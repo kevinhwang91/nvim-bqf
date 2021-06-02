@@ -164,7 +164,7 @@ end
 function M.history(direction)
     local prefix = M.type() == 'loc' and 'l' or 'c'
     local cur_nr, last_nr = M.get({nr = 0}).nr, M.get({nr = '$'}).nr
-    if last_nr == 1 then
+    if last_nr <= 1 then
         return
     end
 
