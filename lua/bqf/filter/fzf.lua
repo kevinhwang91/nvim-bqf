@@ -55,6 +55,9 @@ end
 local function source_list(qf_winid, signs)
     local ret = {}
     local function hl_ansi(name, str)
+        if not name then
+            return ''
+        end
         return headless and headless.hl_ansi[name:upper()] or utils.render_str(str or '%s', name)
     end
 
@@ -87,16 +90,16 @@ local function source_list(qf_winid, signs)
             end
         end
         local line_sect = {}
-        local last_hl_id
-        local last_keyword_flag = -1
+        local last_hl_id = -1
+        local last_is_kw = false
         local last_col = start
         local j = start
         while j <= #line do
             local byte = line:byte(j)
-            local keyword_flag = is_keyword(byte)
-            if last_keyword_flag == false or keyword_flag ~= last_keyword_flag then
+            local is_kw = is_keyword(byte)
+            if last_is_kw == false or is_kw ~= last_is_kw then
                 if utils.is_special(byte) then
-                    last_keyword_flag = -1
+                    last_is_kw = false
                 else
                     local hl_id = fn.synID(i, j, true)
                     if j > start and hl_id ~= last_hl_id then
@@ -104,7 +107,7 @@ local function source_list(qf_winid, signs)
                             hl_id2ansi[last_hl_id]:format(line:sub(last_col, j - 1)))
                         last_col = j
                     end
-                    last_hl_id, last_keyword_flag = hl_id, keyword_flag
+                    last_hl_id, last_is_kw = hl_id, is_kw
                 end
             end
             j = j + 1
@@ -125,7 +128,7 @@ local function source_cmd(qf_winid, signs)
     local fname = fn.fnameescape(fn.tempname())
     local bufnr = api.nvim_win_get_buf(qf_winid)
     export4headless(bufnr, signs, fname)
-    local cmds = {'nvim --clean -n --headless'}
+    local cmds = {vim.v.progpath, '--clean -n --headless'}
     local function append_cmd(str)
         table.insert(cmds, '-c')
         table.insert(cmds, ('%q'):format(str))
