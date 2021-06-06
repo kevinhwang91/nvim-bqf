@@ -63,6 +63,10 @@ function M.open(close, qf_winid, idx0)
                 cmd(([[sil exe '%d%s']]):format(idx, suffix))
             end)
 
+            if vim.wo.foldenable and vim.o.fdo:match('quickfix') then
+                cmd('norm! zv')
+            end
+
             if last_bufnr ~= api.nvim_get_current_buf() then
                 utils.zz()
             else
