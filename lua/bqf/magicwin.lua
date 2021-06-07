@@ -96,7 +96,7 @@ local function evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow, l
     -- It seems that 10 as a minimum and 1.2 as a scale is good to balance performance and accuracy
     local e_bwrow = math.max(10, math.ceil(awrow * 1.2 * bheight / aheight - 0.25))
 
-    local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid, lnum)
+    local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
 
     local e_fraction = cal_fraction(e_bwrow, bheight)
     local e_sline = cal_wrow(e_fraction, aheight)
@@ -147,28 +147,53 @@ local function tune_line(winid, topline, lsizes)
 
     log.debug('lsizes:', lsizes)
 
-    local iter_start, iter_end, iter_step, len
-    if lsizes > 0 then
-        iter_start, iter_end, iter_step = topline - 1, math.max(1, topline - lsizes), -1
-        len = iter_start - iter_end
-    else
-        iter_start, iter_end, iter_step = topline, topline - lsizes - 1, 1
-        len = iter_end - iter_start
+    local i_start, i_end, i_inc, should_continue, len
+    local foldenable = vim.wo[winid].foldenable
+    local folded_other_lnum
+    local neg_one_func = function()
+        return -1
     end
-    log.debug(iter_start, iter_end, iter_step)
+
+    if lsizes > 0 then
+        i_start, i_end, i_inc = topline - 1, math.max(1, topline - lsizes), -1
+        should_continue = function(iter)
+            return iter >= i_end
+        end
+        len = i_start - i_end
+        folded_other_lnum = foldenable and fn.foldclosed or neg_one_func
+    else
+        i_start, i_end, i_inc = topline, topline - lsizes - 1, 1
+        should_continue = function(iter)
+            return iter <= i_end
+        end
+        len = i_end - i_start
+        folded_other_lnum = foldenable and fn.foldclosedend or neg_one_func
+    end
+    log.debug(i_start, i_end, i_inc, len)
 
     return utils.win_execute(winid, function()
         local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
         local loff, lsize_sum = 0, 0
-        for i = iter_start, iter_end, iter_step do
-            local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
-            if log.is_enabled('debug') then
-                log.debug('=====================================================')
+        local i = i_start
+        while should_continue(i) do
+            log.debug('=====================================================')
+            log.debug('i:', i, 'i_end:', i_end)
+            local fo_lnum = folded_other_lnum(i)
+            if fo_lnum == -1 then
+                local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
                 log.debug('lsize_sum:', lsize_sum, 'per_l_size:', per_l_size, 'lnum:', i)
-                log.debug('=====================================================')
+                lsize_sum = lsize_sum + per_l_size
+                loff = loff + 1
+            else
+                log.debug('fo_lnum:', fo_lnum)
+                lsize_sum = lsize_sum + 1
+                loff = loff + math.abs(fo_lnum - i) + 1
+                i_end = i_end + fo_lnum - i
+                i = fo_lnum
             end
-            lsize_sum = lsize_sum + per_l_size
-            loff = loff + 1
+            log.debug('loff:', loff)
+            log.debug('=====================================================')
+            i = i + i_inc
             if lsize_sum > len then
                 if lsize_sum > len + 1 then
                     loff = loff - 1
@@ -176,8 +201,9 @@ local function tune_line(winid, topline, lsizes)
                 break
             end
         end
-        log.debug('line_offset:', lsizes > 0 and loff or -loff)
-        return lsizes > 0 and loff or -loff
+        loff = lsizes > 0 and loff or -loff
+        log.debug('line_offset:', loff)
+        return loff
     end)
 end
 
