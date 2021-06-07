@@ -163,10 +163,16 @@ function M.matchaddpos(hl, plist, prior)
     return ids
 end
 
-function M.gutter_size(winid, lnum)
-    vim.validate({winid = {winid, 'number'}, lnum = {lnum, 'number', true}})
-    lnum = lnum or api.nvim_win_get_cursor(winid)[1]
-    return fn.screenpos(winid, lnum, 1).curscol - fn.win_screenpos(winid)[2]
+function M.gutter_size(winid)
+    vim.validate({winid = {winid, 'number'}})
+    local size
+    M.win_execute(winid, function()
+        local wv = fn.winsaveview()
+        api.nvim_win_set_cursor(winid, {wv.lnum, 0})
+        size = fn.wincol() - 1
+        fn.winrestview(wv)
+    end)
+    return size
 end
 
 function M.win_execute(winid, func)
