@@ -192,6 +192,10 @@ root = {
         win_vheight = {
             description = [[the height of preview window for vertical layout]],
             default = 15
+        },
+        wrap = {
+            description = [[wrap the line, `:h wrap` for detail]],
+            default = false
         }
     },
     func_map = {

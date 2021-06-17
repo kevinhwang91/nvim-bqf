@@ -3,7 +3,7 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local auto_preview, delay_syntax
+local auto_preview, delay_syntax, wrap
 local keep_preview, orig_pos
 local last_idx
 
@@ -23,7 +23,12 @@ local function setup()
     })
     auto_preview = pconf.auto_preview
     delay_syntax = tonumber(pconf.delay_syntax)
-    vim.validate({auto_preview = {auto_preview, 'boolean'}, delay_syntax = {delay_syntax, 'number'}})
+    wrap = pconf.wrap
+    vim.validate({
+        auto_preview = {auto_preview, 'boolean'},
+        delay_syntax = {delay_syntax, 'number'},
+        wrap = {wrap, 'boolean'}
+    })
 
     api.nvim_exec([[
         aug BqfPreview
@@ -70,7 +75,7 @@ local function exec_preview(qf_all, idx, file_winid)
     end
 
     local lnum, col, pattern = entry.lnum, entry.col, entry.pattern
-    vim.wo.wrap, vim.wo.foldenable = false, false
+    vim.wo.wrap, vim.wo.foldenable = wrap, false
     vim.wo.number, vim.wo.relativenumber = true, false
     vim.wo.cursorline, vim.wo.signcolumn = true, 'no'
     vim.wo.foldmethod = 'manual'
