@@ -164,6 +164,11 @@ local function source_cmd(qf_winid, signs)
     return c_out
 end
 
+local function set_qf_cursor(winid, lnum)
+    local col = api.nvim_win_get_cursor(winid)[2]
+    api.nvim_win_set_cursor(winid, {lnum, col})
+end
+
 local function handler(qf_winid, ret)
     local key = table.remove(ret, 1)
     local selected_index = vim.tbl_map(function(e)
@@ -176,8 +181,7 @@ local function handler(qf_winid, ret)
     if #selected_index == 1 then
         idx = selected_index[1]
         if action == 'tabedit' then
-            local col = api.nvim_win_get_cursor(qf_winid)[2]
-            api.nvim_win_set_cursor(qf_winid, {idx, col})
+            set_qf_cursor(qf_winid, idx)
             jump.tabedit(false, qf_winid, idx)
         elseif action == 'split' then
             jump.split(false, qf_winid, idx)
@@ -192,6 +196,7 @@ local function handler(qf_winid, ret)
         for _, i in ipairs(selected_index) do
             sign.toggle(0, i, api.nvim_win_get_buf(qf_winid))
         end
+        set_qf_cursor(qf_winid, selected_index[1])
     else
         if #selected_index == 1 then
             return
@@ -223,8 +228,7 @@ local function create_job(qf_winid, tmpfile)
             end
             if idx and idx > 0 then
                 vim.schedule(function()
-                    local col = api.nvim_win_get_cursor(qf_winid)[2]
-                    api.nvim_win_set_cursor(qf_winid, {idx, col})
+                    set_qf_cursor(qf_winid, idx)
                     preview.open(qf_winid, idx)
                 end)
             end
