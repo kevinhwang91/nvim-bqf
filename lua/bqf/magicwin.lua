@@ -106,9 +106,10 @@ local function evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow, l
     end
 
     local lines_size = {}
+    local wrap = vim.wo[winid].wrap
     -- use 9 as additional compensation
     for i = math.max(1, lnum - e_sline - 9), lnum - 1 do
-        lines_size[i] = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
+        lines_size[i] = wrap and math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid) or 1
     end
 
     if lbwrow and awrow == evaluate_sline(lfraction, aheight, lnum, lines_size) then
