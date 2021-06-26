@@ -100,11 +100,7 @@ function M.kill_alone_qf()
 end
 
 function M.close_qf()
-    local winid = fn.expand('<afile>')
-    -- upstream bug
-    -- https://github.com/neovim/neovim/issues/14512
-    winid = tonumber(winid:sub(winid:find('%d+')))
-
+    local winid = tonumber(fn.expand('<afile>'))
     if qfs[winid].bufhidden then
         local qf_bufnr = api.nvim_win_get_buf(winid)
         vim.bo[qf_bufnr].bufhidden = qfs[winid].bufhidden
