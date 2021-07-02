@@ -113,7 +113,7 @@ local function evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow, l
     end
 
     if lbwrow and awrow == evaluate_sline(lfraction, aheight, lnum, lines_size) then
-        return lbwrow, lfraction
+        return lfraction
     end
 
     local t_frac = {}
