@@ -30,11 +30,11 @@ local function setup()
         wrap = {wrap, 'boolean'}
     })
 
-    api.nvim_exec([[
+    cmd([[
         aug BqfPreview
             au!
         aug END
-    ]], false)
+    ]])
 
     cmd('hi default link BqfPreviewCursor Cursor')
     cmd('hi default link BqfPreviewRange IncSearch')

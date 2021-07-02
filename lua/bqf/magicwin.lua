@@ -414,11 +414,11 @@ function M.revert_close_adjacent_wins(qf_winid, file_winid, qf_pos)
 end
 
 local function setup()
-    api.nvim_exec([[
+    cmd([[
         aug BqfMagicWin
             au!
         aug END
-    ]], false)
+    ]])
 end
 
 setup()

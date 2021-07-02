@@ -37,11 +37,11 @@ local function setup()
         api.nvim_err_writeln([[preview need 'tail' command]])
     end
 
-    api.nvim_exec([[
+    cmd([[
         aug BqfFilterFzf
             au!
         aug END
-    ]], false)
+    ]])
 end
 
 local function export4headless(bufnr, signs, fname)
