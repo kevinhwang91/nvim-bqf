@@ -122,13 +122,6 @@ function M.restore_fwin_opts()
         return
     end
 
-    -- TODO why can't set currentline directly?
-    local cursorline = opts.cursorline
-    local winid = api.nvim_get_current_win()
-    vim.defer_fn(function()
-        vim.wo[winid].cursorline = cursorline
-    end, 100)
-    opts.cursorline = nil
     for opt, val in pairs(opts) do
         if vim.wo[opt] ~= val then
             vim.wo[opt] = val
