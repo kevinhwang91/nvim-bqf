@@ -85,6 +85,8 @@ local function update_border_buf(border_opts, border_buf)
     table.insert(lines, bot)
     if not border_buf then
         border_buf = api.nvim_create_buf(false, true)
+        -- run nvim with `-M` will reset modifiable's default value to false
+        vim.bo[border_buf].modifiable = true
         vim.bo[border_buf].bufhidden = 'wipe'
     end
     api.nvim_buf_set_lines(border_buf, 0, -1, 1, lines)
