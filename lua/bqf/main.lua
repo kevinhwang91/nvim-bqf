@@ -3,7 +3,7 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local qfs = require('bqf.qfsession')
+local wses = require('bqf.wsession')
 local qftool = require('bqf.qftool')
 local preview = require('bqf.preview')
 local layout = require('bqf.layout')
@@ -34,28 +34,29 @@ function M.enable()
 
     assert(vim.bo.buftype == 'quickfix', 'It is not a quickfix window')
 
-    local qf_winid = api.nvim_get_current_win()
-    qfs.attach(qf_winid)
+    local qwinid = api.nvim_get_current_win()
+    wses.acquire(qwinid)
 
-    local qf_type = qftool.type(qf_winid)
+    local qf_type = qftool.type(qwinid)
 
-    local file_winid = qftool.filewinid(qf_winid)
+    local filewinid = qftool.filewinid(qwinid)
 
     if vim.bo.bufhidden == 'wipe' then
-        qfs[qf_winid].bufhidden = 'wipe'
+        wses[qwinid].bufhidden = 'wipe'
     end
 
     vim.wo.number, vim.wo.relativenumber = true, false
     vim.wo.wrap, vim.foldenable = false, false
     vim.wo.foldcolumn, vim.wo.signcolumn = '0', 'number'
 
-    layout.init(qf_winid, file_winid, qf_type)
+    layout.init(qwinid, filewinid, qf_type)
 
-    local qf_bufnr = api.nvim_win_get_buf(qf_winid)
+    local qf_bufnr = api.nvim_win_get_buf(qwinid)
+    sign.clean_pool()
     sign.reset(qf_bufnr)
     -- some plugins will change the quickfix window, preview window should init later
     vim.defer_fn(function()
-        preview.init_window(qf_winid)
+        preview.init_window(qwinid)
     end, 50)
 
     -- after vim-patch:8.1.0877, quickfix will reuse buffer, below buffer setup is no necessary
@@ -80,17 +81,17 @@ function M.disable()
     if vim.bo.buftype ~= 'quickfix' then
         return
     end
-    local qf_winid = api.nvim_get_current_win()
-    preview.close(qf_winid)
+    local qwinid = api.nvim_get_current_win()
+    preview.close(qwinid)
     vim.b.bqf_enabled = false
     cmd('au! Bqf')
     cmd('sil! au! BqfPreview * <buffer>')
     cmd('sil! au! BqfFilterFzf * <buffer>')
     cmd('sil! au! BqfMagicWin')
-    if qfs[qf_winid].bufhidden then
-        vim.bo.bufhidden = qfs[qf_winid].bufhidden
+    if wses[qwinid].bufhidden then
+        vim.bo.bufhidden = wses[qwinid].bufhidden
     end
-    qfs.release(qf_winid)
+    wses.release(qwinid)
 end
 
 function M.kill_alone_qf()
@@ -101,14 +102,15 @@ end
 
 function M.close_qf()
     local winid = tonumber(fn.expand('<afile>'))
-    if qfs[winid].bufhidden then
+    if wses[winid].bufhidden then
         local qf_bufnr = api.nvim_win_get_buf(winid)
-        vim.bo[qf_bufnr].bufhidden = qfs[winid].bufhidden
+        vim.bo[qf_bufnr].bufhidden = wses[winid].bufhidden
     end
+    sign.clean_pool()
     if winid and api.nvim_win_is_valid(winid) then
         preview.close(winid)
         layout.close_win(winid)
-        qfs.release(winid)
+        wses.release(winid)
     end
 end
 

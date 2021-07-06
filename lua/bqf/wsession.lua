@@ -14,7 +14,7 @@ setmetatable(M, {
     end
 })
 
-function M.attach(winid)
+function M.acquire(winid)
     if not holder[winid] then
         holder[winid] = {}
     end

@@ -2,19 +2,20 @@ local M = {}
 local api = vim.api
 
 local qftool = require('bqf.qftool')
+local sign = require('bqf.sign')
 
-function M.filter_list(qf_winid, co_wrap)
-    local qf_all = qftool.getall(qf_winid)
-    local items = qf_all.items
+function M.filter_list(qwinid, co_wrap)
+    local items = qftool.items(qwinid)
     if not co_wrap or #items < 2 then
         return
     end
-    local context, title = qf_all.context, qf_all.title
+    local context = qftool.context(qwinid)
+    local title = qftool.get({title = 0}, qwinid).title
     local lsp_ranges, new_items = {}, {}
     for i, item in co_wrap do
         table.insert(new_items, item)
-        if qf_all.lsp_ranges_hl then
-            table.insert(lsp_ranges, qf_all.lsp_ranges_hl[i])
+        if type(context.lsp_ranges_hl) == 'table' then
+            table.insert(lsp_ranges, context.lsp_ranges_hl[i])
         end
     end
 
@@ -23,21 +24,21 @@ function M.filter_list(qf_winid, co_wrap)
     end
 
     if #lsp_ranges > 0 then
-        context.bqf.lsp_ranges_hl = lsp_ranges
+        context.lsp_ranges_hl = lsp_ranges
     end
 
     title = '*' .. title
-    qftool.set({nr = '$', context = context, title = title, items = new_items}, qf_winid)
+    qftool.set({nr = '$', context = context, title = title, items = new_items}, qwinid)
 end
 
 function M.run(reverse)
-    local qf_winid = api.nvim_get_current_win()
-    local qf_all = qftool.getall(qf_winid)
-    local items, signs = qf_all.items, qf_all.signs or {}
+    local qwinid = api.nvim_get_current_win()
+    local items = qftool.items(qwinid)
+    local signs = sign.get()
     if reverse and vim.tbl_isempty(signs) then
         return
     end
-    M.filter_list(qf_winid, coroutine.wrap(function()
+    M.filter_list(qwinid, coroutine.wrap(function()
         if reverse then
             for i in ipairs(items) do
                 if not signs[i] then

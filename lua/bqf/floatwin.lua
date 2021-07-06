@@ -10,20 +10,20 @@ local border_winid = -1
 
 local qfpos = require('bqf.qfpos')
 
-local function get_opts(qf_winid, file_winid)
-    local rel_pos, abs_pos = unpack(qfpos.get_pos(qf_winid, file_winid))
+local function get_opts(qwinid, filewinid)
+    local rel_pos, abs_pos = unpack(qfpos.get_pos(qwinid, filewinid))
 
-    local qf_info = fn.getwininfo(qf_winid)[1]
-    local opts = {relative = 'win', win = qf_winid, focusable = false, style = 'minimal'}
+    local qinfo = fn.getwininfo(qwinid)[1]
+    local opts = {relative = 'win', win = qwinid, focusable = false, style = 'minimal'}
     local width, height, col, row, anchor
     if rel_pos == 'above' or rel_pos == 'below' or abs_pos == 'top' or abs_pos == 'bottom' then
-        local row_pos = qf_info.winrow
-        width = qf_info.width - 2
+        local row_pos = qinfo.winrow
+        width = qinfo.width - 2
         col = 1
         if rel_pos == 'above' or abs_pos == 'top' then
             anchor = 'NW'
-            height = math.min(win_height, vim.o.lines - 4 - row_pos - qf_info.height)
-            row = qf_info.height + 2
+            height = math.min(win_height, vim.o.lines - 4 - row_pos - qinfo.height)
+            row = qinfo.height + 2
         else
             anchor = 'SW'
             height = math.min(win_height, row_pos - 4)
@@ -34,16 +34,16 @@ local function get_opts(qf_winid, file_winid)
         if abs_pos == 'left_far' then
             width = vim.o.columns - fn.win_screenpos(2)[2] - 1
         elseif abs_pos == 'right_far' then
-            width = qf_info.wincol - 4
+            width = qinfo.wincol - 4
         else
-            width = api.nvim_win_get_width(file_winid) - 2
+            width = api.nvim_win_get_width(filewinid) - 2
         end
-        height = math.min(win_vheight, qf_info.height - 2)
+        height = math.min(win_vheight, qinfo.height - 2)
         local winline = fn.winline()
         row = height >= winline and 1 or winline - height - 1
         if rel_pos == 'left' or abs_pos == 'left_far' then
             anchor = 'NW'
-            col = qf_info.width + 2
+            col = qinfo.width + 2
         else
             anchor = 'NE'
             col = -2
@@ -169,8 +169,8 @@ function M.setup(opts)
     cmd('hi default link BqfPreviewBorder Normal')
 end
 
-function M.open(bufnr, qf_winid, file_winid)
-    local preview_opts, border_opts = get_opts(qf_winid, file_winid)
+function M.open(bufnr, qwinid, filewinid)
+    local preview_opts, border_opts = get_opts(qwinid, filewinid)
     if vim.tbl_isempty(preview_opts) or vim.tbl_isempty(border_opts) then
         return -1, -1
     end

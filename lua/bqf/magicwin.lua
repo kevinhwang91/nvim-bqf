@@ -4,7 +4,7 @@ local fn = vim.fn
 local cmd = vim.cmd
 local uv = vim.loop
 
-local qfs = require('bqf.qfsession')
+local wses = require('bqf.wsession')
 local qfpos = require('bqf.qfpos')
 local utils = require('bqf.utils')
 local log = require('bqf.log')
@@ -218,7 +218,7 @@ local function unregister_winenter()
     cmd('sil! au! BqfMagicWin WinEnter')
 end
 
-local function do_enter_revert(qf_winid, winid, qf_pos)
+local function do_enter_revert(qwinid, winid, qf_pos)
     log.debug('do_enter_revert start')
     -- TODO upstream bug
     -- local f_win_so = vim.wo[winid].scrolloff
@@ -233,15 +233,15 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
     end
 
     utils.win_execute(winid, function()
-        local qf_hei, win_hei = api.nvim_win_get_height(qf_winid), api.nvim_win_get_height(winid)
+        local qf_hei, win_hei = api.nvim_win_get_height(qwinid), api.nvim_win_get_height(winid)
         local wv = fn.winsaveview()
         local topline, lnum = wv.topline, wv.lnum
         local line_count = api.nvim_buf_line_count(0)
 
         -- qf winodw height might be changed by user adds new qf items or navigates history
         -- we need a cache to store previous state
-        qfs[qf_winid].magicwin = qfs[qf_winid].magicwin or {}
-        local mgw = qfs[qf_winid].magicwin[winid] or {}
+        wses[qwinid].magicwin = wses[qwinid].magicwin or {}
+        local mgw = wses[qwinid].magicwin[winid] or {}
         local def_hei = qf_hei + win_hei + 1
         local bheight, aheight = mgw.aheight or def_hei, win_hei
         local lbwrow, lfraction = mgw.bwrow, mgw.fraction
@@ -314,19 +314,19 @@ local function do_enter_revert(qf_winid, winid, qf_pos)
         end
 
         mgw.bwrow, mgw.fraction, mgw.bheight, mgw.aheight = bwrow, fraction, bheight, aheight
-        qfs[qf_winid].magicwin[winid] = mgw
+        wses[qwinid].magicwin[winid] = mgw
     end)
 
     log.debug('do_enter_revert end', '\n')
 end
 
-local function prefetch_close_revert_topline(qf_winid, winid, qf_pos)
+local function prefetch_close_revert_topline(qwinid, winid, qf_pos)
     local topline
     local ok, msg = pcall(fn.getwininfo, winid)
     if ok then
         topline = msg[1].topline
         if qf_pos[1] == 'above' or qf_pos[2] == 'top' then
-            topline = topline - tune_line(winid, topline, api.nvim_win_get_height(qf_winid) + 1)
+            topline = topline - tune_line(winid, topline, api.nvim_win_get_height(qwinid) + 1)
         end
     end
     return topline
@@ -339,13 +339,13 @@ end
 
 local function lastest_mgwin()
     local mgwin = {}
-    local holder = qfs.holder()
-    for winid, qfsession in pairs(holder) do
+    local holder = wses.holder()
+    for winid, wsession in pairs(holder) do
         if api.nvim_win_is_valid(winid) then
             --- maybe get multiple mgws, but only return the lastest one
-            mgwin = qfsession.magicwin or {}
+            mgwin = wsession.magicwin or {}
         else
-            qfs[winid] = nil
+            wses[winid] = nil
         end
     end
     return mgwin
@@ -373,22 +373,22 @@ function M.clear_winview()
     end
 end
 
-function M.revert_enter_adjacent_wins(qf_winid, file_winid, qf_pos)
+function M.revert_enter_adjacent_wins(qwinid, filewinid, qf_pos)
     if need_revert(qf_pos) then
-        for _, winid in ipairs(qfpos.find_adjacent_wins(qf_winid, file_winid)) do
+        for _, winid in ipairs(qfpos.find_adjacent_wins(qwinid, filewinid)) do
             if api.nvim_win_is_valid(winid) then
-                do_enter_revert(qf_winid, winid, qf_pos)
+                do_enter_revert(qwinid, winid, qf_pos)
             end
         end
     end
 end
 
-function M.revert_close_adjacent_wins(qf_winid, file_winid, qf_pos)
+function M.revert_close_adjacent_wins(qwinid, filewinid, qf_pos)
     local defer_data = {}
     if need_revert(qf_pos) then
-        local mgwins = qfs[qf_winid].magicwin
-        for _, winid in ipairs(qfpos.find_adjacent_wins(qf_winid, file_winid)) do
-            local topline = prefetch_close_revert_topline(qf_winid, winid, qf_pos)
+        local mgwins = wses[qwinid].magicwin
+        for _, winid in ipairs(qfpos.find_adjacent_wins(qwinid, filewinid)) do
+            local topline = prefetch_close_revert_topline(qwinid, winid, qf_pos)
             if topline then
                 local info = {winid = winid, topline = topline}
                 local mgw = mgwins[winid]

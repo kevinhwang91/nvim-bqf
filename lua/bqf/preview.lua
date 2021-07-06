@@ -8,7 +8,7 @@ local keep_preview, orig_pos
 local last_idx
 
 local config = require('bqf.config')
-local qfs = require('bqf.qfsession')
+local wses = require('bqf.wsession')
 local qftool = require('bqf.qftool')
 local floatwin = require('bqf.floatwin')
 local utils = require('bqf.utils')
@@ -40,9 +40,9 @@ local function setup()
     cmd('hi default link BqfPreviewRange IncSearch')
 end
 
-local function update_border(border_width, qf_items, idx)
-    local pos_str = ('[%d/%d]'):format(idx, #qf_items)
-    local pbufnr = qf_items[idx].bufnr
+local function update_border(border_width, entry, idx, size)
+    local pos_str = ('[%d/%d]'):format(idx, size)
+    local pbufnr = entry.bufnr
     local buf_str = ('buf %d:'):format(pbufnr)
     local name = fn.bufname(pbufnr):gsub('^' .. vim.env.HOME, '~')
     local pad_fit = border_width - 8 - fn.strwidth(buf_str) - fn.strwidth(pos_str)
@@ -57,9 +57,9 @@ local function update_border(border_width, qf_items, idx)
     floatwin.update_scrollbar()
 end
 
-local function update_mode(qf_winid)
-    qf_winid = qf_winid or api.nvim_get_current_win()
-    local ps = qfs[qf_winid].preview
+local function update_mode(qwinid)
+    qwinid = qwinid or api.nvim_get_current_win()
+    local ps = wses[qwinid].preview
     if ps.full then
         floatwin.set_win_height(999, 999)
     else
@@ -68,12 +68,7 @@ local function update_mode(qf_winid)
     end
 end
 
-local function exec_preview(qf_all, idx, file_winid)
-    local entry = qf_all.items[idx]
-    if not entry then
-        return
-    end
-
+local function exec_preview(entry, filewinid, lsp_range_hl, pattern_hl)
     local lnum, col, pattern = entry.lnum, entry.col, entry.pattern
     vim.wo.wrap, vim.wo.foldenable = wrap, false
     vim.wo.number, vim.wo.relativenumber = true, false
@@ -96,13 +91,9 @@ local function exec_preview(qf_all, idx, file_winid)
 
     fn.clearmatches()
 
-    local lsp_ranges_hl = qf_all.lsp_ranges_hl and not vim.tbl_isempty(qf_all.lsp_ranges_hl) and
-                              qf_all.lsp_ranges_hl[idx] or {}
-    local pattern_hl = qf_all.pattern_hl
-
     local range_ids
-    if not vim.tbl_isempty(lsp_ranges_hl) then
-        local pos_list = utils.lsp_range2pos_list(lsp_ranges_hl)
+    if lsp_range_hl and not vim.tbl_isempty(lsp_range_hl) then
+        local pos_list = utils.lsp_range2pos_list(lsp_range_hl)
         if not vim.tbl_isempty(pos_list) then
             range_ids = utils.matchaddpos('BqfPreviewRange', pos_list)
         end
@@ -122,11 +113,11 @@ local function exec_preview(qf_all, idx, file_winid)
             fn.matchaddpos('BqfPreviewRange', {{lnum}})
         end
     end
-    cmd(('noa call nvim_set_current_win(%d)'):format(file_winid))
+    cmd(('noa call nvim_set_current_win(%d)'):format(filewinid))
 end
 
-local function do_syntax(qf_winid, idx)
-    local ps = qfs[qf_winid].preview
+local function do_syntax(qwinid, idx)
+    local ps = wses[qwinid].preview
     if not ps or idx ~= last_idx then
         return
     end
@@ -176,10 +167,10 @@ local function fire_restore_buf_opts(bufnr, loaded_before, fwin_opts)
     end
 end
 
-local function reopen(qf_winid)
-    qf_winid = qf_winid or api.nvim_get_current_win()
-    M.close(qf_winid)
-    M.open(qf_winid)
+local function reopen(qwinid)
+    qwinid = qwinid or api.nvim_get_current_win()
+    M.close(qwinid)
+    M.open(qwinid)
 end
 
 function M.auto_enabled()
@@ -191,14 +182,14 @@ function M.keep_preview()
 end
 
 function M.toggle_mode()
-    local qf_winid = api.nvim_get_current_win()
-    local ps = qfs[qf_winid].preview
+    local qwinid = api.nvim_get_current_win()
+    local ps = wses[qwinid].preview
     ps.full = ps.full ~= true
     last_idx = -1
-    M.open(qf_winid)
+    M.open(qwinid)
 end
 
-function M.close(qf_winid)
+function M.close(qwinid)
     if keep_preview then
         keep_preview = nil
         return
@@ -207,58 +198,51 @@ function M.close(qf_winid)
     last_idx = -1
     floatwin.close()
 
-    qf_winid = qf_winid or api.nvim_get_current_win()
-    local ps = qfs[qf_winid].preview
+    qwinid = qwinid or api.nvim_get_current_win()
+    local ps = wses[qwinid].preview
     if ps then
         clean_preview_buf(ps.bufnr, ps.buf_loaded)
-        fire_restore_buf_opts(ps.bufnr, ps.buf_loaded, qfs[qf_winid].fwin_opts)
+        fire_restore_buf_opts(ps.bufnr, ps.buf_loaded, wses[qwinid].fwin_opts)
     end
 end
 
-function M.open(qf_winid, qf_idx)
-    qf_winid = qf_winid or api.nvim_get_current_win()
-    local file_winid = qftool.filewinid(qf_winid)
+function M.open(qwinid, qf_idx)
+    qwinid = qwinid or api.nvim_get_current_win()
+    local filewinid = qftool.filewinid(qwinid)
 
-    local ps = qfs[qf_winid].preview
-    if not ps or fn.winnr('$') == 1 or api.nvim_win_get_config(file_winid).relative ~= '' then
+    local ps = wses[qwinid].preview
+    if not ps or fn.winnr('$') == 1 or api.nvim_win_get_config(filewinid).relative ~= '' then
         return
     end
 
-    qf_idx = qf_idx or api.nvim_win_get_cursor(qf_winid)[1]
+    qf_idx = qf_idx or api.nvim_win_get_cursor(qwinid)[1]
     if qf_idx == last_idx then
         return
     end
 
     last_idx = qf_idx
 
-    local qf_all = qftool.getall(qf_winid)
-
-    local qf_items = qf_all.items
-    if #qf_items == 0 then
-        M.close(qf_winid)
-        return
-    end
-
-    local entry = qf_items[qf_idx]
+    local entry = qftool.entry(qf_idx, qwinid)
     if not entry then
+        M.close(qwinid)
         return
     end
 
     local pbufnr = entry.bufnr
 
     if pbufnr == 0 or not api.nvim_buf_is_valid(pbufnr) then
-        M.close(qf_winid)
+        M.close(qwinid)
         return
     end
 
     local pbuf_loaded = api.nvim_buf_is_loaded(pbufnr)
 
-    update_mode(qf_winid)
+    update_mode(qwinid)
 
     local ml = vim.bo[pbufnr].ml
     vim.bo[pbufnr].ml = false
 
-    local preview_winid, border_winid = floatwin.open(pbufnr, qf_winid, file_winid)
+    local preview_winid, border_winid = floatwin.open(pbufnr, qwinid, filewinid)
 
     if preview_winid < 0 or border_winid < 0 then
         vim.bo[pbufnr].ml = ml
@@ -267,40 +251,47 @@ function M.open(qf_winid, qf_idx)
 
     if ps.bufnr ~= pbufnr then
         clean_preview_buf(ps.bufnr, ps.buf_loaded)
-        fire_restore_buf_opts(ps.bufnr, ps.buf_loaded, qfs[qf_winid].fwin_opts)
+        fire_restore_buf_opts(ps.bufnr, ps.buf_loaded, wses[qwinid].fwin_opts)
         ps.bufnr, ps.buf_loaded = pbufnr, pbuf_loaded
     end
 
+    local ctx = qftool.context(qwinid)
+    local lsp_ranges_hl, pattern_hl = ctx.lsp_ranges_hl, ctx.pattern_hl
+    local lsp_range_hl
+    if type(lsp_ranges_hl) == 'table' then
+        lsp_range_hl = lsp_ranges_hl[qf_idx]
+    end
     utils.win_execute(preview_winid, function()
-        exec_preview(qf_all, qf_idx, file_winid)
+        exec_preview(entry, filewinid, lsp_range_hl, pattern_hl)
     end)
 
-    update_border(api.nvim_win_get_width(preview_winid), qf_items, qf_idx)
+    local size = qftool.get({size = 0}, qwinid).size
+    update_border(api.nvim_win_get_width(preview_winid), entry, qf_idx, size)
 
     vim.defer_fn(function()
-        do_syntax(qf_winid, qf_idx)
+        do_syntax(qwinid, qf_idx)
         vim.bo[pbufnr].ml = ml
     end, delay_syntax)
 end
 
-function M.init_window(qf_winid)
-    -- delayed called, qf_winid maybe invalid
-    if not api.nvim_win_is_valid(qf_winid) then
+function M.init_window(qwinid)
+    -- delayed called, qwinid maybe invalid
+    if not api.nvim_win_is_valid(qwinid) then
         return
     end
 
     last_idx = -1
-    qfs[qf_winid].preview = qfs[qf_winid].preview or {full = false}
-    if auto_preview and api.nvim_get_current_win() == qf_winid then
+    wses[qwinid].preview = wses[qwinid].preview or {full = false}
+    if auto_preview and api.nvim_get_current_win() == qwinid then
         -- bufhidden=hide after vim-patch:8.1.0877
         if vim.bo.bufhidden == 'wipe' then
             -- TODO I don't know why must use vim.schedule, defer_fn is already wrapped
-            local bufnr = api.nvim_win_get_buf(qf_winid)
+            local bufnr = api.nvim_win_get_buf(qwinid)
             vim.schedule(function()
                 vim.bo[bufnr].bufhidden = 'hide'
             end)
         end
-        M.open(qf_winid)
+        M.open(qwinid)
     end
 end
 
@@ -309,7 +300,7 @@ function M.scroll(direction)
     if preview_winid < 0 or not direction then
         return
     end
-    local file_winid = qftool.filewinid()
+    local filewinid = qftool.filewinid()
     utils.win_execute(preview_winid, function()
         if direction == 0 then
             api.nvim_win_set_cursor(preview_winid, orig_pos)
@@ -318,7 +309,7 @@ function M.scroll(direction)
             fn.execute(('norm! %c'):format(direction > 0 and 0x04 or 0x15))
         end
         utils.zz()
-        cmd(('noa call nvim_set_current_win(%d)'):format(file_winid))
+        cmd(('noa call nvim_set_current_win(%d)'):format(filewinid))
     end)
     floatwin.update_scrollbar()
 end
@@ -343,15 +334,15 @@ function M.toggle_item()
 end
 
 function M.move_cursor()
-    local qf_winid = api.nvim_get_current_win()
-    local ps = qfs[qf_winid].preview
+    local qwinid = api.nvim_get_current_win()
+    local ps = wses[qwinid].preview
     if not ps then
         return
     end
     if auto_preview then
         M.open()
     else
-        if api.nvim_win_get_cursor(qf_winid)[1] ~= last_idx then
+        if api.nvim_win_get_cursor(qwinid)[1] ~= last_idx then
             M.close()
         end
     end
@@ -363,23 +354,23 @@ function M.tabenter_event()
     end
 end
 
-function M.redraw_win(qf_winid)
+function M.redraw_win(qwinid)
     if floatwin.validate_window() then
-        reopen(qf_winid)
+        reopen(qwinid)
     end
 end
 
 -- Enabling preview and executing cpfile or cnfile or cfdo hits previewed buffer may cause
 -- quickfix window enter the entry buffer, it only produces in quickfix not for location.
 function M.fix_qf_jump(qf_bufnr)
-    local qf_winid = api.nvim_get_current_win()
-    local ok, msg = pcall(qftool.filewinid, qf_winid)
+    local qwinid = api.nvim_get_current_win()
+    local ok, msg = pcall(qftool.filewinid, qwinid)
     if ok then
-        local file_winid = msg
+        local filewinid = msg
         local buf_entered = api.nvim_get_current_buf()
-        api.nvim_win_set_buf(qf_winid, qf_bufnr)
-        api.nvim_set_current_win(file_winid)
-        api.nvim_win_set_buf(file_winid, buf_entered)
+        api.nvim_win_set_buf(qwinid, qf_bufnr)
+        api.nvim_set_current_win(filewinid)
+        api.nvim_win_set_buf(filewinid, buf_entered)
     else
         -- no need after vim-patch:8.1.0877
         api.nvim_buf_delete(qf_bufnr, {})
