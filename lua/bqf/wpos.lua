@@ -38,11 +38,11 @@ local function adjacent_wins(winlayout, is_bottom)
     return wins
 end
 
-function M.find_adjacent_wins(qwinid, filewinid)
+function M.find_adjacent_wins(winid, owinid)
     local wins = {}
-    local rel_pos, abs_pos = unpack(M.get_pos(qwinid, filewinid))
+    local rel_pos, abs_pos = unpack(M.get_pos(winid, owinid))
     if rel_pos == 'above' or rel_pos == 'below' then
-        wins = {filewinid}
+        wins = {owinid}
     elseif abs_pos == 'top' or abs_pos == 'bottom' then
         local nest = fn.winlayout()[2]
         if abs_pos == 'top' then
@@ -54,15 +54,14 @@ function M.find_adjacent_wins(qwinid, filewinid)
     return wins
 end
 
--- get_pos is fast enough, no need to add a cache
-function M.get_pos(qwinid, filewinid)
+function M.get_pos(winid, owinid)
     local layout = fn.winlayout()
     local nested = layout[2]
     local rel_pos, abs_pos = 'unknown', 'unknown'
     if type(nested) ~= 'table' or #nested < 2 then
         return {rel_pos, abs_pos}
     end
-    local qf_p_ind, qf_level, qf_index = node_info(layout, qwinid)
+    local qf_p_ind, qf_level, qf_index = node_info(layout, winid)
     if qf_level == 1 then
         if qf_index == 1 then
             if qf_p_ind == 'col' then
@@ -78,7 +77,7 @@ function M.get_pos(qwinid, filewinid)
             end
         end
     end
-    local f_p_ind, f_level, f_index = node_info(layout, filewinid)
+    local f_p_ind, f_level, f_index = node_info(layout, owinid)
     if f_level == qf_level then
         local offset_index = f_index - qf_index
         if f_p_ind == 'col' then

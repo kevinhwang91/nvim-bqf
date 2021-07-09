@@ -3,7 +3,8 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local qftool = require('bqf.qftool')
+local qhelper = require('bqf.qhelper')
+local qobj = require('bqf.qobj')
 local utils = require('bqf.utils')
 
 local function set_opts_around(winid, func, ...)
@@ -25,41 +26,36 @@ local function set_opts_around(winid, func, ...)
     end
 end
 
-local function validate_size(qwinid)
-    local valid = qftool.get({size = 0}, qwinid).size > 0
+local function validate_size(qo)
+    local valid = qo:get_qflist({size = 0}).size > 0
     if not valid then
         api.nvim_err_writeln('E42: No Errors')
     end
     return valid
 end
 
-local function qinfo(qwinid, idx)
-    idx = idx or api.nvim_win_get_cursor(qwinid)[1]
-    local qf_type = qftool.type(qwinid)
-    local filewinid = qftool.filewinid(qwinid)
-    return idx, qf_type, filewinid
-end
-
-function M.open(close, qwinid, idx0)
+function M.open(close, qwinid, idx)
+    local qo = qobj.get(qwinid)
     qwinid = qwinid or api.nvim_get_current_win()
-    if validate_size(qwinid) then
-        local idx, qf_type, filewinid = qinfo(qwinid, idx0)
+    if validate_size(qo) then
+        idx = idx or api.nvim_win_get_cursor(qwinid)[1]
+        local pair_winid = qhelper.pair_winid(qwinid)
 
-        if filewinid and not api.nvim_win_is_valid(filewinid) then
+        if pair_winid and not api.nvim_win_is_valid(pair_winid) then
             api.nvim_feedkeys(api.nvim_replace_termcodes('<CR>', true, false, true), 'n', true)
         else
 
-            local suffix = qf_type == 'loc' and 'll' or 'cc'
-            local file_w_info = fn.getwininfo(filewinid)[1]
+            local suffix = qo.type == 'loc' and 'll' or 'cc'
+            local file_w_info = fn.getwininfo(pair_winid)[1]
             local topline, botline = file_w_info.topline, file_w_info.botline
 
-            local last_bufnr = api.nvim_win_get_buf(filewinid)
-            api.nvim_set_current_win(filewinid)
+            local last_bufnr = api.nvim_win_get_buf(pair_winid)
+            api.nvim_set_current_win(pair_winid)
             if close then
                 api.nvim_win_close(qwinid, true)
             end
 
-            set_opts_around(filewinid, function()
+            set_opts_around(pair_winid, function()
                 cmd(([[sil exe '%d%s']]):format(idx, suffix))
             end)
 
@@ -79,19 +75,21 @@ function M.open(close, qwinid, idx0)
     end
 end
 
-function M.split(vertical, qwinid, idx0)
+function M.split(vertical, qwinid, idx)
+    local qo = qobj.get(qwinid)
     qwinid = qwinid or api.nvim_get_current_win()
-    if validate_size(qwinid) then
-        local idx, qf_type, filewinid = qinfo(qwinid, idx0)
-        if qf_type == 'loc' then
-            qftool.update({idx = idx}, qwinid)
+    if validate_size(qo) then
+        idx = idx or api.nvim_win_get_cursor(qwinid)[1]
+        local pair_winid = qhelper.pair_winid(qwinid)
+        if qo.type == 'loc' then
+            qo:change_idx(idx)
         end
-        local suffix = qf_type == 'loc' and 'll' or 'cc'
-        api.nvim_set_current_win(filewinid)
+        local suffix = qo.type == 'loc' and 'll' or 'cc'
+        api.nvim_set_current_win(pair_winid)
         api.nvim_win_close(qwinid, true)
 
-        local bufname = api.nvim_buf_get_name(api.nvim_win_get_buf(filewinid))
-        set_opts_around(filewinid, function()
+        local bufname = api.nvim_buf_get_name(api.nvim_win_get_buf(pair_winid))
+        set_opts_around(pair_winid, function()
             if bufname == '' then
                 cmd(([[sil exe '%d%s']]):format(idx, suffix))
             else
@@ -103,19 +101,20 @@ function M.split(vertical, qwinid, idx0)
     end
 end
 
-function M.tabedit(stay, qwinid, idx0)
+function M.tabedit(stay, qwinid, idx)
+    local qo = qobj.get(qwinid)
     qwinid = qwinid or api.nvim_get_current_win()
-
-    if validate_size(qwinid) then
-        local idx, qf_type, filewinid = qinfo(qwinid, idx0)
-        if qf_type == 'loc' then
-            qftool.update({idx = idx}, qwinid)
+    if validate_size(qo) then
+        idx = idx or api.nvim_win_get_cursor(qwinid)[1]
+        local pair_winid = qhelper.pair_winid(qwinid)
+        if qo.type == 'loc' then
+            qo:change_idx(idx)
         end
-        local suffix = qf_type == 'loc' and 'll' or 'cc'
+        local suffix = qo.type == 'loc' and 'll' or 'cc'
 
-        api.nvim_set_current_win(filewinid)
-        local bufname = api.nvim_buf_get_name(api.nvim_win_get_buf(filewinid))
-        set_opts_around(filewinid, function()
+        api.nvim_set_current_win(pair_winid)
+        local bufname = api.nvim_buf_get_name(api.nvim_win_get_buf(pair_winid))
+        set_opts_around(pair_winid, function()
             if bufname == '' then
                 cmd(([[sil exe '%d%s']]):format(idx, suffix))
             else

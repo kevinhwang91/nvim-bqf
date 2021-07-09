@@ -1,6 +1,8 @@
 local M = {}
 local holder = {}
 
+local qobj
+
 local api = vim.api
 
 setmetatable(M, {
@@ -34,6 +36,24 @@ end
 
 function M.holder()
     return holder
+end
+
+function M.bind_qobj(winid)
+    local ws = holder[winid]
+    qobj = require('bqf.qobj')
+    local qo = qobj.get(winid)
+    ws.qobj = qo
+    return ws.qobj
+end
+
+function M.qobj(winid)
+    local ws = holder[winid]
+    qobj = require('bqf.qobj')
+    if not ws.qobj then
+        local qo = qobj.get(winid)
+        ws.qobj = qo
+    end
+    return ws.qobj
 end
 
 return M

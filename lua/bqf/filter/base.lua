@@ -1,16 +1,16 @@
 local M = {}
 local api = vim.api
 
-local qftool = require('bqf.qftool')
-local sign = require('bqf.sign')
+local wses = require('bqf.wsession')
 
 function M.filter_list(qwinid, co_wrap)
-    local items = qftool.items(qwinid)
+    local qo = wses.qobj(qwinid)
+    local items = qo:get_items()
     if not co_wrap or #items < 2 then
         return
     end
-    local context = qftool.context(qwinid)
-    local title = qftool.get({title = 0}, qwinid).title
+    local context = qo:get_context()
+    local title = qo:get_qflist({title = 0}, qwinid).title
     local lsp_ranges, new_items = {}, {}
     for i, item in co_wrap do
         table.insert(new_items, item)
@@ -28,13 +28,14 @@ function M.filter_list(qwinid, co_wrap)
     end
 
     title = '*' .. title
-    qftool.set({nr = '$', context = context, title = title, items = new_items}, qwinid)
+    qo:new_qflist({nr = '$', context = context, title = title, items = new_items})
 end
 
 function M.run(reverse)
     local qwinid = api.nvim_get_current_win()
-    local items = qftool.items(qwinid)
-    local signs = sign.get()
+    local qo = wses.qobj(qwinid)
+    local items = qo:get_items()
+    local signs = qo:get_sign():list()
     if reverse and vim.tbl_isempty(signs) then
         return
     end

@@ -4,7 +4,7 @@ local fn = vim.fn
 local cmd = vim.cmd
 local uv = vim.loop
 
-local preview, jump, supply, qftool, base, config, sign
+local preview, jump, supply, base, config, wses
 local utils = require('bqf.utils')
 local log = require('bqf.log')
 
@@ -22,10 +22,9 @@ local function setup()
     preview = require('bqf.preview')
     jump = require('bqf.jump')
     supply = require('bqf.supply')
-    qftool = require('bqf.qftool')
     base = require('bqf.filter.base')
     config = require('bqf.config')
-    sign = require('bqf.sign')
+    wses = require('bqf.wsession')
 
     local fzf_conf = config.filter.fzf
     action_for, extra_opts = fzf_conf.action_for, fzf_conf.extra_opts
@@ -157,11 +156,11 @@ local function source_cmd(qwinid, signs)
     append_cmd(([[sil! lua require('bqf.filter.fzf').headless_run(%s, %d)]]):format(
         vim.inspect(ansi_tbl), utils.gutter_size(qwinid) - 4))
     append_cmd('q!')
-    local c_out = table.concat(cmds, ' ')
+    local cout = table.concat(cmds, ' ')
 
     log.debug('tmp_fname:', fname)
-    log.debug('cmd_out:', c_out)
-    return c_out
+    log.debug('cmd_out:', cout)
+    return cout
 end
 
 local function set_qf_cursor(winid, lnum)
@@ -193,15 +192,16 @@ local function handler(qwinid, ret)
     end
 
     if action == 'signtoggle' then
+        local sign = wses.qobj(qwinid):get_sign()
         for _, i in ipairs(selected_index) do
-            sign.toggle(0, i, api.nvim_win_get_buf(qwinid))
+            sign:toggle(i, api.nvim_win_get_buf(qwinid))
         end
         set_qf_cursor(qwinid, selected_index[1])
     else
         if #selected_index == 1 then
             return
         end
-        local items = qftool.items(qwinid)
+        local items = wses.qobj(qwinid):get_items()
         base.filter_list(qwinid, coroutine.wrap(function()
             for _, i in ipairs(selected_index) do
                 coroutine.yield(i, items[i])
@@ -267,10 +267,9 @@ end
 
 function M.run()
     local qwinid = api.nvim_get_current_win()
-    local qf_type = qftool.type()
-    local prompt = qf_type == 'loc' and ' Location> ' or ' Quickfix> '
-    local items = qftool.items(qwinid)
-    local signs = sign.get()
+    local qo = wses.qobj(qwinid)
+    local prompt = qo.type == 'loc' and ' Location> ' or ' Quickfix> '
+    local items = qo:get_items()
     if #items < 2 then
         return
     end
@@ -278,7 +277,7 @@ function M.run()
     local source = #items > 1000 and source_cmd or source_list
     local expect_keys = table.concat(vim.tbl_keys(action_for), ',')
     local opts = {
-        source = source(qwinid, signs),
+        source = source(qwinid, qo:get_sign():list()),
         ['sink*'] = nil,
         options = supply.tbl_concat({
             '--multi', '--ansi', '--tabstop', vim.bo.ts, '--with-nth', '2..', '--delimiter', '\t',

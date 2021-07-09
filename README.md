@@ -139,7 +139,7 @@ Key input sequence: `<Tab>j<Tab>zn<zN>zf^^<C-o><C-q>zf<C-o><C-q>`
 
 #### Search and replace demo
 
-Using external grep-like program to search `qftool` and replace it to `mytool`,
+Using external grep-like program to search `qhelper` and replace it to `mytool`,
 but filter `fzf.lua` file.
 
 <p align="center">

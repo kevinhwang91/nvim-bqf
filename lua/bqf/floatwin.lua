@@ -8,10 +8,10 @@ local border_chars, win_height, win_vheight
 local preview_winid = -1
 local border_winid = -1
 
-local qfpos = require('bqf.qfpos')
+local wpos = require('bqf.wpos')
 
-local function get_opts(qwinid, filewinid)
-    local rel_pos, abs_pos = unpack(qfpos.get_pos(qwinid, filewinid))
+local function get_opts(qwinid, pair_winid)
+    local rel_pos, abs_pos = unpack(wpos.get_pos(qwinid, pair_winid))
 
     local qinfo = fn.getwininfo(qwinid)[1]
     local opts = {relative = 'win', win = qwinid, focusable = false, style = 'minimal'}
@@ -36,7 +36,7 @@ local function get_opts(qwinid, filewinid)
         elseif abs_pos == 'right_far' then
             width = qinfo.wincol - 4
         else
-            width = api.nvim_win_get_width(filewinid) - 2
+            width = api.nvim_win_get_width(pair_winid) - 2
         end
         height = math.min(win_vheight, qinfo.height - 2)
         local winline = fn.winline()
@@ -169,8 +169,8 @@ function M.setup(opts)
     cmd('hi default link BqfPreviewBorder Normal')
 end
 
-function M.open(bufnr, qwinid, filewinid)
-    local preview_opts, border_opts = get_opts(qwinid, filewinid)
+function M.open(bufnr, qwinid, pair_winid)
+    local preview_opts, border_opts = get_opts(qwinid, pair_winid)
     if vim.tbl_isempty(preview_opts) or vim.tbl_isempty(border_opts) then
         return -1, -1
     end

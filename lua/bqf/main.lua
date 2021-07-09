@@ -4,11 +4,12 @@ local fn = vim.fn
 local cmd = vim.cmd
 
 local wses = require('bqf.wsession')
-local qftool = require('bqf.qftool')
+local qhelper = require('bqf.qhelper')
 local preview = require('bqf.preview')
 local layout = require('bqf.layout')
 local keymap = require('bqf.keymap')
-local sign = require('bqf.sign')
+local qobj = require('bqf.qobj')
+local qdo = require('bqf.qdo')
 
 local function setup()
     cmd([[
@@ -37,9 +38,11 @@ function M.enable()
     local qwinid = api.nvim_get_current_win()
     wses.acquire(qwinid)
 
-    local qf_type = qftool.type(qwinid)
+    local qo = wses.bind_qobj(qwinid)
+    qo:get_sign():reset()
+    qobj.verify()
 
-    local filewinid = qftool.filewinid(qwinid)
+    local pair_winid = qhelper.pair_winid(qwinid)
 
     if vim.bo.bufhidden == 'wipe' then
         wses[qwinid].bufhidden = 'wipe'
@@ -49,11 +52,8 @@ function M.enable()
     vim.wo.wrap, vim.foldenable = false, false
     vim.wo.foldcolumn, vim.wo.signcolumn = '0', 'number'
 
-    layout.init(qwinid, filewinid, qf_type)
+    layout.init(qwinid, pair_winid, qo.type)
 
-    local qf_bufnr = api.nvim_win_get_buf(qwinid)
-    sign.clean_pool()
-    sign.reset(qf_bufnr)
     -- some plugins will change the quickfix window, preview window should init later
     vim.defer_fn(function()
         preview.init_window(qwinid)
@@ -96,7 +96,7 @@ end
 
 function M.kill_alone_qf()
     pcall(function()
-        qftool.filewinid()
+        qhelper.pair_winid()
     end)
 end
 
@@ -106,7 +106,7 @@ function M.close_qf()
         local qf_bufnr = api.nvim_win_get_buf(winid)
         vim.bo[qf_bufnr].bufhidden = wses[winid].bufhidden
     end
-    sign.clean_pool()
+    qobj.verify()
     if winid and api.nvim_win_is_valid(winid) then
         preview.close(winid)
         layout.close_win(winid)

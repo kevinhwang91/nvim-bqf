@@ -5,7 +5,7 @@ local cmd = vim.cmd
 local uv = vim.loop
 
 local wses = require('bqf.wsession')
-local qfpos = require('bqf.qfpos')
+local wpos = require('bqf.wpos')
 local utils = require('bqf.utils')
 local log = require('bqf.log')
 
@@ -373,9 +373,9 @@ function M.clear_winview()
     end
 end
 
-function M.revert_enter_adjacent_wins(qwinid, filewinid, qf_pos)
+function M.revert_enter_adjacent_wins(qwinid, pair_winid, qf_pos)
     if need_revert(qf_pos) then
-        for _, winid in ipairs(qfpos.find_adjacent_wins(qwinid, filewinid)) do
+        for _, winid in ipairs(wpos.find_adjacent_wins(qwinid, pair_winid)) do
             if api.nvim_win_is_valid(winid) then
                 do_enter_revert(qwinid, winid, qf_pos)
             end
@@ -383,11 +383,11 @@ function M.revert_enter_adjacent_wins(qwinid, filewinid, qf_pos)
     end
 end
 
-function M.revert_close_adjacent_wins(qwinid, filewinid, qf_pos)
+function M.revert_close_adjacent_wins(qwinid, pair_winid, qf_pos)
     local defer_data = {}
     if need_revert(qf_pos) then
         local mgwins = wses[qwinid].magicwin
-        for _, winid in ipairs(qfpos.find_adjacent_wins(qwinid, filewinid)) do
+        for _, winid in ipairs(wpos.find_adjacent_wins(qwinid, pair_winid)) do
             local topline = prefetch_close_revert_topline(qwinid, winid, qf_pos)
             if topline then
                 local info = {winid = winid, topline = topline}

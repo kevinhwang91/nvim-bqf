@@ -7,8 +7,8 @@ local auto_resize_height
 local magic_window
 
 local wses = require('bqf.wsession')
-local qfpos = require('bqf.qfpos')
-local qftool = require('bqf.qftool')
+local wpos = require('bqf.wpos')
+local qhelper = require('bqf.qhelper')
 local config = require('bqf.config')
 local wmagic = require('bqf.magicwin')
 local utils = require('bqf.utils')
@@ -18,8 +18,8 @@ local function setup()
     auto_resize_height = config.auto_resize_height
 end
 
-local function store_fwin_opts(qwinid, filewinid)
-    local fwin_o = vim.wo[filewinid]
+local function store_fwin_opts(qwinid, pair_winid)
+    local fwin_o = vim.wo[pair_winid]
     wses[qwinid].fwin_opts = {
         wrap = fwin_o.wrap,
         cursorline = fwin_o.cursorline,
@@ -34,7 +34,7 @@ local function store_fwin_opts(qwinid, filewinid)
     }
 end
 
-local function fix_default_qf(qwinid, filewinid, qf_type, qf_pos)
+local function fix_default_qf(qwinid, pair_winid, qf_type, qf_pos)
     local qf_win = fn.win_id2win(qwinid)
     if qf_type == 'qf' and fn.winnr('$') == qf_win then
         if qf_pos[1] == 'unknown' and qf_pos[2] == 'unknown' then
@@ -42,26 +42,27 @@ local function fix_default_qf(qwinid, filewinid, qf_type, qf_pos)
             local hei = api.nvim_win_get_height(above_winid)
             cmd('winc J')
             api.nvim_win_set_height(above_winid, hei)
-            qf_pos = qfpos.get_pos(qwinid, filewinid)
+            qf_pos = wpos.get_pos(qwinid, pair_winid)
         end
     end
     return qf_pos
 end
 
-local function adjust_width(qwinid, filewinid, qf_pos)
+local function adjust_width(qwinid, pair_winid, qf_pos)
     local qf_wid = api.nvim_win_get_width(qwinid)
     if vim.o.winwidth > qf_wid then
         if qf_pos[1] == 'right' then
-            local width = api.nvim_win_get_width(filewinid) - (vim.o.winwidth - qf_wid)
-            api.nvim_win_set_width(filewinid, width)
+            local width = api.nvim_win_get_width(pair_winid) - (vim.o.winwidth - qf_wid)
+            api.nvim_win_set_width(pair_winid, width)
         else
             api.nvim_win_set_width(qwinid, vim.o.winwidth)
         end
     end
 end
 
-local function adjust_height(qwinid, filewinid, qf_pos)
-    local size = math.max(qftool.get({size = 0}).size, 1)
+local function adjust_height(qwinid, pair_winid, qf_pos)
+    local qo = wses.qobj(qwinid)
+    local size = math.max(qo:get_qflist({size = 0}).size, 1)
     local qf_hei = api.nvim_win_get_height(qwinid)
     local inc_hei = 0
     wses[qwinid].init_height = wses[qwinid].init_height or qf_hei
@@ -83,7 +84,7 @@ local function adjust_height(qwinid, filewinid, qf_pos)
         api.nvim_win_set_height(qwinid, api.nvim_win_get_height(qwinid) + inc_hei)
     elseif rel_pos == 'below' then
         vim.wo[qwinid].winfixheight = false
-        api.nvim_win_set_height(filewinid, api.nvim_win_get_height(filewinid) - inc_hei)
+        api.nvim_win_set_height(pair_winid, api.nvim_win_get_height(pair_winid) - inc_hei)
         vim.wo[qwinid].winfixheight = true
     end
 end
@@ -98,21 +99,21 @@ local function update_allfixhei(wfh)
     end
 end
 
-function M.init(qwinid, filewinid, qf_type)
-    local qf_pos = qfpos.get_pos(qwinid, filewinid)
-    qf_pos = fix_default_qf(qwinid, filewinid, qf_type, qf_pos)
-    adjust_width(qwinid, filewinid, qf_pos)
+function M.init(qwinid, pair_winid, qf_type)
+    local qf_pos = wpos.get_pos(qwinid, pair_winid)
+    qf_pos = fix_default_qf(qwinid, pair_winid, qf_type, qf_pos)
+    adjust_width(qwinid, pair_winid, qf_pos)
     if auto_resize_height then
-        adjust_height(qwinid, filewinid, qf_pos)
+        adjust_height(qwinid, pair_winid, qf_pos)
     end
 
     if magic_window then
         update_allfixhei(false)
-        wmagic.revert_enter_adjacent_wins(qwinid, filewinid, qf_pos)
+        wmagic.revert_enter_adjacent_wins(qwinid, pair_winid, qf_pos)
         update_allfixhei(true)
     end
     -- store file winodw's options for subsequent use
-    store_fwin_opts(qwinid, filewinid)
+    store_fwin_opts(qwinid, pair_winid)
 end
 
 function M.restore_fwin_opts()
@@ -134,8 +135,8 @@ function M.close_win(qwinid)
         return
     end
 
-    local filewinid = qftool.filewinid(qwinid)
-    local qf_pos = qfpos.get_pos(qwinid, filewinid)
+    local pair_winid = qhelper.pair_winid(qwinid)
+    local qf_pos = wpos.get_pos(qwinid, pair_winid)
     local qf_win = fn.win_id2win(qwinid)
     local qf_win_j, qf_win_l
     utils.win_execute(qwinid, function()
@@ -145,15 +146,15 @@ function M.close_win(qwinid)
     local qf_hei, qf_wid, f_hei, f_wid
     local rel_pos = qf_pos[1]
     if rel_pos == 'right' and qf_win_l ~= qf_win then
-        qf_wid, f_wid = api.nvim_win_get_width(qwinid), api.nvim_win_get_width(filewinid)
+        qf_wid, f_wid = api.nvim_win_get_width(qwinid), api.nvim_win_get_width(pair_winid)
     elseif rel_pos == 'below' and qf_win_j ~= qf_win then
-        qf_hei, f_hei = api.nvim_win_get_height(qwinid), api.nvim_win_get_height(filewinid)
+        qf_hei, f_hei = api.nvim_win_get_height(qwinid), api.nvim_win_get_height(pair_winid)
     end
 
     local wmagic_defer_cb
     if magic_window then
         update_allfixhei(false)
-        wmagic_defer_cb = wmagic.revert_close_adjacent_wins(qwinid, filewinid, qf_pos)
+        wmagic_defer_cb = wmagic.revert_close_adjacent_wins(qwinid, pair_winid, qf_pos)
         update_allfixhei(true)
     end
 
@@ -179,15 +180,15 @@ function M.close_win(qwinid)
         api.nvim_win_close(qwinid, false)
     end
 
-    if api.nvim_win_is_valid(filewinid) and cur_winid == qwinid then
+    if api.nvim_win_is_valid(pair_winid) and cur_winid == qwinid then
         -- current window is a quickfix window, go back file window
-        api.nvim_set_current_win(filewinid)
+        api.nvim_set_current_win(pair_winid)
     end
 
     if rel_pos == 'right' and qf_win_l ~= qf_win then
-        api.nvim_win_set_width(filewinid, qf_wid + f_wid + 1)
+        api.nvim_win_set_width(pair_winid, qf_wid + f_wid + 1)
     elseif rel_pos == 'below' and qf_win_j ~= qf_win then
-        api.nvim_win_set_height(filewinid, qf_hei + f_hei + 1)
+        api.nvim_win_set_height(pair_winid, qf_hei + f_hei + 1)
     end
 
     if wmagic_defer_cb then

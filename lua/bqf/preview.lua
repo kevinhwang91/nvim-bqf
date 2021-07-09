@@ -9,7 +9,8 @@ local last_idx
 
 local config = require('bqf.config')
 local wses = require('bqf.wsession')
-local qftool = require('bqf.qftool')
+local qobj = require('bqf.qobj')
+local qhelper = require('bqf.qhelper')
 local floatwin = require('bqf.floatwin')
 local utils = require('bqf.utils')
 
@@ -68,7 +69,7 @@ local function update_mode(qwinid)
     end
 end
 
-local function exec_preview(entry, filewinid, lsp_range_hl, pattern_hl)
+local function exec_preview(entry, pair_winid, lsp_range_hl, pattern_hl)
     local lnum, col, pattern = entry.lnum, entry.col, entry.pattern
     vim.wo.wrap, vim.wo.foldenable = wrap, false
     vim.wo.number, vim.wo.relativenumber = true, false
@@ -113,7 +114,7 @@ local function exec_preview(entry, filewinid, lsp_range_hl, pattern_hl)
             fn.matchaddpos('BqfPreviewRange', {{lnum}})
         end
     end
-    cmd(('noa call nvim_set_current_win(%d)'):format(filewinid))
+    cmd(('noa call nvim_set_current_win(%d)'):format(pair_winid))
 end
 
 local function do_syntax(qwinid, idx)
@@ -206,23 +207,24 @@ function M.close(qwinid)
     end
 end
 
-function M.open(qwinid, qf_idx)
+function M.open(qwinid, qidx)
     qwinid = qwinid or api.nvim_get_current_win()
-    local filewinid = qftool.filewinid(qwinid)
+    local qo = wses.qobj(qwinid)
+    local pair_winid = qhelper.pair_winid(qwinid)
 
     local ps = wses[qwinid].preview
-    if not ps or fn.winnr('$') == 1 or api.nvim_win_get_config(filewinid).relative ~= '' then
+    if not ps or fn.winnr('$') == 1 or api.nvim_win_get_config(pair_winid).relative ~= '' then
         return
     end
 
-    qf_idx = qf_idx or api.nvim_win_get_cursor(qwinid)[1]
-    if qf_idx == last_idx then
+    qidx = qidx or api.nvim_win_get_cursor(qwinid)[1]
+    if qidx == last_idx then
         return
     end
 
-    last_idx = qf_idx
+    last_idx = qidx
 
-    local entry = qftool.entry(qf_idx, qwinid)
+    local entry = qo:get_entry(qidx)
     if not entry then
         M.close(qwinid)
         return
@@ -242,7 +244,7 @@ function M.open(qwinid, qf_idx)
     local ml = vim.bo[pbufnr].ml
     vim.bo[pbufnr].ml = false
 
-    local preview_winid, border_winid = floatwin.open(pbufnr, qwinid, filewinid)
+    local preview_winid, border_winid = floatwin.open(pbufnr, qwinid, pair_winid)
 
     if preview_winid < 0 or border_winid < 0 then
         vim.bo[pbufnr].ml = ml
@@ -255,21 +257,21 @@ function M.open(qwinid, qf_idx)
         ps.bufnr, ps.buf_loaded = pbufnr, pbuf_loaded
     end
 
-    local ctx = qftool.context(qwinid)
+    local ctx = qo:get_context().bqf or {}
     local lsp_ranges_hl, pattern_hl = ctx.lsp_ranges_hl, ctx.pattern_hl
     local lsp_range_hl
     if type(lsp_ranges_hl) == 'table' then
-        lsp_range_hl = lsp_ranges_hl[qf_idx]
+        lsp_range_hl = lsp_ranges_hl[qidx]
     end
     utils.win_execute(preview_winid, function()
-        exec_preview(entry, filewinid, lsp_range_hl, pattern_hl)
+        exec_preview(entry, pair_winid, lsp_range_hl, pattern_hl)
     end)
 
-    local size = qftool.get({size = 0}, qwinid).size
-    update_border(api.nvim_win_get_width(preview_winid), entry, qf_idx, size)
+    local size = qo:get_qflist({size = 0}, qwinid).size
+    update_border(api.nvim_win_get_width(preview_winid), entry, qidx, size)
 
     vim.defer_fn(function()
-        do_syntax(qwinid, qf_idx)
+        do_syntax(qwinid, qidx)
         vim.bo[pbufnr].ml = ml
     end, delay_syntax)
 end
@@ -300,7 +302,7 @@ function M.scroll(direction)
     if preview_winid < 0 or not direction then
         return
     end
-    local filewinid = qftool.filewinid()
+    local pair_winid = qhelper.pair_winid()
     utils.win_execute(preview_winid, function()
         if direction == 0 then
             api.nvim_win_set_cursor(preview_winid, orig_pos)
@@ -309,7 +311,7 @@ function M.scroll(direction)
             fn.execute(('norm! %c'):format(direction > 0 and 0x04 or 0x15))
         end
         utils.zz()
-        cmd(('noa call nvim_set_current_win(%d)'):format(filewinid))
+        cmd(('noa call nvim_set_current_win(%d)'):format(pair_winid))
     end)
     floatwin.update_scrollbar()
 end
@@ -349,7 +351,7 @@ function M.move_cursor()
 end
 
 function M.tabenter_event()
-    if qftool.validate_qf() and auto_preview then
+    if qhelper.validate_qf() and auto_preview then
         M.open()
     end
 end
@@ -364,13 +366,13 @@ end
 -- quickfix window enter the entry buffer, it only produces in quickfix not for location.
 function M.fix_qf_jump(qf_bufnr)
     local qwinid = api.nvim_get_current_win()
-    local ok, msg = pcall(qftool.filewinid, qwinid)
+    local ok, msg = pcall(qhelper.pair_winid, qwinid)
     if ok then
-        local filewinid = msg
+        local pair_winid = msg
         local buf_entered = api.nvim_get_current_buf()
         api.nvim_win_set_buf(qwinid, qf_bufnr)
-        api.nvim_set_current_win(filewinid)
-        api.nvim_win_set_buf(filewinid, buf_entered)
+        api.nvim_set_current_win(pair_winid)
+        api.nvim_win_set_buf(pair_winid, buf_entered)
     else
         -- no need after vim-patch:8.1.0877
         api.nvim_buf_delete(qf_bufnr, {})
@@ -380,13 +382,13 @@ end
 function M.buf_event()
     -- TODO I hate these autocmd string!!!!!!!!!!!!!!!!!!!!!
     local bufnr = api.nvim_get_current_buf()
-    api.nvim_exec([[
+    cmd([[
         aug BqfPreview
             au! * <buffer>
             au VimResized <buffer> lua require('bqf.preview').redraw_win()
             au TabEnter <buffer> lua require('bqf.preview').tabenter_event()
             au CursorMoved <buffer> lua require('bqf.preview').move_cursor()
-    ]], false)
+    ]])
     cmd(('au WinLeave <buffer> %s'):format(
         ([[lua require('bqf.preview').close(vim.fn.bufwinid(%d))]]):format(bufnr)))
     cmd(('au BufHidden <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once ++nested',
