@@ -32,7 +32,7 @@ local action_funcref = {
     fzffilter = {mode = 'n', module = 'filter.fzf', funcref = 'run()'}
 }
 
-local function setup()
+local function init()
     func_map = config.func_map
     vim.validate({func_map = {func_map, 'table'}})
 end
@@ -50,6 +50,6 @@ function M.buf_map()
     end
 end
 
-setup()
+init()
 
 return M

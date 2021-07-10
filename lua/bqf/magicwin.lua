@@ -413,7 +413,7 @@ function M.revert_close_adjacent_wins(qwinid, pair_winid, qf_pos)
     end
 end
 
-local function setup()
+local function init()
     cmd([[
         aug BqfMagicWin
             au!
@@ -421,6 +421,6 @@ local function setup()
     ]])
 end
 
-setup()
+init()
 
 return M

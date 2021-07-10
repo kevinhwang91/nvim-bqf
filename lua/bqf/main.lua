@@ -9,15 +9,6 @@ local preview = require('bqf.preview')
 local layout = require('bqf.layout')
 local keymap = require('bqf.keymap')
 local qobj = require('bqf.qobj')
-local qdo = require('bqf.qdo')
-
-local function setup()
-    cmd([[
-        aug Bqf
-            au!
-        aug END
-    ]])
-end
 
 function M.toggle()
     if vim.b.bqf_enabled then
@@ -33,12 +24,11 @@ function M.enable()
         return
     end
 
-    assert(vim.bo.buftype == 'quickfix', 'It is not a quickfix window')
-
     local qwinid = api.nvim_get_current_win()
     wses.acquire(qwinid)
 
     local qo = wses.bind_qobj(qwinid)
+    assert(qo, 'It is not a quickfix window')
     qo:get_sign():reset()
     qobj.verify()
 
@@ -71,7 +61,7 @@ function M.enable()
     cmd([[
         aug Bqf
             au! * <buffer>
-            au WinEnter <buffer> lua require('bqf.main').kill_alone_qf()
+            au WinEnter <buffer> ++nested lua require('bqf.main').kill_alone_qf()
             au WinClosed <buffer> ++nested lua require('bqf.main').close_qf()
         aug END
     ]])
@@ -94,10 +84,33 @@ function M.disable()
     wses.release(qwinid)
 end
 
+local function close(winid)
+    local lwin_opts = wses[winid].fwin_opts
+    local ok, msg = pcall(api.nvim_win_close, winid, false)
+    if not ok then
+        -- Vim:E444: Cannot close last window
+        if msg:match('^Vim:E444') then
+            cmd('new')
+            if lwin_opts and not vim.tbl_isempty(lwin_opts) then
+                for opt, val in pairs(lwin_opts) do
+                    if vim.wo[opt] ~= val then
+                        vim.wo[opt] = val
+                    end
+                end
+            end
+            api.nvim_win_close(winid, true)
+        end
+    end
+end
+
 function M.kill_alone_qf()
-    pcall(function()
-        qhelper.pair_winid()
+    local winid = api.nvim_get_current_win()
+    local ok, msg = pcall(function()
+        return qhelper.pair_winid(winid)
     end)
+    if ok and msg < 0 then
+        close(winid)
+    end
 end
 
 function M.close_qf()
@@ -114,6 +127,14 @@ function M.close_qf()
     end
 end
 
-setup()
+local function init()
+    cmd([[
+        aug Bqf
+            au!
+        aug END
+    ]])
+end
+
+init()
 
 return M

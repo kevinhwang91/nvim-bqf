@@ -26,15 +26,18 @@ local function set_qflist(filewinid)
     end or fn.setqflist
 end
 
-local function for_pool(qwinid, id)
+local function from_pool(qwinid, id)
     local qid, filewinid
     if not id then
         qwinid = qwinid or api.nvim_get_current_win()
-        -- vim.validate({winid = {qwinid, qhelper.validate_qf, 'a valid quickfix window'}})
         local what = {id = 0, filewinid = 0}
-        local qinfo = fn.getwininfo(qwinid)[1].loclist == 1 and fn.getloclist(0, what) or
-                          fn.getqflist(what)
-        qid, filewinid = qinfo.id, qinfo.filewinid
+        local winfo = fn.getwininfo(qwinid)[1]
+        if winfo.quickfix == 1 then
+            local qinfo = winfo.loclist == 1 and fn.getloclist(0, what) or fn.getqflist(what)
+            qid, filewinid = qinfo.id, qinfo.filewinid
+        else
+            return nil
+        end
     else
         qid, filewinid = unpack(id)
     end
@@ -70,22 +73,22 @@ function Qobj:get_qflist(what)
     return self.getqflist(what)
 end
 
-function Qobj:reset_field()
-    self.context = nil
-    self.sign = nil
-    Qobj.item_cache = {id = 0, entryies = {}}
+function Qobj:get_changedtick()
+    local cd = self.getqflist({id = self.id, changedtick = 0}).changedtick
+    if cd ~= self.changedtick then
+        self.context = nil
+        self.sign = nil
+        Qobj.item_cache = {id = 0, entryies = {}}
+    end
+    return cd
 end
 
 function Qobj:get_context()
     local ctx
-    local qinfo = self.getqflist({id = self.id, changedtick = 0})
-    local changedtick = qinfo.changedtick
-    if changedtick ~= self.changedtick then
-        self:reset_field()
-    end
+    local cd = self:get_changedtick()
     if not self.context then
-        qinfo = self.getqflist({id = self.id, context = 0})
-        self.changedtick = changedtick
+        local qinfo = self.getqflist({id = self.id, context = 0})
+        self.changedtick = cd
         local c = qinfo.context
         self.context = type(c) == 'table' and c or {}
     end
@@ -95,13 +98,9 @@ end
 
 function Qobj:get_sign()
     local sg
-    local qinfo = self.getqflist({id = self.id, changedtick = 0})
-    local changedtick = qinfo.changedtick
-    if changedtick ~= self.changedtick then
-        self:reset_field()
-    end
+    local cd = self:get_changedtick()
     if not self.sign then
-        self.changedtick = changedtick
+        self.changedtick = cd
         self.sign = require('bqf.sign').new()
     end
     sg = self.sign
@@ -112,15 +111,12 @@ function Qobj:get_items()
     local entryies
     local c = Qobj.item_cache
     local c_id, c_entryies = c.id, c.entryies
-    local qinfo = self.getqflist({id = self.id, changedtick = 0})
-    local changedtick = qinfo.changedtick
-    if changedtick ~= self.changedtick then
-        self:reset_field()
-    elseif c_id > 0 and c_id == self.id then
+    local cd = self:get_changedtick()
+    if cd == self.changedtick and c_id > 0 and c_id == self.id then
         entryies = c_entryies
     end
     if not entryies then
-        qinfo = self.getqflist({id = self.id, items = 0})
+        local qinfo = self.getqflist({id = self.id, items = 0})
         entryies = qinfo.items
         Qobj.item_cache = {id = self.id, entryies = entryies}
     end
@@ -148,7 +144,7 @@ function Qobj:change_idx(idx)
 end
 
 function M.get(qwinid, id)
-    return for_pool(qwinid, id)
+    return from_pool(qwinid, id)
 end
 
 function M.verify()

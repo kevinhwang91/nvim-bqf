@@ -9,37 +9,9 @@ local last_idx
 
 local config = require('bqf.config')
 local wses = require('bqf.wsession')
-local qobj = require('bqf.qobj')
 local qhelper = require('bqf.qhelper')
 local floatwin = require('bqf.floatwin')
 local utils = require('bqf.utils')
-
-local function setup()
-    local pconf = config.preview
-    vim.validate({preview = {pconf, 'table'}})
-    floatwin.setup({
-        win_height = pconf.win_height,
-        win_vheight = pconf.win_vheight,
-        border_chars = pconf.border_chars
-    })
-    auto_preview = pconf.auto_preview
-    delay_syntax = tonumber(pconf.delay_syntax)
-    wrap = pconf.wrap
-    vim.validate({
-        auto_preview = {auto_preview, 'boolean'},
-        delay_syntax = {delay_syntax, 'number'},
-        wrap = {wrap, 'boolean'}
-    })
-
-    cmd([[
-        aug BqfPreview
-            au!
-        aug END
-    ]])
-
-    cmd('hi default link BqfPreviewCursor Cursor')
-    cmd('hi default link BqfPreviewRange IncSearch')
-end
 
 local function update_border(border_width, entry, idx, size)
     local pos_str = ('[%d/%d]'):format(idx, size)
@@ -213,7 +185,7 @@ function M.open(qwinid, qidx)
     local pair_winid = qhelper.pair_winid(qwinid)
 
     local ps = wses[qwinid].preview
-    if not ps or fn.winnr('$') == 1 or api.nvim_win_get_config(pair_winid).relative ~= '' then
+    if not ps or fn.winnr('$') == 1 or fn.win_gettype(pair_winid) ~= '' then
         return
     end
 
@@ -351,8 +323,11 @@ function M.move_cursor()
 end
 
 function M.tabenter_event()
-    if qhelper.validate_qf() and auto_preview then
-        M.open()
+    if auto_preview then
+        local qwinid = api.nvim_get_current_win()
+        if wses.qobj(qwinid) then
+            M.open()
+        end
     end
 end
 
@@ -404,6 +379,34 @@ function M.buf_event()
     cmd('aug END')
 end
 
-setup()
+local function init()
+    local pconf = config.preview
+    vim.validate({preview = {pconf, 'table'}})
+    floatwin.setup({
+        win_height = pconf.win_height,
+        win_vheight = pconf.win_vheight,
+        border_chars = pconf.border_chars
+    })
+    auto_preview = pconf.auto_preview
+    delay_syntax = tonumber(pconf.delay_syntax)
+    wrap = pconf.wrap
+    vim.validate({
+        auto_preview = {auto_preview, 'boolean'},
+        delay_syntax = {delay_syntax, 'number'},
+        wrap = {wrap, 'boolean'}
+    })
+
+    cmd([[
+        aug BqfPreview
+            au!
+        aug END
+    ]])
+
+    cmd('hi default link BqfPreviewCursor Cursor')
+    cmd('hi default link BqfPreviewRange IncSearch')
+end
+
+
+init()
 
 return M

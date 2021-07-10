@@ -13,11 +13,6 @@ local config = require('bqf.config')
 local wmagic = require('bqf.magicwin')
 local utils = require('bqf.utils')
 
-local function setup()
-    magic_window = config.magic_window
-    auto_resize_height = config.auto_resize_height
-end
-
 local function store_fwin_opts(qwinid, pair_winid)
     local fwin_o = vim.wo[pair_winid]
     wses[qwinid].fwin_opts = {
@@ -202,6 +197,11 @@ function M.valid_qf_win()
                win_l and win_k == win_l)
 end
 
-setup()
+local function init()
+    magic_window = config.magic_window
+    auto_resize_height = config.auto_resize_height
+end
+
+init()
 
 return M
