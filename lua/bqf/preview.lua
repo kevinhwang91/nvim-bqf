@@ -4,6 +4,7 @@ local fn = vim.fn
 local cmd = vim.cmd
 
 local auto_preview, delay_syntax, wrap
+local should_preview_cb
 local keep_preview, orig_pos
 local last_idx
 
@@ -24,10 +25,12 @@ local function setup()
     auto_preview = pconf.auto_preview
     delay_syntax = tonumber(pconf.delay_syntax)
     wrap = pconf.wrap
+    should_preview_cb = pconf.should_preview_cb
     vim.validate({
         auto_preview = {auto_preview, 'boolean'},
         delay_syntax = {delay_syntax, 'number'},
-        wrap = {wrap, 'boolean'}
+        wrap = {wrap, 'boolean'},
+        should_preview_cb = {should_preview_cb, 'function', true}
     })
 
     cmd([[
@@ -179,7 +182,7 @@ end
 local function reopen(qf_winid)
     qf_winid = qf_winid or api.nvim_get_current_win()
     M.close(qf_winid)
-    M.open(qf_winid)
+    M.open(qf_winid, nil, true)
 end
 
 function M.auto_enabled()
@@ -195,7 +198,7 @@ function M.toggle_mode()
     local ps = qfs[qf_winid].preview
     ps.full = ps.full ~= true
     last_idx = -1
-    M.open(qf_winid)
+    M.open(qf_winid, nil, true)
 end
 
 function M.close(qf_winid)
@@ -215,7 +218,7 @@ function M.close(qf_winid)
     end
 end
 
-function M.open(qf_winid, qf_idx)
+function M.open(qf_winid, qf_idx, force)
     qf_winid = qf_winid or api.nvim_get_current_win()
     local file_winid = qftool.filewinid(qf_winid)
 
@@ -252,6 +255,11 @@ function M.open(qf_winid, qf_idx)
     end
 
     local pbuf_loaded = api.nvim_buf_is_loaded(pbufnr)
+
+    if not pbuf_loaded and not force and should_preview_cb and not should_preview_cb(pbufnr) then
+        M.close(qf_winid)
+        return
+    end
 
     update_mode(qf_winid)
 
@@ -338,7 +346,7 @@ function M.toggle_item()
     if floatwin.validate_window() then
         M.close()
     else
-        M.open()
+        M.open(nil, nil, true)
     end
 end
 
@@ -359,7 +367,7 @@ end
 
 function M.tabenter_event()
     if qftool.validate_qf() and auto_preview then
-        M.open()
+        M.open(nil, nil, true)
     end
 end
 

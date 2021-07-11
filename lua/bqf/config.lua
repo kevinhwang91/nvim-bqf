@@ -14,6 +14,7 @@ local function setup()
             win_height = 15,
             win_vheight = 15,
             wrap = false,
+            should_preview_cb = nil
         },
         func_map = {
             open = '<CR>',
