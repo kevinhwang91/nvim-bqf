@@ -10,7 +10,7 @@ local last_idx
 local config = require('bqf.config')
 local wses = require('bqf.wsession')
 local qhelper = require('bqf.qhelper')
-local floatwin = require('bqf.floatwin')
+local floatwin = require('bqf.previewer.floatwin')
 local utils = require('bqf.utils')
 
 local function update_border(border_width, entry, idx, size)
@@ -360,14 +360,14 @@ function M.buf_event()
     cmd([[
         aug BqfPreview
             au! * <buffer>
-            au VimResized <buffer> lua require('bqf.preview').redraw_win()
-            au TabEnter <buffer> lua require('bqf.preview').tabenter_event()
-            au CursorMoved <buffer> lua require('bqf.preview').move_cursor()
+            au VimResized <buffer> lua require('bqf.previewer.preview').redraw_win()
+            au TabEnter <buffer> lua require('bqf.previewer.preview').tabenter_event()
+            au CursorMoved <buffer> lua require('bqf.previewer.preview').move_cursor()
     ]])
     cmd(('au WinLeave <buffer> %s'):format(
-        ([[lua require('bqf.preview').close(vim.fn.bufwinid(%d))]]):format(bufnr)))
+        ([[lua require('bqf.previewer.preview').close(vim.fn.bufwinid(%d))]]):format(bufnr)))
     cmd(('au BufHidden <buffer> exe "%s %s"'):format('au BqfPreview BufEnter * ++once ++nested',
-        ([[lua require('bqf.preview').fix_qf_jump(%d)]]):format(bufnr)))
+        ([[lua require('bqf.previewer.preview').fix_qf_jump(%d)]]):format(bufnr)))
 
     -- bufhidden=hide after vim-patch:8.1.0877
     if vim.bo.bufhidden == 'wipe' then

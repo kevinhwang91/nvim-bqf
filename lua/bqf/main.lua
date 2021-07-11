@@ -5,7 +5,7 @@ local cmd = vim.cmd
 
 local wses = require('bqf.wsession')
 local qhelper = require('bqf.qhelper')
-local preview = require('bqf.preview')
+local preview = require('bqf.previewer.preview')
 local layout = require('bqf.layout')
 local keymap = require('bqf.keymap')
 local qobj = require('bqf.qobj')

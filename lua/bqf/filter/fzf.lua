@@ -19,7 +19,7 @@ local function setup()
     assert(vim.g.loaded_fzf or fn.exists('*fzf#run') == 1,
         'fzf#run function not found. You also need Vim plugin from the main fzf repository')
 
-    preview = require('bqf.preview')
+    preview = require('bqf.previewer.preview')
     jump = require('bqf.jump')
     supply = require('bqf.supply')
     base = require('bqf.filter.base')
@@ -210,7 +210,7 @@ local function handler(qwinid, ret)
     end
 end
 
-local function create_job(qwinid, tmpfile)
+local function new_job(qwinid, tmpfile)
     io.open(tmpfile, 'w'):close()
     local stdout = uv.new_pipe(false)
     local handle, pid
@@ -293,7 +293,7 @@ function M.run()
             local tmpfile = fn.tempname()
             supply.tbl_concat(opts.options,
                 {'--preview-window', 0, '--preview', 'echo -n {1}, >> ' .. tmpfile})
-            pid = create_job(qwinid, tmpfile)
+            pid = new_job(qwinid, tmpfile)
             preview.keep_preview()
         end
     end
