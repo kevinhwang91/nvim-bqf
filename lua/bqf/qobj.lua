@@ -124,11 +124,7 @@ function Qobj:get_items()
 end
 
 function Qobj:get_entry(idx)
-    local qinfo = self.getqflist({id = self.id, changedtick = 0})
-    local changedtick = qinfo.changedtick
-    if changedtick ~= self.changedtick then
-        self:reset_field()
-    end
+    local _ = self:get_changedtick()
 
     local e
     local items = self.getqflist({id = self.id, idx = idx, items = 0}).items

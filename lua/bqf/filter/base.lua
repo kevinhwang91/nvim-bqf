@@ -5,12 +5,12 @@ local wses = require('bqf.wsession')
 
 function M.filter_list(qwinid, co_wrap)
     local qo = wses.qobj(qwinid)
-    local items = qo:get_items()
-    if not co_wrap or #items < 2 then
+    local size = qo:get_qflist({size = 0}).size
+    if not co_wrap or size < 2 then
         return
     end
     local context = qo:get_context()
-    local title = qo:get_qflist({title = 0}, qwinid).title
+    local title = qo:get_qflist({title = 0}).title
     local lsp_ranges, new_items = {}, {}
     for i, item in co_wrap do
         table.insert(new_items, item)
@@ -34,12 +34,12 @@ end
 function M.run(reverse)
     local qwinid = api.nvim_get_current_win()
     local qo = wses.qobj(qwinid)
-    local items = qo:get_items()
     local signs = qo:get_sign():list()
     if reverse and vim.tbl_isempty(signs) then
         return
     end
     M.filter_list(qwinid, coroutine.wrap(function()
+        local items = qo:get_items()
         if reverse then
             for i in ipairs(items) do
                 if not signs[i] then

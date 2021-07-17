@@ -215,23 +215,27 @@ local function new_job(qwinid, tmpfile)
     local stdout = uv.new_pipe(false)
     local handle, pid
     handle, pid = uv.spawn('tail', {args = {'-f', tmpfile}, stdio = {nil, stdout}}, function()
-        stdout:close()
         handle:close()
         os.remove(tmpfile)
     end)
-    stdout:read_start(function(_, data)
-        if data and data ~= '' then
-            local tbl_data = vim.split(data, ',')
-            local idx
-            while #tbl_data > 0 and not idx do
-                idx = tonumber(table.remove(tbl_data))
+    stdout:read_start(function(err, data)
+        assert(not err, err)
+        if data then
+            if data ~= '' then
+                local tbl_data = vim.split(data, ',')
+                local idx
+                while #tbl_data > 0 and not idx do
+                    idx = tonumber(table.remove(tbl_data))
+                end
+                if idx and idx > 0 then
+                    vim.schedule(function()
+                        set_qf_cursor(qwinid, idx)
+                        preview.open(qwinid, idx)
+                    end)
+                end
             end
-            if idx and idx > 0 then
-                vim.schedule(function()
-                    set_qf_cursor(qwinid, idx)
-                    preview.open(qwinid, idx)
-                end)
-            end
+        else
+            stdout:close()
         end
     end)
     return pid
@@ -269,12 +273,12 @@ function M.run()
     local qwinid = api.nvim_get_current_win()
     local qo = wses.qobj(qwinid)
     local prompt = qo.type == 'loc' and ' Location> ' or ' Quickfix> '
-    local items = qo:get_items()
-    if #items < 2 then
+    local size = qo:get_qflist({size = 0}).size
+    if size < 2 then
         return
     end
-    -- greater than 1000 items is worth using headless as stream to improve user experience
-    local source = #items > 1000 and source_cmd or source_list
+    -- size greater than 1000 is worth using headless as stream to improve user experience
+    local source = size > 1000 and source_cmd or source_list
     local expect_keys = table.concat(vim.tbl_keys(action_for), ',')
     local opts = {
         source = source(qwinid, qo:get_sign():list()),
