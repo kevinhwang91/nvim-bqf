@@ -8,7 +8,7 @@ local preview, jump, supply, qftool, base, config, sign
 local utils = require('bqf.utils')
 local log = require('bqf.log')
 
-local action_for, extra_opts, has_tail
+local action_for, extra_opts, has_tail, is_windows
 local headless
 
 local function setup()
@@ -31,6 +31,7 @@ local function setup()
     action_for, extra_opts = fzf_conf.action_for, fzf_conf.extra_opts
     vim.validate({action_for = {action_for, 'table'}, extra_opts = {extra_opts, 'table'}})
     has_tail = fn.executable('tail') == 1
+    is_windows = uv.os_uname().sysname == 'Windows_NT'
 
     if not has_tail then
         -- also need echo :)
@@ -275,7 +276,8 @@ function M.run()
         return
     end
     -- greater than 1000 items is worth using headless as stream to improve user experience
-    local source = #items > 1000 and source_cmd or source_list
+    -- look like widnows can't spawn process :(
+    local source = #items > 1000 and not is_windows and source_cmd or source_list
     local expect_keys = table.concat(vim.tbl_keys(action_for), ',')
     local opts = {
         source = source(qf_winid, signs),
