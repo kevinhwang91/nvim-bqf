@@ -79,6 +79,15 @@ function M.open(close, qf_winid, idx0)
     end
 end
 
+function M.close(qf_winid, idx0)
+    qf_winid = qf_winid or api.nvim_get_current_win()
+    if validate_size(qf_winid) then
+        local _, _, file_winid = qf_info(qf_winid, idx0)
+        api.nvim_set_current_win(file_winid)
+        api.nvim_win_close(qf_winid, true)
+    end
+end
+
 function M.split(vertical, qf_winid, idx0)
     qf_winid = qf_winid or api.nvim_get_current_win()
     if validate_size(qf_winid) then

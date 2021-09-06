@@ -245,6 +245,7 @@ about current configuration.
 | ----------- | -------------------------------------------------- | --------- |
 | open        | open the item under the cursor                     | `<CR>`    |
 | openc       | like `open`, and close quickfix window             | `o`       |
+| close       | close quickfix window                              | `q`       |
 | tab         | open the item under the cursor in a new tab        | `t`       |
 | tabb        | like `tab`, but stay at quickfix window            | `T`       |
 | split       | open the item under the cursor in vertical split   | `<C-x>`   |

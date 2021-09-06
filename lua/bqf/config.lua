@@ -19,6 +19,7 @@ local function setup()
         func_map = {
             open = '<CR>',
             openc = 'o',
+            close = 'q',
             split = '<C-x>',
             vsplit = '<C-v>',
             tab = 't',

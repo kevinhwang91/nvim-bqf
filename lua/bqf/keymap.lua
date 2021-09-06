@@ -8,6 +8,7 @@ local func_map
 local action_funcref = {
     open = {mode = 'n', module = 'jump', funcref = 'open(false)'},
     openc = {mode = 'n', module = 'jump', funcref = 'open(true)'},
+    close = {mode = 'n', module = 'jump', funcref = 'close()'},
     split = {mode = 'n', module = 'jump', funcref = 'split(false)'},
     vsplit = {mode = 'n', module = 'jump', funcref = 'split(true)'},
     tab = {mode = 'n', module = 'jump', funcref = 'tabedit(false)'},
