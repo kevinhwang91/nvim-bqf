@@ -125,7 +125,10 @@ function M.tabedit(stay, qf_winid, idx0)
         end)
 
         utils.zz()
-        cmd('noa bw #')
+        local abufnr = fn.bufnr('#')
+        if api.nvim_buf_is_valid(abufnr) and api.nvim_buf_get_name(abufnr) == '' then
+            cmd('noa bw #')
+        end
 
         api.nvim_set_current_win(qf_winid)
 
