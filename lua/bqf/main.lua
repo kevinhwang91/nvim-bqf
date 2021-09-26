@@ -82,6 +82,7 @@ function M.disable()
     end
     local qf_winid = api.nvim_get_current_win()
     preview.close(qf_winid)
+    keymap.buf_unmap()
     vim.b.bqf_enabled = false
     cmd('au! Bqf')
     cmd('sil! au! BqfPreview * <buffer>')
