@@ -40,7 +40,7 @@ local function get_pwinid(winid, qlist)
         pwinid = qlist.filewinid
     else
         pwinid = fn.win_getid(fn.winnr('#'))
-        if pwinid <= 0 or not validate(pwinid) then
+        if pwinid <= 0 or validate(pwinid) then
             local tabpage = api.nvim_win_get_tabpage(winid)
             for _, owinid in ipairs(api.nvim_tabpage_list_wins(tabpage)) do
                 if is_normal_win_type(owinid) then
