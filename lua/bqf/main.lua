@@ -3,20 +3,11 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local qfs = require('bqf.qfsession')
-local qftool = require('bqf.qftool')
-local preview = require('bqf.preview')
+local qfs = require('bqf.qfwin.session')
+local previewer = require('bqf.previewer.handler')
 local layout = require('bqf.layout')
+local magicwin = require('bqf.magicwin.handler')
 local keymap = require('bqf.keymap')
-local sign = require('bqf.sign')
-
-local function setup()
-    cmd([[
-        aug Bqf
-            au!
-        aug END
-    ]])
-end
 
 function M.toggle()
     if vim.b.bqf_enabled then
@@ -32,87 +23,84 @@ function M.enable()
         return
     end
 
-    assert(vim.bo.buftype == 'quickfix', 'It is not a quickfix window')
+    local qwinid = api.nvim_get_current_win()
 
-    local qf_winid = api.nvim_get_current_win()
-    qfs.attach(qf_winid)
+    local qs = qfs:new(qwinid)
+    assert(qs, 'It is not a quickfix window')
 
-    local qf_type = qftool.type(qf_winid)
+    vim.wo.nu, vim.wo.rnu = true, false
+    vim.wo.wrap = false
+    vim.wo.foldenable, vim.wo.foldcolumn = false, '0'
+    vim.wo.signcolumn = 'number'
 
-    local file_winid = qftool.filewinid(qf_winid)
+    layout.initialize(qwinid)
 
-    if vim.bo.bufhidden == 'wipe' then
-        qfs[qf_winid].bufhidden = 'wipe'
-    end
+    previewer.initialize(qwinid)
+    keymap.initialize()
 
-    vim.wo.number, vim.wo.relativenumber = true, false
-    vim.wo.wrap, vim.foldenable = false, false
-    vim.wo.foldcolumn, vim.wo.signcolumn = '0', 'number'
-
-    layout.init(qf_winid, file_winid, qf_type)
-
-    local qf_bufnr = api.nvim_win_get_buf(qf_winid)
-    sign.reset(qf_bufnr)
-    -- some plugins will change the quickfix window, preview window should init later
-    vim.defer_fn(function()
-        preview.init_window(qf_winid)
-    end, 50)
-
-    -- after vim-patch:8.1.0877, quickfix will reuse buffer, below buffer setup is no necessary
-    if vim.b.bqf_enabled then
-        return
-    end
-
-    vim.b.bqf_enabled = true
-    preview.buf_event()
-    keymap.buf_map()
-
+    magicwin.attach(qwinid, qs:pwinid())
     cmd([[
         aug Bqf
             au! * <buffer>
-            au WinEnter <buffer> lua require('bqf.main').kill_alone_qf()
+            au WinEnter <buffer> ++nested lua require('bqf.main').kill_alone_qf()
             au WinClosed <buffer> ++nested lua require('bqf.main').close_qf()
         aug END
     ]])
+    vim.b.bqf_enabled = true
 end
 
 function M.disable()
     if vim.bo.buftype ~= 'quickfix' then
         return
     end
-    local qf_winid = api.nvim_get_current_win()
-    preview.close(qf_winid)
-    keymap.buf_unmap()
+    local qwinid = api.nvim_get_current_win()
+    previewer.close(qwinid)
+    keymap.dispose()
     vim.b.bqf_enabled = false
     cmd('au! Bqf')
     cmd('sil! au! BqfPreview * <buffer>')
     cmd('sil! au! BqfFilterFzf * <buffer>')
     cmd('sil! au! BqfMagicWin')
-    if qfs[qf_winid].bufhidden then
-        vim.bo.bufhidden = qfs[qf_winid].bufhidden
+    qfs:dispose()
+end
+
+local function close(winid)
+    local ok, msg = pcall(api.nvim_win_close, winid, false)
+    if not ok then
+        -- Vim:E444: Cannot close last window
+        if msg:match('^Vim:E444') then
+            cmd('new')
+            api.nvim_win_close(winid, true)
+        end
     end
-    qfs.release(qf_winid)
 end
 
 function M.kill_alone_qf()
-    pcall(function()
-        qftool.filewinid()
-    end)
+    local winid = api.nvim_get_current_win()
+    local qs = qfs.get(winid)
+    if qs then
+        if qs:pwinid() < 0 then
+            close(winid)
+        end
+    end
 end
 
 function M.close_qf()
     local winid = tonumber(fn.expand('<afile>'))
-    if qfs[winid].bufhidden then
-        local qf_bufnr = api.nvim_win_get_buf(winid)
-        vim.bo[qf_bufnr].bufhidden = qfs[winid].bufhidden
-    end
     if winid and api.nvim_win_is_valid(winid) then
-        preview.close(winid)
-        layout.close_win(winid)
-        qfs.release(winid)
+        qfs:dispose()
+        previewer.close(winid)
     end
 end
 
-setup()
+local function init()
+    cmd([[
+        aug Bqf
+            au!
+        aug END
+    ]])
+end
+
+init()
 
 return M

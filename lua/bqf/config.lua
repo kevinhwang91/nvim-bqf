@@ -1,6 +1,6 @@
 local config = {}
 
-local function setup()
+local function init()
     local bqf = require('bqf')
     vim.validate({config = {bqf._config, 'table', true}})
     config = vim.tbl_deep_extend('keep', bqf._config or {}, {
@@ -57,6 +57,6 @@ local function setup()
     bqf._config = nil
 end
 
-setup()
+init()
 
 return config

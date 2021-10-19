@@ -3,16 +3,15 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local ansi = {
-    black = 30,
-    red = 31,
-    green = 32,
-    yellow = 33,
-    blue = 34,
-    magenta = 35,
-    cyan = 36,
-    white = 37
-}
+M.is_dev = (function()
+    local is_dev
+    return function()
+        if is_dev == nil then
+            is_dev = fn.has('nvim-0.6') == 1
+        end
+        return is_dev
+    end
+end)()
 
 local function color2csi24b(color_num, fg)
     local r = math.floor(color_num / 2 ^ 16)
@@ -38,6 +37,17 @@ function M.syntax_list(bufnr)
     end
     return list
 end
+
+local ansi = {
+    black = 30,
+    red = 31,
+    green = 32,
+    yellow = 33,
+    blue = 34,
+    magenta = 35,
+    cyan = 36,
+    white = 37
+}
 
 function M.render_str(str, group_name, def_fg, def_bg)
     vim.validate({
@@ -82,7 +92,7 @@ function M.zz()
     local lnum1, lcount = api.nvim_win_get_cursor(0)[1], api.nvim_buf_line_count(0)
     local zb = 'keepj norm! %dzb'
     if lnum1 == lcount then
-        fn.execute(zb:format(lnum1))
+        cmd(zb:format(lnum1))
         return
     end
     cmd('norm! zvzz')
@@ -90,58 +100,62 @@ function M.zz()
     cmd('norm! L')
     local lnum2 = api.nvim_win_get_cursor(0)[1]
     if lnum2 + fn.getwinvar(0, '&scrolloff') >= lcount then
-        fn.execute(zb:format(lnum2))
+        cmd(zb:format(lnum2))
     end
     if lnum1 ~= lnum2 then
         cmd('keepj norm! ``')
     end
 end
 
-function M.lsp_range2pos_list(lsp_ranges)
-    local s_line, s_char, e_line, e_char, s_lnum, e_lnum
-    if not pcall(function()
-        s_line, s_char = lsp_ranges.start.line, lsp_ranges.start.character
-        e_line, e_char = lsp_ranges['end'].line, lsp_ranges['end'].character
-    end) then
+function M.is_unname_buf(bufnr, name, off)
+    name = name or api.nvim_buf_get_name(bufnr)
+    off = off or api.nvim_buf_get_offset(bufnr, 1)
+    return name == '' and off <= 0
+end
+
+local function range2pos_list(lnum, col, end_lnum, end_col)
+    if lnum > end_lnum or (lnum == end_col and col >= end_col) then
         return {}
     end
-    s_lnum, e_lnum = s_line + 1, e_line + 1
-    if s_line > e_line or (s_line == e_line and s_char > e_char) then
-        return {}
+    if lnum == end_lnum then
+        return {{lnum, col, end_col - col}}
     end
-    if s_line == e_line then
-        return {{s_lnum, s_char + 1, e_char - s_char}}
+    local pos_list = {{lnum, col, 999}}
+    for i = 1, end_lnum - lnum - 1 do
+        table.insert(pos_list, {lnum + i})
     end
-    local pos_list = {{s_lnum, s_char + 1, 999}}
-    for i = 1, e_line - s_line - 1 do
-        table.insert(pos_list, {s_lnum + i})
-    end
-    local pos = {e_lnum, 1, e_char}
+    local pos = {end_lnum, 1, end_col - 1}
     table.insert(pos_list, pos)
     return pos_list
 end
 
-function M.pattern2pos_list(pattern_hl)
-    local s_lnum, s_col, e_lnum, e_col
+function M.qf_range2pos_list(lnum, col, end_lnum, end_col)
+    return range2pos_list(lnum, col, end_lnum, end_col)
+end
+
+function M.lsp_range2pos_list(range)
+    local s_line, s_char, e_line, e_char
     if not pcall(function()
-        s_lnum, s_col = unpack(fn.searchpos(pattern_hl, 'cn'))
-        e_lnum, e_col = unpack(fn.searchpos(pattern_hl, 'cen'))
+        s_line, s_char = range.start.line, range.start.character
+        e_line, e_char = range['end'].line, range['end'].character
     end) then
         return {}
     end
-    if s_lnum == 0 or s_col == 0 or e_lnum == 0 or e_col == 0 then
+    local lnum, end_lnum = s_line + 1, e_line + 1
+    local col, end_col = s_char + 1, e_char + 1
+    return range2pos_list(lnum, col, end_lnum, end_col)
+end
+
+function M.pattern2pos_list(pattern)
+    local lnum, col, end_lnum, end_col
+    if not pcall(function()
+        lnum, col = unpack(fn.searchpos(pattern, 'cn'))
+        end_lnum, end_col = unpack(fn.searchpos(pattern, 'cen'))
+        end_col = end_col + 1
+    end) then
         return {}
     end
-    if s_lnum == e_lnum then
-        return {{s_lnum, s_col, e_col - s_col + 1}}
-    end
-    local pos_list = {{s_lnum, s_col, 999}}
-    for i = 1, e_lnum - s_lnum - 1 do
-        table.insert(pos_list, {s_lnum + i})
-    end
-    local pos = {e_lnum, 1, e_col}
-    table.insert(pos_list, pos)
-    return pos_list
+    return range2pos_list(lnum, col, end_lnum, end_col)
 end
 
 function M.matchaddpos(hl, plist, prior)
@@ -175,11 +189,19 @@ function M.gutter_size(winid)
     return size
 end
 
-function M.win_execute(winid, func)
+function M.is_win_valid(winid)
+    return winid and type(winid) == 'number' and winid > 0 and api.nvim_win_is_valid(winid)
+end
+
+function M.is_buf_loaded(bufnr)
+    return bufnr and type(bufnr) == 'number' and bufnr > 0 and api.nvim_buf_is_loaded(bufnr)
+end
+
+function M.win_execute(winid, func, ...)
     vim.validate({
         winid = {
             winid, function(w)
-                return w and api.nvim_win_is_valid(w)
+                return M.is_win_valid(w)
             end, 'a valid window'
         },
         func = {func, 'function'}
@@ -190,11 +212,11 @@ function M.win_execute(winid, func)
     if cur_winid ~= winid then
         cmd(noa_set_win:format(winid))
     end
-    local ret = func()
+    local _, msg = pcall(func, ...)
     if cur_winid ~= winid then
         cmd(noa_set_win:format(cur_winid))
     end
-    return ret
+    return msg
 end
 
 local function syn_keyword(bufnr)
@@ -297,8 +319,84 @@ function M.gen_is_keyword(bufnr)
     end
 end
 
-function M.is_special(b)
-    return b <= 32
+function M.tbl_kv_map(func, tbl)
+    local new_tbl = {}
+    for k, v in pairs(tbl) do
+        new_tbl[k] = func(k, v)
+    end
+    return new_tbl
+end
+
+-- 1. use uv read file will cause much cpu usage and memory usage
+-- 2. type of result returned by read is string, it must convert to table first
+-- 3. nvim_buf_set_lines is expensive for flushing all buffers
+function M.transfer_buf(from, to)
+    local function transfer_file(rb, wb)
+        local e_path = fn.fnameescape(api.nvim_buf_get_name(rb))
+        local ok, msg = pcall(api.nvim_buf_call, wb, function()
+            cmd(([[
+                noa call deletebufline(%d, 1, '$')
+                noa sil 0read %s
+                noa call deletebufline(%d, '$')
+            ]]):format(wb, e_path, wb))
+        end)
+        return ok, msg
+    end
+    local from_loaded = api.nvim_buf_is_loaded(from)
+    if from_loaded then
+        if vim.bo[from].modified then
+            local lines = api.nvim_buf_get_lines(from, 0, -1, false)
+            api.nvim_buf_set_lines(to, 0, -1, false, lines)
+        else
+            if not transfer_file(from, to) then
+                local lines = api.nvim_buf_get_lines(from, 0, -1, false)
+                api.nvim_buf_set_lines(to, 0, -1, false, lines)
+            end
+        end
+    else
+        local ok, msg = transfer_file(from, to)
+        if not ok then
+            if msg:match([[:E484: Can't open file]]) then
+                cmd(('noa call bufload(%d)'):format(from))
+                local lines = api.nvim_buf_get_lines(from, 0, -1, false)
+                cmd(('noa bun %d'):format(from))
+                api.nvim_buf_set_lines(to, 0, -1, false, lines)
+            end
+
+        end
+    end
+    vim.bo[to].modified = false
+end
+
+function M.expandtab(str, ts, start)
+    start = start or 1
+    local new = str:sub(1, start - 1)
+    -- without check type to improve performance
+    -- if str and type(str) == 'string' then
+    local pad = ' '
+    local ti = start - 1
+    local i = start
+    while true do
+        i = str:find('\t', i, true)
+        if not i then
+            if ti == 0 then
+                new = str
+            else
+                new = new .. str:sub(ti + 1)
+            end
+            break
+        end
+        if ti + 1 == i then
+            new = new .. pad:rep(ts)
+        else
+            local append = str:sub(ti + 1, i - 1)
+            new = new .. append .. pad:rep(ts - api.nvim_strwidth(append) % ts)
+        end
+        ti = i
+        i = i + 1
+    end
+    -- end
+    return new
 end
 
 return M

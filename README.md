@@ -2,9 +2,7 @@
 
 The goal of nvim-bqf is to make Neovim's quickfix window better.
 
-<p align="center">
-    <img width="864px" src=https://user-images.githubusercontent.com/17562139/117401587-70796c80-af37-11eb-9ee7-b43a5f4c296a.gif>
-</p>
+<https://user-images.githubusercontent.com/17562139/137736502-91d32251-96a2-4c3f-ba74-65cfd336473e.mp4>
 
 ---
 
@@ -13,7 +11,7 @@ uncomfortable?  Are you constantly jumping between the edit window and the quick
 use quickfix window to refactor because of lacking a sustainable preview window? Do you think
 quickfix window lacks a fuzzy search function? At present, nvim-bqf can solve the above problems.
 
-You really don't need any search and replace plugins, because nvim-bqf with the built-in function of
+You really don't need any search replace plugins, because nvim-bqf with the built-in function of
 the quickfix window allows you to easily search and replace targets.
 
 So why not nvim-bqf?
@@ -28,8 +26,9 @@ So why not nvim-bqf?
   * [Installation](#installation)
   * [Minimal configuration](#minimal-configuration)
   * [Usage](#usage)
-    * [filter with signs](#filter-with-signs)
-    * [fzf mode](#fzf-mode)
+    * [Filter with signs](#filter-with-signs)
+    * [Fzf mode](#fzf-mode)
+    * [Filter items with signs demo](#filter-items-with-signs-demo)
     * [Search and replace demo](#search-and-replace-demo)
 * [Documentation](#documentation)
   * [Setup and description](#setup-and-description)
@@ -39,7 +38,7 @@ So why not nvim-bqf?
   * [Quickfix context](#quickfix-context)
     * [Why use an additional context?](#why-use-an-additional-context?)
     * [Supported keys](#supported-keys)
-    * [Simple vimscript tests for understanding](#simple-vimscript-tests-for-understanding)
+    * [Simple lua tests for understanding](#simple-lua-tests-for-understanding)
   * [Highlight groups](#highlight-groups)
 * [Advanced configuration](#advanced-configuration)
   * [Customize configuration](#customize-configuration)
@@ -52,55 +51,54 @@ So why not nvim-bqf?
 - Toggle quickfix window with magic window keep your eyes comfortable
 - Extend built-in context of quickfix to build an eye friendly highlighting at preview
 - Support convenient actions inside quickfix window, see [Function table](#function-table) below
-- Support built-in buffer for preview perfectly
-- Fast start time compare with others lua plugins, which almost only spend time on `lua require`
+- Optimize the buffer preview under treesitter to get extreme performance
 - Using signs to filter the items of quickfix window
 - Integrate [fzf](https://github.com/junegunn/fzf) as a picker/filter in quickfix window
 
 ## TODO
 
-- [ ] Provide statusline for information
 - [ ] Find a better way to list history and switch to one
-- [ ] Provide some useful functions to users
-- [ ] Add tests
 - [ ] Use context field to override the existed configuration
+- [ ] Add tests
 
 ## Quickstart
 
 ### Requirements
 
-- Neovim [nightly](https://github.com/neovim/neovim#install-from-source)
+- [Neovim](https://github.com/neovim/neovim) 0.5 or later
 - [fzf](https://github.com/junegunn/fzf) (optional, 0.24.0 later)
 
-> Preview with fzf needs a pipe command, Windows can't be supported. It must be stated that
+> Preview with fzf needs a pipe, Windows can't be supported. It must be stated that
 > I'm not working under Windows.
 
 ### Installation
 
-Install nvim-bqf with your favorite plugin manager! For instance: [Vim-plug](https://github.com/junegunn/vim-plug):
+Install with [Packer.nvim](https://github.com/wbthomason/packer.nvim):
 
-```vim
-Plug 'kevinhwang91/nvim-bqf'
+```lua
+use {'kevinhwang91/nvim-bqf'}
 ```
-
-> The default branch is main, please upgrade vim-plug if you encounter any installation issues.
 
 ### Minimal configuration
 
-```vim
-Plug 'kevinhwang91/nvim-bqf'
+```lua
+use {'kevinhwang91/nvim-bqf', ft = 'qf'}
 
-" if you install fzf as system package like `pacman -S fzf` in ArchLinux,
-" please comment next line
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+-- optional
+use {'junegunn/fzf', run = function()
+    vim.fn['fzf#install']()
+end
+}
 
-" highly recommended
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+-- optional, highly recommended
+use {'nvim-treesitter/nvim-treesitter', run = ':TSUpdate'}
 ```
 
 The nvim-bqf's preview builds upon the buffers. I highly recommended to use
-[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) to do syntax to the buffer,
+[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) to do syntax for the buffer,
 because vim's syntax is very lagging and is extremely bad for the user experience in large files.
+
+> nvim-bqf has optimized the preview performance for treesitter
 
 ### Usage
 
@@ -129,22 +127,16 @@ fzf also support `ctrl-q` to toggle items' sign.
 
 #### Filter items with signs demo
 
-Key input sequence: `<Tab>j<Tab>zn<zN>zf^^<C-o><C-q>zf<C-o><C-q>`
+<https://user-images.githubusercontent.com/17562139/137736623-e436cb3e-af40-4a00-b08a-b7120d41821e.mp4>
 
-<p align="center">
-    <img width="864px" src="https://user-images.githubusercontent.com/17562139/105815794-6a95f600-5fee-11eb-9add-003b5e9b5dc0.gif">
-</p>
-
-> input `^^` in fzf will find all signed items, `ctrl-o` in fzf mode has bind `toggle-all`
+> input `^^` in fzf prompt will find all signed items, `ctrl-o` in fzf mode has bind `toggle-all`
 
 #### Search and replace demo
 
-Using external grep-like program to search `qftool` and replace it to `mytool`,
-but filter `fzf.lua` file.
+Using external grep-like program to search `display` and replace it to `show`,
+but exclude `session.lua` file.
 
-<p align="center">
-    <img width="960px" src="https://user-images.githubusercontent.com/17562139/105032702-16d95900-5a92-11eb-8e2d-8d57ca36e4fb.gif">
-</p>
+<https://user-images.githubusercontent.com/17562139/137747257-ff8fb5cf-e437-42e3-b4e4-76c72a0273aa.mp4>
 
 > Demonstrating batch undo just show that quickfix has this feature
 
@@ -153,7 +145,7 @@ but filter `fzf.lua` file.
 ### Setup and description
 
 ```lua
-root = {
+{
     auto_enable = {
         description = [[enable nvim-bqf in quickfix window automatically]],
         default = true
@@ -196,6 +188,11 @@ root = {
         wrap = {
             description = [[wrap the line, `:h wrap` for detail]],
             default = false
+        },
+        should_preview_cb = {
+            description = [[a callback function to decide whether to preview while switching buffer,
+                with a bufnr parameter]],
+            default = nil
         }
     },
     func_map = {
@@ -284,6 +281,9 @@ Vim grant users an ability to stuff a context to quickfix, please run `:help qui
 
 #### Why use an additional context?
 
+**Neovim nightly version has supported position range, use the builtin range if highlight
+context doesn't exist.**
+
 nvim-bqf will use the context to implement missing features of quickfix. If you are familiar with
 quickfix, you know quickfix only contains `lnum` and `col` to locate a position in an item, but
 lacks of range. To get better highlighting experience, nvim-bqf processeds the vim regrex pattern
@@ -292,13 +292,7 @@ context additionally.
 
 The context's format that can be processed by nvim-bqf is:
 
-```vim
-" vimscript
-let context = {'context': {'bqf': {}}}
-```
-
 ```lua
--- lua
 local context = {context = {bqf = {}}}
 ```
 
@@ -316,57 +310,69 @@ context = {
         },
         lsp_ranges_hl = {
             description = [[a list of lsp range. The length of list is equal to the items',
-            and each element corresponds one to one]],
-            type = 'list in vimscript | table in lua'
+            pairwise correspondence each other]],
+            type = 'table'
         }
-
     }
 }
 ```
 
-#### Simple vimscript tests for understanding
+#### Simple lua tests for understanding
 
-```vim
-function s:create_qf()
-    enew
-    let bufnr = bufnr('%')
-    for i in range(1, 3)
-        call setline(i, i .. ' | ' .. strftime("%F"))
-    endfor
+```lua
+local cmd = vim.cmd
+local api = vim.api
+local fn = vim.fn
 
-    call setqflist([{'bufnr': bufnr, 'lnum': 1, 'col': 5},
-                \  {'bufnr': bufnr, 'lnum': 2, 'col': 10},
-                \  {'bufnr': bufnr, 'lnum': 3, 'col': 13}])
-endfunction
+local function create_qf()
+    cmd('enew')
+    local bufnr = api.nvim_get_current_buf()
+    local lines = {}
+    for i = 1, 3 do
+        table.insert(lines, ('%d | %s'):format(i, fn.strftime('%F')))
+    end
+    api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+    fn.setqflist({
+        {bufnr = bufnr, lnum = 1, col = 5}, {bufnr = bufnr, lnum = 2, col = 10},
+        {bufnr = bufnr, lnum = 3, col = 13}
+    })
+end
 
-function! Test_bqf_pattern()
-    call s:create_qf()
-    call setqflist([], 'r', {'context': {'bqf': {'pattern_hl': '\d\+'}},
-                \ 'title': 'pattern_hl'})
-    cwindow
-endfunc
+function _G.bqf_pattern()
+    create_qf()
+    fn.setqflist({}, 'r', {context = {bqf = {pattern_hl = [[\d\+]]}}, title = 'pattern_hl'})
+    cmd('cw')
+end
 
-function! Test_bqf_lsp_ranges()
-    call s:create_qf()
-    let lsp_ranges = []
-    call add(lsp_ranges, {
-                \ 'start': {'line': 0, 'character': 4},
-                \ 'end': {'line': 0, 'character': 8}
-                \ })
-    call add(lsp_ranges, {
-                \ 'start': {'line': 1, 'character': 9},
-                \ 'end': {'line': 1, 'character': 11}
-                \ })
-    call add(lsp_ranges, {
-                \ 'start': {'line': 2, 'character': 12},
-                \ 'end': {'line': 2, 'character': 14}
-                \ })
-    call setqflist([], 'r', {'context': {'bqf': {'lsp_ranges_hl': lsp_ranges}},
-                \ 'title': 'lsp_ranges_hl'})
-    cwindow
-endfunc
+function _G.bqf_lsp_ranges()
+    create_qf()
+    local lsp_ranges = {}
+    table.insert(lsp_ranges,
+        {start = {line = 0, character = 4}, ['end'] = {line = 0, character = 8}})
+    table.insert(lsp_ranges,
+        {start = {line = 1, character = 9}, ['end'] = {line = 1, character = 11}})
+    table.insert(lsp_ranges,
+        {start = {line = 2, character = 12}, ['end'] = {line = 2, character = 14}})
+    fn.setqflist({}, 'r', {context = {bqf = {lsp_ranges_hl = lsp_ranges}}, title = 'lsp_ranges_hl'})
+    cmd('cw')
+end
 
-" Save me, source me. Run `call Test_bqf_pattern()` and `call Test_bqf_lsp_ranges()`
+function _G.qf_ranges()
+    if fn.has('nvim-0.6') == 1 then
+        create_qf()
+        local items = fn.getqflist()
+        local it1, it2, it3 = items[1], items[2], items[3]
+        it1.end_lnum, it1.end_col = it1.lnum, it1.col + 4
+        it2.end_lnum, it2.end_col = it2.lnum, it2.col + 2
+        it3.end_lnum, it3.end_col = it3.lnum, it3.col + 2
+        fn.setqflist({}, 'r', {items = items, title = 'qf_ranges_hl'})
+        cmd('cw')
+    else
+        error([[couldn't support quickfix ranges highlight before Neovim nightly]])
+    end
+end
+
+-- Save and source me(`so %`). Run `lua bqf_pattern()`, `lua bqf_lsp_ranges()` and `lua qf_ranges()`
 ```
 
 nvim-bqf actually works with context in
@@ -385,33 +391,37 @@ hi default BqfSign ctermfg=14 guifg=Cyan
 - `BqfPreviewFloat`: highlight floating window
 - `BqfPreviewBorder`: highlight border of floating window
 - `BqfPreviewCursor`: highlight the cursor format `[lnum, col]` in preview window
-- `BqfPreviewRange`: highlight the range format `[lnum, col, range]`, `pattern_hl` and `lsp_ranges_hl`
+- `BqfPreviewRange`: highlight the range format `[lnum, col, range]`,
+   which is produced by `pattern_hl`, `lsp_ranges_hl` and quickfix range
 - `BqfSign`: highlight the sign in quickfix window
 
 ## Advanced configuration
 
 ### Customize configuration
 
-```vim
-call plug#begin('~/.config/nvim/plugged')
+```lua
+vim.cmd([[
+    hi BqfPreviewBorder guifg=#50a14f ctermfg=71
+    hi link BqfPreviewRange Search
+]])
 
-Plug 'kevinhwang91/nvim-bqf'
-
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-
-call plug#end()
-
-hi BqfPreviewBorder guifg=#50a14f ctermfg=71
-hi link BqfPreviewRange Search
-
-lua <<EOF
 require('bqf').setup({
     auto_enable = true,
     preview = {
         win_height = 12,
         win_vheight = 12,
         delay_syntax = 80,
-        border_chars = {'┃', '┃', '━', '━', '┏', '┓', '┗', '┛', '█'}
+        border_chars = {'┃', '┃', '━', '━', '┏', '┓', '┗', '┛', '█'},
+        should_preview_cb = function(bufnr)
+            local ret = true
+            local filename = vim.api.nvim_buf_get_name(bufnr)
+            local fsize = vim.fn.getfsize(filename)
+            -- file size greater than 100k can't be previewed automatically
+            if fsize > 100 * 1024 then
+                ret = false
+            end
+            return ret
+        end
     },
     func_map = {
         vsplit = '',
@@ -425,83 +435,105 @@ require('bqf').setup({
         }
     }
 })
-EOF
 ```
 
 ### Integrate with other plugins
 
-```vim
-call plug#begin('~/.config/nvim/plugged')
+```lua
+local fn = vim.fn
+local cmd = vim.cmd
+local api = vim.api
 
-Plug 'kevinhwang91/nvim-bqf'
+cmd([[
+    packadd nvim-bqf
+    packadd fzf
+    packadd nvim-treesitter
+    packadd vim-grepper
+    packadd coc.nvim
+]])
 
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+vim.g.grepper = {tools = {'rg', 'grep'}, open = 0, quickfix = 1, searchreg = 1, highlight = 0}
+cmd(([[
+    aug Grepper
+        au!
+        au User Grepper ++nested %s | %s
+    aug END
+]]):format([[call setqflist([], 'r', {'context': {'bqf': {'pattern_hl': '\%#' . getreg('/')}}})]],
+    'bo cope'))
 
-Plug 'neoclide/coc.nvim'
+-- try `gsiw` under word
+cmd([[
+    nmap gs  <plug>(GrepperOperator)
+    xmap gs  <plug>(GrepperOperator)
+]])
 
-" :h CocLocationsChange for detail
-let g:coc_enable_locationlist = 0
-aug Coc
-    au!
-    au User CocLocationsChange ++nested call Coc_qf_jump2loc(g:coc_jump_locations)
-aug END
+-- if you use coc-fzf, you should disable its CocLocationsChange event
+-- to make bqf work for <Plug>(coc-references)
 
-" if you use coc-fzf, you should disable its CocLocationsChange event make
-" bqf work for <Plug>(coc-references)
-" au VimEnter * au! CocFzfLocation User CocLocationsChange
-nmap <silent> gr <Plug>(coc-references)
-nnoremap <silent> <leader>qd <Cmd>call Coc_qf_diagnostic()<CR>
+-- vim.schedule(function()
+--     cmd('au! CocFzfLocation User CocLocationsChange')
+-- end)
+vim.g.coc_enable_locationlist = 0
+cmd([[
+    aug Coc
+        au!
+        au User CocLocationsChange ++nested lua _G.jump2loc()
+    aug END
+]])
 
-function! Coc_qf_diagnostic() abort
-    let diagnostic_list = CocAction('diagnosticList')
-    let items = []
-    let loc_ranges = []
-    for d in diagnostic_list
-        let text = printf('[%s%s] %s', (empty(d.source) ? 'coc.nvim' : d.source),
-                    \ (d.code ? ' ' . d.code : ''), split(d.message, '\n')[0])
-        let item = {'filename': d.file, 'lnum': d.lnum, 'col': d.col, 'text': text, 'type':
-                    \ d.severity[0]}
-        call add(loc_ranges, d.location.range)
-        call add(items, item)
-    endfor
-    call setqflist([], ' ', {'title': 'CocDiagnosticList', 'items': items,
-                \ 'context': {'bqf': {'lsp_ranges_hl': loc_ranges}}})
-    botright copen
-endfunction
+cmd([[
+    nmap <silent> gr <Plug>(coc-references)
+    nnoremap <silent> <leader>qd <Cmd>lua _G.diagnostic()<CR>
+]])
 
-function! Coc_qf_jump2loc(locs) abort
-    let loc_ranges = map(deepcopy(a:locs), 'v:val.range')
-    call setloclist(0, [], ' ', {'title': 'CocLocationList', 'items': a:locs,
-                \ 'context': {'bqf': {'lsp_ranges_hl': loc_ranges}}})
-    let winid = getloclist(0, {'winid': 0}).winid
-    if winid == 0
-        aboveleft lwindow
+-- just use `_G` prefix as a global function for a demo
+-- please use module instead in reality
+function _G.jump2loc(locs)
+    locs = locs or vim.g.coc_jump_locations
+    local loc_ranges = vim.tbl_map(function(val)
+        return val.range
+    end, locs)
+    fn.setloclist(0, {}, ' ', {
+        title = 'CocLocationList',
+        items = locs,
+        context = {bqf = {lsp_ranges_hl = loc_ranges}}
+    })
+    local winid = fn.getloclist(0, {winid = 0}).winid
+    if winid == 0 then
+        cmd('abo lw')
     else
-        call win_gotoid(winid)
-    endif
-endfunction
+        api.nvim_set_current_win(winid)
+    end
+end
 
-Plug 'mhinz/vim-grepper'
+function _G.diagnostic()
+    fn.CocActionAsync('diagnosticList', '', function(err, res)
+        if err == vim.NIL then
+            local items, loc_ranges = {}, {}
+            for _, d in ipairs(res) do
+                local text = ('[%s%s] %s'):format((d.source == '' and 'coc.nvim' or d.source),
+                    (d.code == vim.NIL and '' or ' ' .. d.code), d.message:match('([^\n]+)\n*'))
+                local item = {
+                    filename = d.file,
+                    lnum = d.lnum,
+                    col = d.col,
+                    text = text,
+                    type = d.severity
+                }
+                table.insert(loc_ranges, d.location.range)
+                table.insert(items, item)
+            end
+            fn.setqflist({}, ' ', {
+                title = 'CocDiagnosticList',
+                items = items,
+                context = {bqf = {lsp_ranges_hl = loc_ranges}}
+            })
 
-aug Grepper
-    au!
-    au User Grepper call setqflist([], 'r',
-                \ {'context': {'bqf': {'pattern_hl': histget('/')}}}) |
-                \ botright copen
-aug END
+            cmd('bo cope')
+        end
+    end)
+end
 
-let g:grepper = {
-            \ 'open': 0,
-            \ 'quickfix': 1,
-            \ 'searchreg': 1,
-            \ 'highlight': 0,
-            \ }
-
-" try `gsiw` under word
-nmap gs  <plug>(GrepperOperator)
-xmap gs  <plug>(GrepperOperator)
-
-call plug#end()
 ```
 
 ## Feedback
