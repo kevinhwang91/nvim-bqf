@@ -148,28 +148,30 @@ local function need_revert(qf_pos)
 end
 
 function M.clear_winview(qbufnr)
-    local qwinid = fn.bufwinid(qbufnr)
-    if utils.is_win_valid(qwinid) then
-        for _, winid in ipairs(api.nvim_tabpage_list_wins(0)) do
-            local aws = mgws.adjacent_win(qbufnr, winid)
-            if aws and aws.wv then
-                local lnum, col, _, hrtime, flag = unpack(aws.wv)
-                if uv.hrtime() - hrtime > 100000000 then
-                    fn.setpos([['']], {0, lnum, col + 1, 0})
-                else
-                    utils.win_execute(winid, function()
-                        api.nvim_win_set_cursor(0, {lnum, col})
-                        if flag == 1 then
-                            cmd('noa norm! zb')
-                        else
-                            cmd('noa norm! zt')
-                        end
-                    end)
+    vim.schedule(function()
+        local qwinid = fn.bufwinid(qbufnr)
+        if utils.is_win_valid(qwinid) then
+            for _, winid in ipairs(api.nvim_tabpage_list_wins(0)) do
+                local aws = mgws.adjacent_win(qbufnr, winid)
+                if aws and aws.wv then
+                    local lnum, col, _, hrtime, flag = unpack(aws.wv)
+                    if uv.hrtime() - hrtime > 100000000 then
+                        fn.setpos([['']], {0, lnum, col + 1, 0})
+                    else
+                        utils.win_execute(winid, function()
+                            api.nvim_win_set_cursor(0, {lnum, col})
+                            if flag == 1 then
+                                cmd('noa norm! zb')
+                            else
+                                cmd('noa norm! zt')
+                            end
+                        end)
+                    end
+                    aws.wv = nil
                 end
-                aws.wv = nil
             end
         end
-    end
+    end)
 end
 
 local function revert_enter_adjacent_wins(qwinid, pwinid, qf_pos)
