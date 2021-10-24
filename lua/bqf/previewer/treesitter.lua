@@ -112,7 +112,7 @@ function M.shrink_cache()
         return
     end
 
-    -- shrink cache, keep usage fo memory proper
+    -- shrink cache, keep usage of memory proper
     local cnt = parsers_litmit / 4
     for bufnr in parsers_cache:pairs() do
         if api.nvim_buf_is_loaded(bufnr) or not api.nvim_buf_is_valid(bufnr) or cnt < 1 then

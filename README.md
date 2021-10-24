@@ -452,14 +452,14 @@ cmd([[
     packadd coc.nvim
 ]])
 
-vim.g.grepper = {tools = {'rg', 'grep'}, open = 0, quickfix = 1, searchreg = 1, highlight = 0}
+-- https://github.com/mhinz/vim-grepper
+vim.g.grepper = {tools = {'rg', 'grep'}, searchreg = 1}
 cmd(([[
     aug Grepper
         au!
-        au User Grepper ++nested %s | %s
+        au User Grepper ++nested %s
     aug END
-]]):format([[call setqflist([], 'r', {'context': {'bqf': {'pattern_hl': '\%#' . getreg('/')}}})]],
-    'bo cope'))
+]]):format([[call setqflist([], 'r', {'context': {'bqf': {'pattern_hl': '\%#' . getreg('/')}}})]]))
 
 -- try `gsiw` under word
 cmd([[
@@ -467,6 +467,7 @@ cmd([[
     xmap gs  <plug>(GrepperOperator)
 ]])
 
+-- https://github.com/neoclide/coc.nvim
 -- if you use coc-fzf, you should disable its CocLocationsChange event
 -- to make bqf work for <Plug>(coc-references)
 
