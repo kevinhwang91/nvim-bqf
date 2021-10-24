@@ -32,6 +32,9 @@ local function exec_preview(entry, lsp_range_hl, pattern_hl)
     utils.zz()
     orig_pos = api.nvim_win_get_cursor(0)
 
+    -- scrolling horizontally reset
+    cmd('norm! ze')
+
     fn.clearmatches()
 
     local pos_list = {}
