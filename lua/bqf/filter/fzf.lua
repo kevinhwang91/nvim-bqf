@@ -142,7 +142,7 @@ local function source_cmd(qwinid, signs)
     local fd = assert(io.open(sfname, 'w'))
 
     local fenc = vim.bo[bufnr].fenc
-    table.insert(script, ('e %s %s'):format(fenc ~= '' and '++enc=' .. fenc or '', qfname))
+    table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', qfname))
 
     local ansi_tbl = {[('BqfSign'):upper()] = utils.render_str('^', 'BqfSign')}
 
