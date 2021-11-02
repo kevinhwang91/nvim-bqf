@@ -136,7 +136,9 @@ local function source_cmd(qwinid, signs)
     -- keep spawn process away from inheriting $NVIM_LISTEN_ADDRESS to call server_init()
     -- look like widnows can't clear env in cmdline
     local no_listen_env = is_windows and '' or 'NVIM_LISTEN_ADDRESS='
-    local cmds = {no_listen_env, vim.v.progpath, '--clean -n --headless', '-c', ('so %q'):format(sfname)}
+    local cmds = {
+        no_listen_env, vim.v.progpath, '--clean -n --headless', '-c', ('so %q'):format(sfname)
+    }
     local script = {'vim.cmd([['}
 
     local fd = assert(io.open(sfname, 'w'))
@@ -321,8 +323,14 @@ function M.run()
 
     local base_opt = {}
     if compare_version(version, '0.25.0') >= 0 then
-        base_opt = {'--color', 'gutter:-1'}
+        table.insert(base_opt, '--color')
+        table.insert(base_opt, 'gutter:-1')
     end
+    if compare_version(version, '0.27.4') >= 0 then
+        table.insert(base_opt, '--scroll-off')
+        table.insert(base_opt, vim.wo[qwinid].so)
+    end
+
     vim.list_extend(base_opt, {
         '--multi', '--ansi', '--with-nth', '2..', '--delimiter', '\t', '--header-lines', 0,
         '--tiebreak', 'index', '--info', 'inline', '--prompt', prompt, '--no-border', '--layout',
