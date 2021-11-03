@@ -1,0 +1,11 @@
+*bqf.txt*
+*nvimbqf.txt*
+*nvim-bqf.txt*
+
+`URL`: https://github.com/kevinhwang91/nvim-bqf
+
+`PATH`: ../README.md
+
+press `gf` or `CTRL-W gf` under the PATH value :)
+
+vim:ft=help
