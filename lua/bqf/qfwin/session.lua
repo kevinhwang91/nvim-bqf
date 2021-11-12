@@ -37,10 +37,13 @@ end)()
 local function get_pwinid(winid, qlist)
     local pwinid
     if qlist.type == 'loc' then
-        pwinid = qlist.filewinid
+        pwinid = qlist.filewinid > 0 and qlist.filewinid or -1
     else
+        local function is_valid(wid)
+            return wid > 0 and is_normal_win_type(wid)
+        end
         pwinid = fn.win_getid(fn.winnr('#'))
-        if pwinid <= 0 or validate(pwinid) then
+        if not is_valid(pwinid) then
             local tabpage = api.nvim_win_get_tabpage(winid)
             for _, owinid in ipairs(api.nvim_tabpage_list_wins(tabpage)) do
                 if is_normal_win_type(owinid) then
@@ -49,9 +52,9 @@ local function get_pwinid(winid, qlist)
                 end
             end
         end
-    end
-    if pwinid <= 0 or validate(pwinid) then
-        pwinid = -1
+        if not is_valid(pwinid) then
+            pwinid = -1
+        end
     end
     return pwinid
 end
@@ -87,7 +90,7 @@ function QfSession:validate()
 end
 
 function QfSession:pwinid()
-    if not utils.is_win_valid(self._pwinid) then
+    if not utils.is_win_valid(self._pwinid) or fn.win_gettype(self._pwinid) ~= '' then
         self._pwinid = get_pwinid(self.winid, self._list)
     end
     return self._pwinid
