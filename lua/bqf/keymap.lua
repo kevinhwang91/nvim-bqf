@@ -46,18 +46,18 @@ function M.initialize()
 end
 
 function M.dispose()
-    local function do_unmap(maparg)
-        if maparg.rhs:match([[lua require%('bqf%..*'%)]]) then
-            api.nvim_buf_del_keymap(0, maparg.mode, maparg.lhs)
+    local function do_unmap(mode, lhs, rhs)
+        if rhs:match([[lua require%('bqf%..*'%)]]) then
+            api.nvim_buf_del_keymap(0, mode, lhs)
         end
     end
 
     for _, maparg in pairs(api.nvim_buf_get_keymap(0, 'n')) do
-        do_unmap(maparg)
+        do_unmap('n', maparg.lhs, maparg.rhs)
     end
 
     for _, maparg in pairs(api.nvim_buf_get_keymap(0, 'x')) do
-        do_unmap(maparg)
+        do_unmap('x', maparg.lhs, maparg.rhs)
     end
 end
 
