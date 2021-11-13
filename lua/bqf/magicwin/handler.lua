@@ -175,13 +175,25 @@ function M.clear_winview(qbufnr)
 end
 
 local function surround_winwidth(func)
-    local wiw_bak = vim.o.winwidth
+    local ww_bak = vim.o.winwidth
     local wmw_bak = vim.o.winminwidth
-    vim.o.winminwidth = 1
-    vim.o.winwidth = 1
+    local ww_need_bak = ww_bak ~= 1
+    local wmw_need_bak = wmw_bak > 1
+    if wmw_need_bak then
+        vim.o.winminwidth = 1
+    end
+    if ww_need_bak then
+        vim.o.winwidth = 1
+    end
+
     pcall(func)
-    vim.o.winwidth = wiw_bak
-    vim.o.winminwidth = wmw_bak
+
+    if ww_need_bak then
+        vim.o.winwidth = ww_bak
+    end
+    if wmw_need_bak then
+        vim.o.winminwidth = wmw_bak
+    end
 end
 
 local function revert_enter_adjacent_wins(qwinid, pwinid, qf_pos)
