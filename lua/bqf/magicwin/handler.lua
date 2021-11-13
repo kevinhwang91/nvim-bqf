@@ -174,6 +174,16 @@ function M.clear_winview(qbufnr)
     end)
 end
 
+local function surround_winwidth(func)
+    local wiw_bak = vim.o.winwidth
+    local wmw_bak = vim.o.winminwidth
+    vim.o.winminwidth = 1
+    vim.o.winwidth = 1
+    pcall(func)
+    vim.o.winwidth = wiw_bak
+    vim.o.winminwidth = wmw_bak
+end
+
 local function revert_enter_adjacent_wins(qwinid, pwinid, qf_pos)
     if need_revert(qf_pos) then
         local wfh_tbl = {}
@@ -183,16 +193,13 @@ local function revert_enter_adjacent_wins(qwinid, pwinid, qf_pos)
                 table.insert(wfh_tbl, winid)
             end
         end
-        local wiw_bak = vim.o.winwidth
-        vim.o.winwidth = 1
-        pcall(function()
+        surround_winwidth(function()
             for _, winid in ipairs(wpos.find_adjacent_wins(qwinid, pwinid)) do
                 if utils.is_win_valid(winid) then
                     do_enter_revert(qwinid, winid, qf_pos)
                 end
             end
         end)
-        vim.o.winwidth = wiw_bak
         for _, winid in ipairs(wfh_tbl) do
             vim.wo[winid].winfixheight = true
         end
@@ -216,9 +223,7 @@ local function revert_close_adjacent_wins(qwinid, pwinid, qf_pos)
         end
 
         return #defer_data > 0 and function()
-            local wiw_bak = vim.o.winwidth
-            vim.o.winwidth = 1
-            pcall(function()
+            surround_winwidth(function()
                 for _, info in ipairs(defer_data) do
                     local winid, topline, lnum, col, curswant = info.winid, info.topline, info.lnum,
                         info.col, info.curswant
@@ -228,7 +233,6 @@ local function revert_close_adjacent_wins(qwinid, pwinid, qf_pos)
                     end)
                 end
             end)
-            vim.o.winwidth = wiw_bak
         end or nil
     end
 end
