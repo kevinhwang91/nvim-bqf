@@ -14,6 +14,8 @@ local config = require('bqf.config')
 
 local enable
 
+local LNUM = {KEEP = 0, UP = 1, DOWN = 2}
+
 local function register_winenter(qwinid)
     local qbufnr = api.nvim_win_get_buf(qwinid)
     cmd(('au BqfMagicWin WinEnter * ++once %s'):format(
@@ -37,13 +39,12 @@ local function do_enter_revert(qwinid, winid, qf_pos)
     utils.win_execute(winid, function()
         local qf_hei, win_hei = api.nvim_win_get_height(qwinid), api.nvim_win_get_height(winid)
         local wv = fn.winsaveview()
-        local topline, lnum = wv.topline, wv.lnum
+        local topline, lnum, col = wv.topline, wv.lnum, wv.col + 1
         local line_count = api.nvim_buf_line_count(0)
+        local qbufnr = api.nvim_win_get_buf(qwinid)
 
         -- qf winodw height might be changed by user adds new qf items or navigates history
         -- we need a cache to store previous state
-
-        local qbufnr = api.nvim_win_get_buf(qwinid)
         local aws = mgws.adjacent_win(qbufnr, winid)
         local def_hei = qf_hei + win_hei + 1
         local bheight, aheight = aws.aheight or def_hei, win_hei
@@ -62,7 +63,7 @@ local function do_enter_revert(qwinid, winid, qf_pos)
                 topline = fn.line('w0')
             end
 
-            fraction = mcore.evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow,
+            fraction, bwrow = mcore.evaluate(winid, {lnum, col}, awrow, aheight, bheight, lbwrow,
                 lfraction)
             log.debug('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
             log.debug('lbwrow:', lbwrow, 'lfraction:', lfraction)
@@ -71,15 +72,11 @@ local function do_enter_revert(qwinid, winid, qf_pos)
             if not fraction then
                 return
             end
-            bwrow = mcore.cal_wrow(fraction, bheight)
             log.debug('bwrow:', bwrow)
             delta_lsize = bwrow - awrow
         end
 
         if qf_pos[1] == POS.ABOVE or qf_pos[2] == POS.TOP then
-            if lbwrow == bwrow and lfraction == fraction then
-                bheight = aws.bheight or def_hei
-            end
             delta_lsize = delta_lsize - bheight + aheight
         end
 
@@ -91,26 +88,26 @@ local function do_enter_revert(qwinid, winid, qf_pos)
 
         local line_offset = mcore.tune_line(winid, topline, delta_lsize)
         topline = math.max(1, topline - line_offset)
-        local flag = 0
+        local tune_lnum = LNUM.KEEP
         if delta_lsize > 0 then
             local reminder = aheight - awrow - 1
             if delta_lsize > reminder then
-                flag = 1
+                tune_lnum = LNUM.UP
                 lnum = topline
             end
         else
             if -delta_lsize > awrow then
-                flag = 2
+                tune_lnum = LNUM.DOWN
                 lnum = topline
             end
         end
 
         mcore.resetview(topline, lnum)
 
-        local wv_info
-        if flag > 0 then
-            wv_info = {wv.lnum, wv.col, wv.curswant, uv.hrtime(), flag}
-            if flag == 1 then
+        local wv_info = aws.wv
+        if tune_lnum ~= LNUM.KEEP then
+            wv_info = wv_info or {wv.lnum, wv.col, wv.curswant, uv.hrtime(), tune_lnum}
+            if tune_lnum == LNUM.UP then
                 mcore.resetview(topline, fn.line('w$'))
             end
             log.debug('wv_info:', wv_info)
@@ -154,19 +151,19 @@ function M.clear_winview(qbufnr)
             for _, winid in ipairs(api.nvim_tabpage_list_wins(0)) do
                 local aws = mgws.adjacent_win(qbufnr, winid)
                 if aws and aws.wv then
-                    local lnum, col, _, hrtime, flag = unpack(aws.wv)
-                    if uv.hrtime() - hrtime > 100000000 then
-                        fn.setpos([['']], {0, lnum, col + 1, 0})
-                    else
-                        utils.win_execute(winid, function()
+                    local lnum, col, _, hrtime, tune_lnum = unpack(aws.wv)
+                    utils.win_execute(winid, function()
+                        if uv.hrtime() - hrtime > 100000000 then
+                            fn.setpos([['']], {0, lnum, col + 1, 0})
+                        else
                             api.nvim_win_set_cursor(0, {lnum, col})
-                            if flag == 1 then
+                            if tune_lnum == LNUM.UP then
                                 cmd('noa norm! zb')
                             else
                                 cmd('noa norm! zt')
                             end
-                        end)
-                    end
+                        end
+                    end)
                     aws.wv = nil
                 end
             end
@@ -232,12 +229,13 @@ local function revert_close_adjacent_wins(qwinid, pwinid, qf_pos)
     if need_revert(qf_pos) then
         local defer_data = {}
         local qbufnr = api.nvim_win_get_buf(qwinid)
+        local cur_bufnr = api.nvim_get_current_buf()
         for _, winid in ipairs(wpos.find_adjacent_wins(qwinid, pwinid)) do
             local topline = prefetch_close_revert_topline(qwinid, winid, qf_pos)
             if topline then
                 local info = {winid = winid, topline = topline}
                 local aws = mgws.adjacent_win(qbufnr, winid)
-                if aws and aws.wv then
+                if aws and aws.wv and cur_bufnr ~= api.nvim_win_get_buf(winid) then
                     info.lnum, info.col, info.curswant = unpack(aws.wv)
                 end
                 table.insert(defer_data, info)
