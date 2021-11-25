@@ -177,16 +177,22 @@ function M.matchaddpos(hl, plist, prior)
     return ids
 end
 
-function M.gutter_size(winid)
+function M.textoff(winid)
     vim.validate({winid = {winid, 'number'}})
-    local size
-    M.win_execute(winid, function()
-        local wv = fn.winsaveview()
-        api.nvim_win_set_cursor(winid, {wv.lnum, 0})
-        size = fn.wincol() - 1
-        fn.winrestview(wv)
-    end)
-    return size
+    local textoff
+    if M.is_dev() then
+        textoff = fn.getwininfo(winid).textoff
+    end
+
+    if not textoff then
+        M.win_execute(winid, function()
+            local wv = fn.winsaveview()
+            api.nvim_win_set_cursor(winid, {wv.lnum, 0})
+            textoff = fn.wincol() - 1
+            fn.winrestview(wv)
+        end)
+    end
+    return textoff
 end
 
 function M.is_win_valid(winid)

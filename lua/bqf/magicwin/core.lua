@@ -96,7 +96,7 @@ function M.evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow, lfrac
     -- It seems that 10 as a minimum and 1.2 as a scale is good to balance performance and accuracy
     local e_bwrow = math.max(10, math.ceil(awrow * 1.2 * bheight / aheight - 0.25))
 
-    local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
+    local per_lwidth = api.nvim_win_get_width(winid) - utils.textoff(winid)
 
     local e_fraction = cal_fraction(e_bwrow, bheight)
     local e_sline = cal_wrow(e_fraction, aheight)
@@ -109,7 +109,7 @@ function M.evaluate_fraction(winid, lnum, awrow, aheight, bheight, lbwrow, lfrac
     local wrap = vim.wo[winid].wrap
     -- use 9 as additional compensation
     for i = math.max(1, lnum - e_sline - 9), lnum - 1 do
-        lines_size[i] = wrap and math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid) or 1
+        lines_size[i] = wrap and math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_lwidth) or 1
     end
 
     if lbwrow and awrow == evaluate_sline(lfraction, aheight, lnum, lines_size) then
@@ -177,7 +177,7 @@ function M.tune_line(winid, topline, lsizes)
     log.debug(i_start, i_end, i_inc, len)
 
     return utils.win_execute(winid, function()
-        local per_l_wid = api.nvim_win_get_width(winid) - utils.gutter_size(winid)
+        local per_lwidth = api.nvim_win_get_width(winid) - utils.textoff(winid)
         local loff, lsize_sum = 0, 0
         local i = i_start
         while should_continue(i) do
@@ -185,7 +185,7 @@ function M.tune_line(winid, topline, lsizes)
             log.debug('i:', i, 'i_end:', i_end)
             local fo_lnum = folded_other_lnum(i)
             if fo_lnum == -1 then
-                local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_l_wid)
+                local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_lwidth)
                 log.debug('lsize_sum:', lsize_sum, 'per_l_size:', per_l_size, 'lnum:', i)
                 lsize_sum = lsize_sum + per_l_size
                 loff = loff + 1
