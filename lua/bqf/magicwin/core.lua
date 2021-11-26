@@ -4,6 +4,7 @@ local fn = vim.fn
 
 local utils = require('bqf.utils')
 local log = require('bqf.log')
+local ffi = require('bqf.ffi')
 
 -- Code in this file relates to source code
 -- https://github.com/neovim/neovim/blob/master/src/nvim/window.c
@@ -31,6 +32,7 @@ local function evaluate_wrow(fraction, height, lines_size)
     local sline = wrow - line_size
     log.debug('wrow:', wrow, 'sline:', sline)
     if sline >= 0 then
+        -- plines_win(wp, lnum, false)
         local rows = lines_size[lnum]
         if sline > height - rows then
             sline = height - rows
@@ -44,8 +46,10 @@ local function evaluate_wrow(fraction, height, lines_size)
         while sline > 0 and lnum > 1 do
             lnum = lnum - 1
             if lnum == wv.topline then
+                -- plines_win_nofill(wp, lnum, true)
                 line_size = lines_size[lnum] + wv.topfill
             else
+                -- plines_win(wp, lnum, true)
                 line_size = lines_size[lnum]
             end
             sline = sline - line_size
@@ -105,8 +109,44 @@ local function filter_fraction(frac_list, lines_size, max_hei)
 end
 
 -- TODO line_size can't handle virt_lines and diff filter
-local function line_size(expr, per_lwidth)
-    return math.ceil(math.max(fn.virtcol(expr) - 1, 1) / per_lwidth)
+local function line_size(lnum, col, wrap, per_lwidth)
+    if not wrap then
+        return 1
+    end
+
+    local l
+    if ffi then
+        if col then
+            l = ffi.plines_win_col(lnum, col)
+        else
+            l = ffi.plines_win(lnum)
+        end
+    else
+        if not col then
+            col = '$'
+        end
+        l = math.ceil(math.max(fn.virtcol({lnum, col}) - 1, 1) / per_lwidth)
+    end
+    log.debug(l, lnum)
+    return l
+end
+
+-- current line number size may greater than 1, must be consider its value after wrappered, use
+-- 0 as index in lines_size
+local function get_lines_size(winid, pos)
+    local per_lwidth = ffi and 1 or api.nvim_win_get_width(winid) - utils.textoff(winid)
+    local wrap = ffi and true or vim.wo[winid].wrap
+    local lnum, col = unpack(pos)
+    return setmetatable({}, {
+        __index = function(tbl, i)
+            if i == 0 then
+                rawset(tbl, i, line_size(lnum, col, wrap, per_lwidth))
+            else
+                rawset(tbl, i, line_size(i, nil, wrap, per_lwidth))
+            end
+            return tbl[i]
+        end
+    })
 end
 
 function M.evaluate(winid, pos, awrow, aheight, bheight, lbwrow, lfraction)
@@ -122,20 +162,7 @@ function M.evaluate(winid, pos, awrow, aheight, bheight, lbwrow, lfraction)
     -- 1.2 as a scale is good to balance performance and accuracy
     local e_bwrow = math.max(s_bwrow + 5, math.ceil(awrow * 1.2 * bheight / aheight - 0.25))
 
-    local per_lwidth = api.nvim_win_get_width(winid) - utils.textoff(winid)
-    local wrap = vim.wo[winid].wrap
-    -- current line number size may greater than 1, must be consider its value after wrappered, use
-    -- 0 as index in lines_size
-    local lines_size = setmetatable({}, {
-        __index = function(tbl, i)
-            if i == 0 then
-                rawset(tbl, i, wrap and line_size(pos, per_lwidth) or 1)
-            else
-                rawset(tbl, i, wrap and line_size({i, '$'}, per_lwidth) or 1)
-            end
-            return tbl[i]
-        end
-    })
+    local lines_size = get_lines_size(winid, pos)
 
     if lbwrow and awrow == evaluate_wrow(lfraction, aheight, lines_size) then
         return lfraction, awrow
@@ -203,7 +230,7 @@ function M.tune_line(winid, topline, lsizes)
     log.debug(i_start, i_end, i_inc, len)
 
     return utils.win_execute(winid, function()
-        local per_lwidth = api.nvim_win_get_width(winid) - utils.textoff(winid)
+        local per_lwidth = ffi and 1 or api.nvim_win_get_width(winid) - utils.textoff(winid)
         local loff, lsize_sum = 0, 0
         local i = i_start
         while should_continue(i) do
@@ -211,9 +238,9 @@ function M.tune_line(winid, topline, lsizes)
             log.debug('i:', i, 'i_end:', i_end)
             local fo_lnum = folded_other_lnum(i)
             if fo_lnum == -1 then
-                local per_l_size = math.ceil(math.max(fn.virtcol({i, '$'}) - 1, 1) / per_lwidth)
-                log.debug('lsize_sum:', lsize_sum, 'per_l_size:', per_l_size, 'lnum:', i)
-                lsize_sum = lsize_sum + per_l_size
+                local lsize = line_size(i, nil, true, per_lwidth)
+                log.debug('lsize_sum:', lsize_sum, 'lsize:', lsize, 'lnum:', i)
+                lsize_sum = lsize_sum + lsize
                 loff = loff + 1
             else
                 log.debug('fo_lnum:', fo_lnum)
