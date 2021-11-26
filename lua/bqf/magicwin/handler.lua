@@ -174,7 +174,7 @@ function M.clear_winview(qbufnr)
     end)
 end
 
-local function surround_winwidth(func)
+local function keep_context(func)
     local ww_bak = vim.o.winwidth
     local wmw_bak = vim.o.winminwidth
     local ww_need_bak = ww_bak ~= 1
@@ -186,7 +186,17 @@ local function surround_winwidth(func)
         vim.o.winwidth = 1
     end
 
+    local last_winnr = fn.winnr('#')
+
     pcall(func)
+
+    if last_winnr ~= fn.winnr('#') then
+        local last_winid = fn.win_getid(last_winnr)
+        local cur_winid = api.nvim_get_current_win()
+        local noa_set_win = 'noa call nvim_set_current_win(%d)'
+        cmd((noa_set_win):format(last_winid))
+        cmd((noa_set_win):format(cur_winid))
+    end
 
     if ww_need_bak then
         vim.o.winwidth = ww_bak
@@ -205,7 +215,7 @@ local function revert_enter_adjacent_wins(qwinid, pwinid, qf_pos)
                 table.insert(wfh_tbl, winid)
             end
         end
-        surround_winwidth(function()
+        keep_context(function()
             for _, winid in ipairs(wpos.find_adjacent_wins(qwinid, pwinid)) do
                 if utils.is_win_valid(winid) then
                     do_enter_revert(qwinid, winid, qf_pos)
@@ -235,7 +245,7 @@ local function revert_close_adjacent_wins(qwinid, pwinid, qf_pos)
         end
 
         return #defer_data > 0 and function()
-            surround_winwidth(function()
+            keep_context(function()
                 for _, info in ipairs(defer_data) do
                     local winid, topline, lnum, col, curswant = info.winid, info.topline, info.lnum,
                         info.col, info.curswant
