@@ -328,7 +328,7 @@ function M.run()
     end
     if compare_version(version, '0.27.4') >= 0 then
         table.insert(base_opt, '--scroll-off')
-        table.insert(base_opt, vim.wo[qwinid].so)
+        table.insert(base_opt, utils.scrolloff(qwinid))
     end
 
     vim.list_extend(base_opt, {

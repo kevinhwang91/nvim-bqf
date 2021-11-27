@@ -325,6 +325,14 @@ function M.gen_is_keyword(bufnr)
     end
 end
 
+-- TODO upstream bug
+-- local f_win_so = vim.wo[winid].scrolloff
+-- return a big number like '1.4014575443238e+14' if window option is absent
+-- Use getwinvar to workaround
+function M.scrolloff(winid)
+    return fn.getwinvar(winid, '&scrolloff')
+end
+
 function M.tbl_kv_map(func, tbl)
     local new_tbl = {}
     for k, v in pairs(tbl) do

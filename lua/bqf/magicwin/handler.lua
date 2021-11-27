@@ -24,11 +24,7 @@ end
 
 local function do_enter_revert(qwinid, winid, qf_pos)
     log.debug('do_enter_revert start')
-    -- TODO upstream bug
-    -- local f_win_so = vim.wo[winid].scrolloff
-    -- return a big number like '1.4014575443238e+14' if window option is absent
-    -- Use getwinvar to workaround
-    local f_win_so = fn.getwinvar(winid, '&scrolloff')
+    local f_win_so = utils.scrolloff(winid)
     if f_win_so ~= 0 then
         -- turn off scrolloff and then show us true wrow
         vim.wo[winid].scrolloff = 0
