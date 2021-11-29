@@ -1,3 +1,4 @@
+local M = {}
 local api = vim.api
 local fn = vim.fn
 
@@ -61,32 +62,8 @@ end
 
 local QfSession = {pool = {}}
 
-function QfSession:new(winid)
-    local obj = {}
-    setmetatable(obj, self)
-    self.__index = self
-    obj.winid = winid
-    obj._list = list.get(winid)
-    if not obj._list then
-        return nil
-    end
-    obj._list:get_sign():reset()
-    obj._pwinid = get_pwinid(winid, obj._list)
-    self.pool[winid] = obj
-    return obj
-end
-
-function QfSession.get(winid)
-    winid = winid or api.nvim_get_current_win()
-    return QfSession.pool[winid]
-end
-
 function QfSession:list()
     return self._list
-end
-
-function QfSession:validate()
-    return validate(self.winid)
 end
 
 function QfSession:pwinid()
@@ -96,12 +73,36 @@ function QfSession:pwinid()
     return self._pwinid
 end
 
-function QfSession:dispose()
-    for w_id in pairs(self.pool) do
+function QfSession:validate()
+    return validate(self.winid)
+end
+
+function M.new(winid)
+    local obj = {}
+    setmetatable(obj, QfSession)
+    QfSession.__index = QfSession
+    obj.winid = winid
+    obj._list = list.get(winid)
+    if not obj._list then
+        return nil
+    end
+    obj._list:get_sign():reset()
+    obj._pwinid = get_pwinid(winid, obj._list)
+    QfSession.pool[winid] = obj
+    return obj
+end
+
+function M.get(winid)
+    winid = winid or api.nvim_get_current_win()
+    return QfSession.pool[winid]
+end
+
+function M.dispose()
+    for w_id in pairs(QfSession.pool) do
         if not utils.is_win_valid(w_id) then
-            self.pool[w_id] = nil
+            QfSession.pool[w_id] = nil
         end
     end
 end
 
-return QfSession
+return M

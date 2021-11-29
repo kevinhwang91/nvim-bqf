@@ -25,7 +25,7 @@ function M.enable()
 
     local qwinid = api.nvim_get_current_win()
 
-    local qs = qfs:new(qwinid)
+    local qs = qfs.new(qwinid)
     assert(qs, 'It is not a quickfix window')
 
     vim.wo.nu, vim.wo.rnu = true, false
@@ -38,7 +38,7 @@ function M.enable()
     previewer.initialize(qwinid)
     keymap.initialize()
 
-    magicwin.attach(qwinid, qs:pwinid())
+    local pwinid = qs:pwinid()
     cmd([[
         aug Bqf
             au! * <buffer>
@@ -46,6 +46,10 @@ function M.enable()
             au WinClosed <buffer> ++nested lua require('bqf.main').close_qf()
         aug END
     ]])
+    -- TODO
+    -- After WinClosed callback in magic window, WinClosed in main can't be fired.
+    -- WinClosed event in magic window must after in main
+    magicwin.attach(qwinid, pwinid)
     vim.b.bqf_enabled = true
 end
 
@@ -61,7 +65,7 @@ function M.disable()
     cmd('sil! au! BqfPreview * <buffer>')
     cmd('sil! au! BqfFilterFzf * <buffer>')
     cmd('sil! au! BqfMagicWin')
-    qfs:dispose()
+    qfs.dispose()
 end
 
 local function close(winid)
@@ -88,7 +92,7 @@ end
 function M.close_qf()
     local winid = tonumber(fn.expand('<afile>'))
     if winid and api.nvim_win_is_valid(winid) then
-        qfs:dispose()
+        qfs.dispose()
         previewer.close(winid)
     end
 end
