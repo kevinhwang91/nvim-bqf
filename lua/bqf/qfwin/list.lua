@@ -132,6 +132,14 @@ function QfList:change_idx(idx)
     end
 end
 
+function QfList:get_winview()
+    return self.winview
+end
+
+function QfList:set_winview(winview)
+    self.winview = winview
+end
+
 function M.get(qwinid, id)
     local qid, filewinid
     if not id then

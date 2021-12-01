@@ -33,6 +33,7 @@ local function init()
             nextfile = '<C-n>',
             prevhist = '<',
             nexthist = '>',
+            lastleave = [['"]],
             stoggleup = '<S-Tab>',
             stoggledown = '<Tab>',
             stogglevm = '<Tab>',

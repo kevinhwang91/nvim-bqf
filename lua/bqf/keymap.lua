@@ -22,6 +22,7 @@ local action_funcref = {
     nextfile = {mode = '', module = 'qfwin.handler', funcref = 'nav_file(true)'},
     prevhist = {mode = 'n', module = 'qfwin.handler', funcref = 'nav_history(false)'},
     nexthist = {mode = 'n', module = 'qfwin.handler', funcref = 'nav_history(true)'},
+    lastleave = {mode = '', module = 'qfwin.handler', funcref = 'restore_winview()'},
     stoggleup = {mode = 'n', module = 'qfwin.handler', funcref = 'sign_toggle(-1)'},
     stoggledown = {mode = 'n', module = 'qfwin.handler', funcref = 'sign_toggle(1)'},
     stogglevm = {mode = 'x', module = 'qfwin.handler', funcref = 'sign_vm_toggle()'},

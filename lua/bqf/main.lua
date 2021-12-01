@@ -44,6 +44,7 @@ function M.enable()
             au! * <buffer>
             au WinEnter <buffer> ++nested lua require('bqf.main').kill_alone_qf()
             au WinClosed <buffer> ++nested lua require('bqf.main').close_qf()
+            au WinLeave <buffer> lua require('bqf.main').save_winview()
         aug END
     ]])
     -- TODO
@@ -77,6 +78,11 @@ local function close(winid)
             api.nvim_win_close(winid, true)
         end
     end
+end
+
+function M.save_winview()
+    local winid = api.nvim_get_current_win()
+    qfs.save_winview(winid)
 end
 
 function M.kill_alone_qf()

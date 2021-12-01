@@ -34,6 +34,7 @@ function M.filter_list(qwinid, co_wrap)
     end
 
     title = '*' .. title
+    qfs.save_winview(qwinid)
     qlist:new_qflist({nr = '$', context = context, title = title, items = new_items})
 end
 

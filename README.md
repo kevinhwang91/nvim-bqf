@@ -7,7 +7,7 @@ The goal of nvim-bqf is to make Neovim's quickfix window better.
 ---
 
 In today's era of floating windows, are you afraid to toggle quickfix window to make your eyes
-uncomfortable?  Are you constantly jumping between the edit window and the quickfix window when you
+uncomfortable? Are you constantly jumping between the edit window and the quickfix window when you
 use quickfix window to refactor because of lacking a sustainable preview window? Do you think
 quickfix window lacks a fuzzy search function? At present, nvim-bqf can solve the above problems.
 
@@ -238,32 +238,33 @@ about current configuration.
 
 > You can reference [Customize configuration](#customize-configuration) to configure `func_map`.
 
-| Function    | Action                                             | Def Key   |
-| ----------- | -------------------------------------------------- | --------- |
-| open        | open the item under the cursor                     | `<CR>`    |
-| openc       | like `open`, and close quickfix window             | `o`       |
-| tab         | open the item under the cursor in a new tab        | `t`       |
-| tabb        | like `tab`, but stay at quickfix window            | `T`       |
-| split       | open the item under the cursor in vertical split   | `<C-x>`   |
-| vsplit      | open the item under the cursor in horizontal split | `<C-v>`   |
-| prevfile    | go to previous file under the cursor               | `<C-p>`   |
-| nextfile    | go to next file under the cursor                   | `<C-n>`   |
-| prevhist    | go to previous quickfix list                       | `<`       |
-| nexthist    | go to next quickfix list                           | `>`       |
-| stoggleup   | toggle sign and move cursor up                     | `<S-Tab>` |
-| stoggledown | toggle sign and move cursor down                   | `<Tab>`   |
-| stogglevm   | toggle multiple signs in visual mode               | `<Tab>`   |
-| stogglebuf  | toggle signs for same buffers under the cursor     | `'<Tab>`  |
-| sclear      | clear the signs in current quickfix list           | `z<Tab>`  |
-| pscrollup   | scroll up half-page in preview window              | `<C-b>`   |
-| pscrolldown | scroll down half-page in preview window            | `<C-f>`   |
-| pscrollorig | scroll back to original postion in preview window  | `zo`      |
-| ptogglemode | toggle preview window between normal and max size  | `zp`      |
-| ptoggleitem | toggle preview for an item of quickfix list        | `p`       |
-| ptoggleauto | toggle auto preview when cursor moved              | `P`       |
-| filter      | create new list for signed items                   | `zn`      |
-| filterr     | create new list for non-signed items               | `zN`      |
-| fzffilter   | enter fzf mode                                     | `zf`      |
+| Function    | Action                                                  | Def Key   |
+| ----------- | ------------------------------------------------------- | --------- |
+| open        | open the item under the cursor                          | `<CR>`    |
+| openc       | like `open`, and close quickfix window                  | `o`       |
+| tab         | open the item under the cursor in a new tab             | `t`       |
+| tabb        | like `tab`, but stay at quickfix window                 | `T`       |
+| split       | open the item under the cursor in vertical split        | `<C-x>`   |
+| vsplit      | open the item under the cursor in horizontal split      | `<C-v>`   |
+| prevfile    | go to previous file under the cursor in quickfix window | `<C-p>`   |
+| nextfile    | go to next file under the cursor in quickfix window     | `<C-n>`   |
+| prevhist    | go to previous quickfix list in quickfix window         | `<`       |
+| nexthist    | go to next quickfix list in quickfix window             | `>`       |
+| lastleave   | go to last leaving position in quickfix window          | `'"`      |
+| stoggleup   | toggle sign and move cursor up                          | `<S-Tab>` |
+| stoggledown | toggle sign and move cursor down                        | `<Tab>`   |
+| stogglevm   | toggle multiple signs in visual mode                    | `<Tab>`   |
+| stogglebuf  | toggle signs for same buffers under the cursor          | `'<Tab>`  |
+| sclear      | clear the signs in current quickfix list                | `z<Tab>`  |
+| pscrollup   | scroll up half-page in preview window                   | `<C-b>`   |
+| pscrolldown | scroll down half-page in preview window                 | `<C-f>`   |
+| pscrollorig | scroll back to original postion in preview window       | `zo`      |
+| ptogglemode | toggle preview window between normal and max size       | `zp`      |
+| ptoggleitem | toggle preview for an item of quickfix list             | `p`       |
+| ptoggleauto | toggle auto preview when cursor moved                   | `P`       |
+| filter      | create new list for signed items                        | `zn`      |
+| filterr     | create new list for non-signed items                    | `zN`      |
+| fzffilter   | enter fzf mode                                          | `zf`      |
 
 ### Buffer Commands
 

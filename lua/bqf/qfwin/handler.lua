@@ -1,6 +1,7 @@
 local M = {}
 local api = vim.api
 local cmd = vim.cmd
+local fn = vim.fn
 
 local qfs = require('bqf.qfwin.session')
 local utils = require('bqf.utils')
@@ -79,10 +80,22 @@ function M.sign_clear(bufnr)
     sign:clear(bufnr)
 end
 
+function M.restore_winview()
+    local qwinid = api.nvim_get_current_win()
+    local qs = qfs.get(qwinid)
+    local qlist = qs:list()
+    local wv = qlist:get_winview()
+    if wv then
+        fn.winrestview(wv)
+    end
+end
+
 function M.nav_history(direction)
     local qwinid = api.nvim_get_current_win()
     local qs = qfs.get(qwinid)
     local qlist = qs:list()
+    qlist:set_winview(fn.winsaveview())
+
     local prefix = qlist.type == 'loc' and 'l' or 'c'
     local cur_nr, last_nr = qlist:get_qflist({nr = 0}).nr, qlist:get_qflist({nr = '$'}).nr
     if last_nr <= 1 then

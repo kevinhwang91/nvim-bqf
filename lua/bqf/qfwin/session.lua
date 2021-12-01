@@ -97,6 +97,14 @@ function M.get(winid)
     return QfSession.pool[winid]
 end
 
+function M.save_winview(winid)
+    if winid then
+        local obj = QfSession.pool[winid]
+        local wv = utils.win_execute(winid, fn.winsaveview)
+        obj:list():set_winview(wv)
+    end
+end
+
 function M.dispose()
     for w_id in pairs(QfSession.pool) do
         if not utils.is_win_valid(w_id) then
