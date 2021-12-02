@@ -284,7 +284,7 @@ function M.initialize(qwinid)
         aug BqfPreview
             au! * <buffer>
             au VimResized <buffer> lua require('bqf.previewer.handler').redraw_win()
-            au CursorMoved <buffer> lua require('bqf.previewer.handler').move_cursor()
+            au CursorMoved,WinEnter <buffer> lua require('bqf.previewer.handler').move_cursor()
             au WinLeave,BufWipeout <buffer> lua require('bqf.previewer.handler').close()
         aug END
     ]])
