@@ -238,33 +238,36 @@ about current configuration.
 
 > You can reference [Customize configuration](#customize-configuration) to configure `func_map`.
 
-| Function    | Action                                                  | Def Key   |
-| ----------- | ------------------------------------------------------- | --------- |
-| open        | open the item under the cursor                          | `<CR>`    |
-| openc       | like `open`, and close quickfix window                  | `o`       |
-| tab         | open the item under the cursor in a new tab             | `t`       |
-| tabb        | like `tab`, but stay at quickfix window                 | `T`       |
-| split       | open the item under the cursor in vertical split        | `<C-x>`   |
-| vsplit      | open the item under the cursor in horizontal split      | `<C-v>`   |
-| prevfile    | go to previous file under the cursor in quickfix window | `<C-p>`   |
-| nextfile    | go to next file under the cursor in quickfix window     | `<C-n>`   |
-| prevhist    | go to previous quickfix list in quickfix window         | `<`       |
-| nexthist    | go to next quickfix list in quickfix window             | `>`       |
-| lastleave   | go to last leaving position in quickfix window          | `'"`      |
-| stoggleup   | toggle sign and move cursor up                          | `<S-Tab>` |
-| stoggledown | toggle sign and move cursor down                        | `<Tab>`   |
-| stogglevm   | toggle multiple signs in visual mode                    | `<Tab>`   |
-| stogglebuf  | toggle signs for same buffers under the cursor          | `'<Tab>`  |
-| sclear      | clear the signs in current quickfix list                | `z<Tab>`  |
-| pscrollup   | scroll up half-page in preview window                   | `<C-b>`   |
-| pscrolldown | scroll down half-page in preview window                 | `<C-f>`   |
-| pscrollorig | scroll back to original postion in preview window       | `zo`      |
-| ptogglemode | toggle preview window between normal and max size       | `zp`      |
-| ptoggleitem | toggle preview for an item of quickfix list             | `p`       |
-| ptoggleauto | toggle auto preview when cursor moved                   | `P`       |
-| filter      | create new list for signed items                        | `zn`      |
-| filterr     | create new list for non-signed items                    | `zN`      |
-| fzffilter   | enter fzf mode                                          | `zf`      |
+| Function    | Action                                                     | Def Key   |
+| ----------- | ---------------------------------------------------------- | --------- |
+| open        | open the item under the cursor in quickfix window          | `<CR>`    |
+| openc       | open the item, and close quickfix window                   | `o`       |
+| drop        | use `drop` to open the item, and close quickfix window     | `O`       |
+| tabdrop     | use `tab drop` to open the item, and close quickfix window |           |
+| tab         | open the item in a new tab                                 | `t`       |
+| tabb        | open the item in a new tab, but stay at quickfix window    | `T`       |
+| tabc        | open the item in a new tab, and close quickfix window      | `<C-t>`   |
+| split       | open the item in vertical split                            | `<C-x>`   |
+| vsplit      | open the item in horizontal split                          | `<C-v>`   |
+| prevfile    | go to previous file under the cursor in quickfix window    | `<C-p>`   |
+| nextfile    | go to next file under the cursor in quickfix window        | `<C-n>`   |
+| prevhist    | go to previous quickfix list in quickfix window            | `<`       |
+| nexthist    | go to next quickfix list in quickfix window                | `>`       |
+| lastleave   | go to last leaving position in quickfix window             | `'"`      |
+| stoggleup   | toggle sign and move cursor up                             | `<S-Tab>` |
+| stoggledown | toggle sign and move cursor down                           | `<Tab>`   |
+| stogglevm   | toggle multiple signs in visual mode                       | `<Tab>`   |
+| stogglebuf  | toggle signs for same buffers under the cursor             | `'<Tab>`  |
+| sclear      | clear the signs in current quickfix list                   | `z<Tab>`  |
+| pscrollup   | scroll up half-page in preview window                      | `<C-b>`   |
+| pscrolldown | scroll down half-page in preview window                    | `<C-f>`   |
+| pscrollorig | scroll back to original postion in preview window          | `zo`      |
+| ptogglemode | toggle preview window between normal and max size          | `zp`      |
+| ptoggleitem | toggle preview for an item of quickfix list                | `p`       |
+| ptoggleauto | toggle auto preview when cursor moved                      | `P`       |
+| filter      | create new list for signed items                           | `zn`      |
+| filterr     | create new list for non-signed items                       | `zN`      |
+| fzffilter   | enter fzf mode                                             | `zf`      |
 
 ### Buffer Commands
 
@@ -282,8 +285,7 @@ Vim grant users an ability to stuff a context to quickfix, please run `:help qui
 
 #### Why use an additional context?
 
-**Neovim nightly version has supported position range, use the builtin range if highlight
-context doesn't exist.**
+**Neovim 0.6 has supported position range, skip this section if your Neovim is 0.6 later.**
 
 nvim-bqf will use the context to implement missing features of quickfix. If you are familiar with
 quickfix, you know quickfix only contains `lnum` and `col` to locate a position in an item, but
@@ -369,11 +371,11 @@ function _G.qf_ranges()
         fn.setqflist({}, 'r', {items = items, title = 'qf_ranges_hl'})
         cmd('cw')
     else
-        error([[couldn't support quickfix ranges highlight before Neovim nightly]])
+        error([[couldn't support quickfix ranges highlight before Neovim 0.6]])
     end
 end
 
--- Save and source me(`so %`). Run `lua bqf_pattern()`, `lua bqf_lsp_ranges()` and `lua qf_ranges()`
+-- Save and source me(`so %`). Run `:lua bqf_pattern()`, `:lua bqf_lsp_ranges()` and `:lua qf_ranges()`
 ```
 
 nvim-bqf actually works with context in
@@ -424,14 +426,18 @@ require('bqf').setup({
             return ret
         end
     },
+    -- make `drop` and `tab drop` to become preferred
     func_map = {
-        vsplit = '',
+        drop = 'o',
+        openc = 'O',
+        split = '<C-s>',
+        tabdrop = '<C-t>',
+        tabc = '',
         ptogglemode = 'z,',
-        stoggleup = ''
     },
     filter = {
         fzf = {
-            action_for = {['ctrl-s'] = 'split'},
+            action_for = {['ctrl-s'] = 'split', ['ctrl-t'] = 'tab drop'},
             extra_opts = {'--bind', 'ctrl-o:toggle-all', '--prompt', '> '}
         }
     }

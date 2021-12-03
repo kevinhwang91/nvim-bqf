@@ -19,10 +19,13 @@ local function init()
         func_map = {
             open = '<CR>',
             openc = 'o',
+            drop = 'O',
             split = '<C-x>',
             vsplit = '<C-v>',
             tab = 't',
             tabb = 'T',
+            tabc = '<C-t>',
+            tabdrop = '',
             ptogglemode = 'zp',
             ptoggleitem = 'p',
             ptoggleauto = 'P',

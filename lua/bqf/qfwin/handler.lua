@@ -174,12 +174,18 @@ local function do_edit(qwinid, idx, close, action)
     local last_bufname = api.nvim_buf_get_name(last_bufnr)
     local last_bufoff = api.nvim_buf_get_offset(0, 1)
     if action and not utils.is_unname_buf(last_bufnr, last_bufname, last_bufoff) then
-        action()
+        action(bufnr)
+    else
+        api.nvim_set_current_buf(bufnr)
     end
 
-    api.nvim_set_current_buf(bufnr)
     vim.bo.buflisted = true
     pcall(api.nvim_win_set_cursor, 0, {lnum, math.max(0, col - 1)})
+
+    if vim.wo.foldenable and vim.o.fdo:match('quickfix') then
+        cmd('norm! zv')
+    end
+    utils.zz()
 
     if utils.is_unname_buf(last_bufnr, last_bufname, last_bufoff) then
         api.nvim_buf_delete(last_bufnr, {})
@@ -187,43 +193,30 @@ local function do_edit(qwinid, idx, close, action)
     return true
 end
 
-function M.open(close, qwinid, idx)
-    if do_edit(qwinid, idx, close) then
-        if vim.wo.foldenable and vim.o.fdo:match('quickfix') then
-            cmd('norm! zv')
+function M.open(close, jump_cmd, qwinid, idx)
+    do_edit(qwinid, idx, close, function(bufnr)
+        if jump_cmd then
+            local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
+            cmd(('%s %s'):format(jump_cmd, fname))
+        else
+            api.nvim_set_current_buf(bufnr)
         end
-
-        utils.zz()
-    end
-end
-
-function M.split(vertical, qwinid, idx)
-    if do_edit(qwinid, idx, true, function()
-        cmd(('%ssp'):format(vertical and 'v' or ''))
-    end) then
-        utils.zz()
-    end
+    end)
 end
 
 function M.tabedit(stay, qwinid, idx)
     local last_tp = api.nvim_get_current_tabpage()
     qwinid = qwinid or api.nvim_get_current_win()
-    local dummy_bufnr
-    if do_edit(qwinid, idx, false, function()
-        cmd(('%s tabedit'):format(stay and 'noa' or ''))
-        dummy_bufnr = api.nvim_get_current_buf()
+    local unname_buf = true
+    if do_edit(qwinid, idx, false, function(bufnr)
+        unname_buf = false
+        local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
+        cmd(('tabedit %s'):format(fname))
     end) then
-        utils.zz()
-
-        if dummy_bufnr then
-            -- user may use other autocmds to wipe out unnamed buffer
-            if api.nvim_buf_is_valid(dummy_bufnr) and api.nvim_buf_get_name(dummy_bufnr) == '' then
-                cmd(('noa bw %d'):format(dummy_bufnr))
-            end
-        end
         local cur_tp = api.nvim_get_current_tabpage()
-
-        api.nvim_set_current_win(qwinid)
+        if not unname_buf then
+            api.nvim_set_current_win(qwinid)
+        end
 
         if last_tp ~= cur_tp and not stay then
             api.nvim_set_current_tabpage(cur_tp)

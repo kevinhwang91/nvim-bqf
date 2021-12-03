@@ -204,16 +204,7 @@ local function handler(qwinid, ret)
     local action = action_for[key]
     if #selected_index == 1 then
         idx = selected_index[1]
-        if action == 'tabedit' then
-            set_qf_cursor(qwinid, idx)
-            qhandler.tabedit(false, qwinid, idx)
-        elseif action == 'split' then
-            qhandler.split(false, qwinid, idx)
-        elseif action == 'vsplit' then
-            qhandler.split(true, qwinid, idx)
-        elseif not action then
-            qhandler.open(true, qwinid, idx)
-        end
+        qhandler.open(true, action, qwinid, idx)
         return
     end
 
