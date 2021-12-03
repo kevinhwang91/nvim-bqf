@@ -197,7 +197,16 @@ function M.open(close, jump_cmd, qwinid, idx)
     do_edit(qwinid, idx, close, function(bufnr)
         if jump_cmd then
             local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
-            cmd(('%s %s'):format(jump_cmd, fname))
+            if jump_cmd == 'drop' then
+                local buf_info = fn.getbufinfo(bufnr)
+                if #buf_info == 1 and #buf_info[1].windows == 0 then
+                    api.nvim_set_current_buf(bufnr)
+                else
+                    cmd(('%s %s'):format(jump_cmd, fname))
+                end
+            else
+                cmd(('%s %s'):format(jump_cmd, fname))
+            end
         else
             api.nvim_set_current_buf(bufnr)
         end
