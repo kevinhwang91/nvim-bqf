@@ -386,7 +386,7 @@ local function init()
     base = require('bqf.filter.base')
     qfs = require('bqf.qfwin.session')
     has_tail = fn.executable('tail') == 1
-    is_windows = uv.os_uname().sysname == 'Windows_NT'
+    is_windows = utils.is_windows()
 
     if not has_tail then
         -- also need echo :)

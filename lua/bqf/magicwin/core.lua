@@ -2,9 +2,10 @@ local M = {}
 local api = vim.api
 local fn = vim.fn
 
+local wffi
+
 local utils = require('bqf.utils')
 local log = require('bqf.log')
-local ffi = require('bqf.ffi')
 
 -- Code in this file relates to source code
 -- https://github.com/neovim/neovim/blob/master/src/nvim/window.c
@@ -115,11 +116,11 @@ local function line_size(lnum, col, wrap, per_lwidth)
     end
 
     local l
-    if ffi then
+    if wffi then
         if col then
-            l = ffi.plines_win_col(lnum, col)
+            l = wffi.plines_win_col(lnum, col)
         else
-            l = ffi.plines_win(lnum)
+            l = wffi.plines_win(lnum)
         end
     else
         if not col then
@@ -134,8 +135,8 @@ end
 -- current line number size may greater than 1, must be consider its value after wrappered, use
 -- 0 as index in lines_size
 local function get_lines_size(winid, pos)
-    local per_lwidth = ffi and 1 or api.nvim_win_get_width(winid) - utils.textoff(winid)
-    local wrap = ffi and true or vim.wo[winid].wrap
+    local per_lwidth = wffi and 1 or api.nvim_win_get_width(winid) - utils.textoff(winid)
+    local wrap = wffi and true or vim.wo[winid].wrap
     local lnum, col = unpack(pos)
     return setmetatable({}, {
         __index = function(tbl, i)
@@ -230,7 +231,7 @@ function M.tune_line(winid, topline, lsizes)
     log.debug(i_start, i_end, i_inc, len)
 
     return utils.win_execute(winid, function()
-        local per_lwidth = ffi and 1 or api.nvim_win_get_width(winid) - utils.textoff(winid)
+        local per_lwidth = wffi and 1 or api.nvim_win_get_width(winid) - utils.textoff(winid)
         local loff, lsize_sum = 0, 0
         local i = i_start
         while should_continue(i) do
@@ -261,5 +262,13 @@ function M.tune_line(winid, topline, lsizes)
         return loff
     end)
 end
+
+local function init()
+    if utils.jit_enabled() then
+        wffi = require('bqf.wffi')
+    end
+end
+
+init()
 
 return M

@@ -42,7 +42,7 @@ local function exec_preview(entry, lsp_range_hl, pattern_hl)
         pos_list = utils.lsp_range2pos_list(lsp_range_hl)
     elseif pattern_hl and pattern_hl ~= '' then
         pos_list = utils.pattern2pos_list(pattern_hl)
-    elseif utils.is_dev() then
+    elseif utils.has_06() then
         local end_lnum, end_col = entry.end_lnum, entry.end_col
         pos_list = utils.qf_range2pos_list(lnum, col, end_lnum, end_col)
     end

@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-field
 local M = {}
 
 local C
@@ -11,11 +12,7 @@ function M.plines_win_col(lnum, col)
 end
 
 local function init()
-    local ok, ffi = pcall(require, 'ffi')
-    if not ok then
-        M = nil
-        return
-    end
+    local ffi = require('ffi')
     C = ffi.C
     ffi.cdef([[
         typedef struct window_S win_T;

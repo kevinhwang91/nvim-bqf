@@ -2,14 +2,35 @@ local M = {}
 local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
+local uv = vim.loop
 
-M.is_dev = (function()
-    local is_dev
+M.has_06 = (function()
+    local has_06
     return function()
-        if is_dev == nil then
-            is_dev = fn.has('nvim-0.6') == 1
+        if has_06 == nil then
+            has_06 = fn.has('nvim-0.6') == 1
         end
-        return is_dev
+        return has_06
+    end
+end)()
+
+M.is_windows = (function()
+    local is_win
+    return function()
+        if is_win == nil then
+            is_win = uv.os_uname().sysname == 'Windows_NT'
+        end
+        return is_win
+    end
+end)()
+
+M.jit_enabled = (function()
+    local enabled
+    return function()
+        if enabled == nil then
+            enabled = jit and not M.is_windows()
+        end
+        return enabled
     end
 end)()
 
@@ -180,7 +201,7 @@ end
 function M.textoff(winid)
     vim.validate({winid = {winid, 'number'}})
     local textoff
-    if M.is_dev() then
+    if M.has_06() then
         textoff = fn.getwininfo(winid).textoff
     end
 
