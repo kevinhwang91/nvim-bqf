@@ -279,7 +279,7 @@ function M.prepare(qwinid, pid, size)
 
     -- keep fzf term away from dithering
     if vim.o.termguicolors then
-        vim.wo.winbl = 100
+        vim.wo[qwinid].winbl = 100
         local stl
         local ok, msg = pcall(api.nvim_win_get_option, qwinid, 'stl')
         if ok then
