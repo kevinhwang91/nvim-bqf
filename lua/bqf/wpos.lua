@@ -31,7 +31,6 @@ local function node_info(winlayout, parent, winid, level, index)
             end
         end
     end
-    return
 end
 
 local function adjacent_wins(winlayout, is_bottom)
