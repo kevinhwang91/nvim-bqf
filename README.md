@@ -498,14 +498,7 @@ cmd([[
 -- please use module instead in reality
 function _G.jump2loc(locs)
     locs = locs or vim.g.coc_jump_locations
-    local loc_ranges = vim.tbl_map(function(val)
-        return val.range
-    end, locs)
-    fn.setloclist(0, {}, ' ', {
-        title = 'CocLocationList',
-        items = locs,
-        context = {bqf = {lsp_ranges_hl = loc_ranges}}
-    })
+    fn.setloclist(0, {}, ' ', {title = 'CocLocationList', items = locs})
     local winid = fn.getloclist(0, {winid = 0}).winid
     if winid == 0 then
         cmd('abo lw')
@@ -517,31 +510,29 @@ end
 function _G.diagnostic()
     fn.CocActionAsync('diagnosticList', '', function(err, res)
         if err == vim.NIL then
-            local items, loc_ranges = {}, {}
+            local items = {}
             for _, d in ipairs(res) do
                 local text = ('[%s%s] %s'):format((d.source == '' and 'coc.nvim' or d.source),
                     (d.code == vim.NIL and '' or ' ' .. d.code), d.message:match('([^\n]+)\n*'))
                 local item = {
                     filename = d.file,
                     lnum = d.lnum,
+                    end_lnum = d.end_lnum,
                     col = d.col,
+                    end_col = d.end_col,
                     text = text,
                     type = d.severity
                 }
-                table.insert(loc_ranges, d.location.range)
                 table.insert(items, item)
             end
-            fn.setqflist({}, ' ', {
-                title = 'CocDiagnosticList',
-                items = items,
-                context = {bqf = {lsp_ranges_hl = loc_ranges}}
-            })
+            fn.setqflist({}, ' ', {title = 'CocDiagnosticList', items = items})
 
             cmd('bo cope')
         end
     end)
 end
-
+-- you can also subscribe User `CocDiagnosticChange` event to reload your diagnostic in quickfix
+-- dynamically, enjoy yourself or find my configuration :)
 ```
 
 ## Feedback
