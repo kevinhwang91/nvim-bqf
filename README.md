@@ -43,6 +43,9 @@ So why not nvim-bqf?
 * [Advanced configuration](#advanced-configuration)
   * [Customize configuration](#customize-configuration)
   * [Integrate with other plugins](#integrate-with-other-plugins)
+* [Customize quickfix window (Easter egg)](#customize-quickfix-window-(easter-egg))
+  * [Format new quickfix](#format-new-quickfix)
+  * [Rebuild syntax for quickfix](#rebuild-syntax-for-quickfix)
 * [Feedback](#feedback)
 * [License](#license)
 
@@ -67,6 +70,7 @@ So why not nvim-bqf?
 
 - [Neovim](https://github.com/neovim/neovim) 0.5 or later
 - [fzf](https://github.com/junegunn/fzf) (optional, 0.24.0 later)
+- [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (optional)
 
 > Preview with fzf needs a pipe, Windows can't be supported. It must be stated that
 > I'm not working under Windows.
@@ -533,6 +537,93 @@ function _G.diagnostic()
 end
 -- you can also subscribe User `CocDiagnosticChange` event to reload your diagnostic in quickfix
 -- dynamically, enjoy yourself or find my configuration :)
+```
+
+## Customize quickfix window (Easter egg)
+
+Quickfix window default UI is extremely outdated and low level aesthetics. However, you can
+dress up your personal quickfix window:) Here is the configuration for demo:
+
+> This section is not `nvim-bqf` exclusive, you can use the configuration without `nvm-bqf`
+
+### Format new quickfix
+
+Set `quickfixtextfunc` option and write down corresponding function:
+
+```lua
+function _G.qftf(info)
+    local items
+    local ret = {}
+    if info.quickfix == 1 then
+        items = fn.getqflist({id = info.id, items = 0}).items
+    else
+        items = fn.getloclist(info.winid, {id = info.id, items = 0}).items
+    end
+    local limit = 31
+    local fname_fmt1, fname_fmt2 = '%-' .. limit .. 's', '…%.' .. (limit - 1) .. 's'
+    local valid_fmt = '%s │%5d:%-3d│%s %s'
+    for i = info.start_idx, info.end_idx do
+        local e = items[i]
+        local fname = ''
+        local str
+        if e.valid == 1 then
+            if e.bufnr > 0 then
+                fname = fn.bufname(e.bufnr)
+                if fname == '' then
+                    fname = '[No Name]'
+                else
+                    fname = fname:gsub('^' .. vim.env.HOME, '~')
+                end
+                -- char in fname may occur more than 1 width, ignore this issue in order to keep performance
+                if #fname <= limit then
+                    fname = fname_fmt1:format(fname)
+                else
+                    fname = fname_fmt2:format(fname:sub(1 - limit))
+                end
+            end
+            local lnum = e.lnum > 99999 and -1 or e.lnum
+            local col = e.col > 999 and -1 or e.col
+            local qtype = e.type == '' and '' or ' ' .. e.type:sub(1, 1):upper()
+            str = valid_fmt:format(fname, lnum, col, qtype, e.text)
+        else
+            str = e.text
+        end
+        table.insert(ret, str)
+    end
+    return ret
+end
+
+vim.o.qftf = '{info -> v:lua._G.qftf(info)}'
+```
+
+### Rebuild syntax for quickfix
+
+Add `qf.vim` under your syntax path, for instance: `~/.config/nvim/syntax/qf.vim`
+
+```vim
+if exists("b:current_syntax")
+    finish
+endif
+
+syn match qfFileName /^[^│]*/ nextgroup=qfSeparatorLeft
+syn match qfSeparatorLeft /│/ contained nextgroup=qfLineNr
+syn match qfLineNr /[^│]*/ contained nextgroup=qfSeparatorRight
+syn match qfSeparatorRight '│' contained nextgroup=qfError,qfWarning,qfInfo,qfNote
+syn match qfError / E .*$/ contained
+syn match qfWarning / W .*$/ contained
+syn match qfInfo / I .*$/ contained
+syn match qfNote / [NH] .*$/ contained
+
+hi def link qfFileName Directory
+hi def link qfSeparatorLeft Delimiter
+hi def link qfSeparatorRight Delimiter
+hi def link qfLineNr LineNr
+hi def link qfError CocErrorSign
+hi def link qfWarning CocWarningSign
+hi def link qfInfo CocInfoSign
+hi def link qfNote CocHintSign
+
+let b:current_syntax = 'qf'
 ```
 
 ## Feedback
