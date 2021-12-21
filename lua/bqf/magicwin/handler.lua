@@ -18,7 +18,7 @@ local LNUM = {KEEP = 0, UP = 1, DOWN = 2}
 
 local function register_winenter(qwinid)
     local qbufnr = api.nvim_win_get_buf(qwinid)
-    cmd(('au BqfMagicWin WinEnter * ++once %s'):format(
+    cmd(('au BqfMagicWin WinEnter * %s'):format(
         ([[lua require('bqf.magicwin.handler').clear_winview(%d)]]):format(qbufnr)))
 end
 
@@ -141,7 +141,13 @@ local function need_revert(qf_pos)
 end
 
 function M.clear_winview(qbufnr)
+    local win_type = fn.win_gettype()
+    if win_type == 'popup' or win_type == 'quickfix' or win_type == 'loclist' then
+        return
+    end
+
     vim.schedule(function()
+        cmd('au! BqfMagicWin WinEnter')
         local qwinid = fn.bufwinid(qbufnr)
         if utils.is_win_valid(qwinid) then
             for _, winid in ipairs(api.nvim_tabpage_list_wins(0)) do
