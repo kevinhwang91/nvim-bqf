@@ -42,9 +42,7 @@ local function do_enter_revert(qwinid, winid, qf_pos)
         -- qf winodw height might be changed by user adds new qf items or navigates history
         -- we need a cache to store previous state
         local aws = mgws.adjacent_win(qbufnr, winid)
-        local def_hei = qf_hei + win_hei + 1
-        local bheight, aheight = aws.aheight or def_hei, win_hei
-        local lbwrow, lfraction = aws.bwrow, aws.fraction
+        local bheight, aheight = aws.height or qf_hei + win_hei + 1, win_hei
         local bwrow, fraction, delta_lsize
 
         local awrow = fn.winline() - 1
@@ -59,10 +57,8 @@ local function do_enter_revert(qwinid, winid, qf_pos)
                 topline = fn.line('w0')
             end
 
-            fraction, bwrow = mcore.evaluate(winid, {lnum, col}, awrow, aheight, bheight, lbwrow,
-                lfraction)
+            fraction, bwrow = mcore.evaluate(winid, {lnum, col}, awrow, aheight, bheight)
             log.debug('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
-            log.debug('lbwrow:', lbwrow, 'lfraction:', lfraction)
             log.debug('fraction:', fraction)
 
             if not fraction then
@@ -76,19 +72,18 @@ local function do_enter_revert(qwinid, winid, qf_pos)
             delta_lsize = delta_lsize - bheight + aheight
         end
 
-        if delta_lsize == 0 then
-            return
-        end
-
         log.debug('before topline:', topline, 'delta_lsize:', delta_lsize)
-
         local line_offset = mcore.tune_line(winid, topline, delta_lsize)
+
+        log.debug('line_offset:', line_offset)
+
         topline = math.max(1, topline - line_offset)
         local tune_lnum = LNUM.KEEP
         if delta_lsize > 0 then
             local reminder = aheight - awrow - 1
             if delta_lsize > reminder then
                 tune_lnum = LNUM.UP
+                -- We change lnum temporarily to make sure that topline will be changed successfully
                 lnum = topline
             end
         else
@@ -99,24 +94,30 @@ local function do_enter_revert(qwinid, winid, qf_pos)
         end
 
         mcore.resetview(topline, lnum)
+        local botline = fn.line('w$')
+        log.debug('after topline:', topline, 'lnum:', lnum, 'tune_lnum:', tune_lnum)
 
         local wv_info = aws.wv
-        if tune_lnum ~= LNUM.KEEP then
-            wv_info = wv_info or {wv.lnum, wv.col, wv.curswant, uv.hrtime(), tune_lnum}
-            if tune_lnum == LNUM.UP then
-                mcore.resetview(topline, fn.line('w$'))
+        if wv_info and wv_info[5] ~= LNUM.KEEP then
+            local wv_lnum = wv_info[1]
+            local wv_tune_lnum = wv_info[5]
+            if wv_tune_lnum == LNUM.UP and wv.lnum <= wv_lnum then
+                mcore.resetview(topline, math.min(botline, wv_lnum))
+            elseif wv_tune_lnum == LNUM.DOWN and wv.lnum >= wv_lnum then
+                mcore.resetview(topline, math.max(topline, wv_lnum))
             end
-            log.debug('wv_info:', wv_info)
-            register_winenter(qwinid)
+        else
+            wv_info = {wv.lnum, wv.col, wv.curswant, uv.hrtime(), tune_lnum}
+            if tune_lnum ~= LNUM.KEEP then
+                if tune_lnum == LNUM.UP then
+                    mcore.resetview(topline, botline)
+                end
+                register_winenter(qwinid)
+            end
         end
+        log.debug('wv_info:', wv_info)
 
-        aws:set({
-            bwrow = bwrow,
-            bheight = bheight,
-            aheight = aheight,
-            fraction = fraction,
-            wv = wv_info
-        })
+        aws:set({height = aheight, wv = wv_info})
     end)
 
     log.debug('do_enter_revert end', '\n')

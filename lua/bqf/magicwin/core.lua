@@ -109,7 +109,6 @@ local function filter_fraction(frac_list, lines_size, max_hei)
     return frac_list
 end
 
--- TODO line_size can't handle virt_lines and diff filter
 local function line_size(lnum, col, wrap, per_lwidth)
     if not wrap then
         return 1
@@ -128,7 +127,6 @@ local function line_size(lnum, col, wrap, per_lwidth)
         end
         l = math.ceil(math.max(fn.virtcol({lnum, col}) - 1, 1) / per_lwidth)
     end
-    log.debug(l, lnum)
     return l
 end
 
@@ -150,7 +148,7 @@ local function get_lines_size(winid, pos)
     })
 end
 
-function M.evaluate(winid, pos, awrow, aheight, bheight, lbwrow, lfraction)
+function M.evaluate(winid, pos, awrow, aheight, bheight)
     -- s_bwrow: the minimum bwrow value
     -- Below formula we can derive from the known conditions
     local s_bwrow = math.ceil(awrow * bheight / aheight - 0.5)
@@ -164,10 +162,6 @@ function M.evaluate(winid, pos, awrow, aheight, bheight, lbwrow, lfraction)
     local e_bwrow = math.max(s_bwrow + 5, math.ceil(awrow * 1.2 * bheight / aheight - 0.25))
 
     local lines_size = get_lines_size(winid, pos)
-
-    if lbwrow and awrow == evaluate_wrow(lfraction, aheight, lines_size) then
-        return lfraction, awrow
-    end
 
     local frac_list = {}
     for bw = s_bwrow, e_bwrow do

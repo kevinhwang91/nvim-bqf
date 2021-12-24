@@ -16,10 +16,7 @@ function Win.new(winid)
 end
 
 function Win:set(o)
-    self.bwrow = o.bwrow
-    self.bheight = o.bheight
-    self.aheight = o.aheight
-    self.fraction = o.fraction
+    self.height = o.height
     self.wv = o.wv
 end
 
