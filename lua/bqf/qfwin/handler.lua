@@ -163,6 +163,10 @@ local function do_edit(qwinid, idx, close, action)
     qlist:change_idx(idx)
     local entry = qlist:get_entry(idx)
     local bufnr, lnum, col = entry.bufnr, entry.lnum, entry.col
+    if bufnr == 0 then
+        api.nvim_err_writeln('Buffer not found')
+        return
+    end
 
     if close then
         api.nvim_win_close(qwinid, true)
@@ -201,12 +205,10 @@ function M.open(close, jump_cmd, qwinid, idx)
                 local buf_info = fn.getbufinfo(bufnr)
                 if #buf_info == 1 and #buf_info[1].windows == 0 then
                     api.nvim_set_current_buf(bufnr)
-                else
-                    cmd(('%s %s'):format(jump_cmd, fname))
+                    return
                 end
-            else
-                cmd(('%s %s'):format(jump_cmd, fname))
             end
+            cmd(('%s %s'):format(jump_cmd, fname))
         else
             api.nvim_set_current_buf(bufnr)
         end
