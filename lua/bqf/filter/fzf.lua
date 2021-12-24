@@ -8,7 +8,7 @@ local phandler, qhandler, base, config, qfs
 local utils = require('bqf.utils')
 local log = require('bqf.log')
 
-local action_for, extra_opts, has_tail, is_windows
+local action_for, extra_opts, can_preview, is_windows
 local version
 local headless
 
@@ -193,11 +193,11 @@ local function set_qf_cursor(winid, lnum)
     api.nvim_win_set_cursor(winid, {lnum, col})
 end
 
-local function handler(qwinid, ret)
-    local key = table.remove(ret, 1)
+local function handler(qwinid, lines)
+    local key = table.remove(lines, 1)
     local selected_index = vim.tbl_map(function(e)
         return tonumber(e:match('%d+'))
-    end, ret)
+    end, lines)
     table.sort(selected_index)
 
     local idx
@@ -328,9 +328,11 @@ function M.run()
         'reverse-list', '--expect', expect_keys
     })
     local opts = {
-        source = source(qwinid, qlist:get_sign():list()),
-        ['sink*'] = nil,
         options = vim.list_extend(base_opt, extra_opts),
+        source = source(qwinid, qlist:get_sign():list()),
+        ['sink*'] = function(lines)
+            return handler(qwinid, lines)
+        end,
         window = {
             width = api.nvim_win_get_width(qwinid),
             height = api.nvim_win_get_height(qwinid) + 1,
@@ -341,7 +343,7 @@ function M.run()
     }
 
     local pid
-    if has_tail then
+    if can_preview then
         if phandler.auto_enabled() then
             local tmpfile = fn.tempname()
             vim.list_extend(opts.options,
@@ -354,12 +356,7 @@ function M.run()
     cmd(('au BqfFilterFzf FileType fzf ++once %s'):format(
         ([[lua require('bqf.filter.fzf').prepare(%d, %s, %d)]]):format(qwinid, tostring(pid), size)))
 
-    -- TODO lua can't translate nested table data to vimscript
-    local fzf_wrap = fn['fzf#wrap'](opts)
-    fzf_wrap['sink*'] = function(ret)
-        return handler(qwinid, ret)
-    end
-    fn['fzf#run'](fzf_wrap)
+    fn.BqfFzfWrapper(opts)
 end
 
 local function init()
@@ -385,18 +382,17 @@ local function init()
     qhandler = require('bqf.qfwin.handler')
     base = require('bqf.filter.base')
     qfs = require('bqf.qfwin.session')
-    has_tail = fn.executable('tail') == 1
+    can_preview = fn.executable('tail') == 1 and fn.executable('echo') == 1
     is_windows = utils.is_windows()
-
-    if not has_tail then
-        -- also need echo :)
-        api.nvim_echo({{[[preview need 'tail' command]], 'WarningMsg'}}, true, {})
-    end
 
     cmd([[
         aug BqfFilterFzf
             au!
         aug END
+
+        function! BqfFzfWrapper(opts) abort
+            call fzf#run(fzf#wrap(a:opts))
+        endfunction
     ]])
 end
 
