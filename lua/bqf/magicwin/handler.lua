@@ -20,6 +20,11 @@ local function register_winenter(qwinid)
     local qbufnr = api.nvim_win_get_buf(qwinid)
     cmd(('au BqfMagicWin WinEnter * %s'):format(
         ([[lua require('bqf.magicwin.handler').clear_winview(%d)]]):format(qbufnr)))
+    -- check out whether current window is not a quickfix window.
+    -- WinEnter event can't be fired if run quickfix command outside the quickfix window.
+    vim.schedule(function()
+        M.clear_winview(qbufnr)
+    end)
 end
 
 local function do_enter_revert(qwinid, winid, qf_pos)
