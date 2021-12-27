@@ -426,7 +426,7 @@ require('bqf').setup({
             if fsize > 100 * 1024 then
                 -- skip file size greater than 100k
                 ret = false
-            else if bufname:match('^fugitive://') then
+            elseif bufname:match('^fugitive://') then
                 -- skip fugitive buffer
                 ret = false
             end
