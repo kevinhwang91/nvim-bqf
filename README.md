@@ -72,9 +72,6 @@ So why not nvim-bqf?
 - [fzf](https://github.com/junegunn/fzf) (optional, 0.24.0 later)
 - [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (optional)
 
-> Preview with fzf needs a pipe, Windows can't be supported. It must be stated that
-> I'm not working under Windows.
-
 ### Installation
 
 Install with [Packer.nvim](https://github.com/wbthomason/packer.nvim):

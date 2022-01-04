@@ -8,7 +8,7 @@ local phandler, qhandler, base, config, qfs
 local utils = require('bqf.utils')
 local log = require('bqf.log')
 
-local action_for, extra_opts, can_preview, is_windows
+local action_for, extra_opts, is_windows
 local version
 local headless
 
@@ -225,35 +225,44 @@ local function handler(qwinid, lines)
     end
 end
 
-local function new_job(qwinid, tmpfile)
-    io.open(tmpfile, 'w'):close()
-    local stdout = uv.new_pipe(false)
-    local handle, pid
-    handle, pid = uv.spawn('tail', {args = {'-f', tmpfile}, stdio = {nil, stdout}}, function()
-        handle:close()
-        os.remove(tmpfile)
-    end)
-    stdout:read_start(function(err, data)
+local function watch_file(qwinid, tmpfile)
+    local fd
+    if is_windows then
+        -- two processes can't write same file meanwhile in Windows :(
+        io.open(tmpfile, 'w'):close()
+        fd = assert(uv.fs_open(tmpfile, 'r', 438))
+    else
+        fd = assert(uv.fs_open(tmpfile, 'w+', 438))
+    end
+    local watch_ev = assert(uv.new_fs_event())
+    local function release()
+        -- watch_ev:stop and :close have the same effect
+        watch_ev:close(function(err)
+            assert(not err, err)
+        end)
+        uv.fs_close(fd, function(err)
+            assert(not err, err)
+        end)
+    end
+    watch_ev:start(tmpfile, {}, function(err, filename, events)
         assert(not err, err)
-        if data then
-            if data ~= '' then
-                local tbl_data = vim.split(data, ',')
-                local idx
-                while #tbl_data > 0 and not idx do
-                    idx = tonumber(table.remove(tbl_data))
-                end
+        local _ = filename
+        if events.change then
+            uv.fs_read(fd, 4 * 1024, -1, function(err2, data)
+                assert(not err2, err2)
+                local idx = is_windows and tonumber(data:match('%d+')) or tonumber(data)
                 if idx and idx > 0 then
                     vim.schedule(function()
                         set_qf_cursor(qwinid, idx)
                         phandler.open(qwinid, idx)
                     end)
                 end
-            end
+            end)
         else
-            stdout:close()
+            release()
         end
     end)
-    return pid
+    return release
 end
 
 function M.headless_run(hl_ansi, padding_nr)
@@ -266,7 +275,7 @@ function M.headless_run(hl_ansi, padding_nr)
     end
 end
 
-function M.prepare(qwinid, pid, size)
+function M.pre_handle(qwinid, size)
     local line_count = api.nvim_buf_line_count(0)
     api.nvim_win_set_config(0, {
         relative = 'win',
@@ -293,10 +302,12 @@ function M.prepare(qwinid, pid, size)
         end, size > 1000 and 100 or 50)
     end
 
-    if pid then
-        cmd('aug BqfFilterFzf')
-        cmd(('au BufWipeout <buffer> %s'):format(('lua vim.loop.kill(%d, 15)'):format(pid)))
-        cmd('aug END')
+    if M.post_handle then
+        cmd([[
+            aug BqfFilterFzf')
+                au BufWipeout <buffer> lua require('bqf.filter.fzf').post_handle()
+            aug END
+        ]])
     end
 end
 
@@ -342,19 +353,20 @@ function M.run()
         }
     }
 
-    local pid
-    if can_preview then
-        if phandler.auto_enabled() then
-            local tmpfile = fn.tempname()
-            vim.list_extend(opts.options,
-                {'--preview-window', 0, '--preview', 'echo -n {1}, >> ' .. tmpfile})
-            pid = new_job(qwinid, tmpfile)
-            phandler.keep_preview()
+    if phandler.auto_enabled() then
+        local tmpfile = fn.tempname()
+        vim.list_extend(opts.options,
+            {'--preview-window', 0, '--preview', 'echo {1} >> ' .. tmpfile})
+        local release_cb = watch_file(qwinid, tmpfile)
+        M.post_handle = function()
+            release_cb()
+            M.post_handle = nil
         end
+        phandler.keep_preview()
     end
 
     cmd(('au BqfFilterFzf FileType fzf ++once %s'):format(
-        ([[lua require('bqf.filter.fzf').prepare(%d, %s, %d)]]):format(qwinid, tostring(pid), size)))
+        ([[lua require('bqf.filter.fzf').pre_handle(%d, %d)]]):format(qwinid, size)))
 
     fn.BqfFzfWrapper(opts)
 end
@@ -382,7 +394,6 @@ local function init()
     qhandler = require('bqf.qfwin.handler')
     base = require('bqf.filter.base')
     qfs = require('bqf.qfwin.session')
-    can_preview = fn.executable('tail') == 1 and fn.executable('echo') == 1
     is_windows = utils.is_windows()
 
     cmd([[
