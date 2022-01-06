@@ -162,7 +162,7 @@ but exclude `session.lua` file.
         description = [[resize quickfix window height automatically.
             Shrink higher height to size of list in quickfix window, otherwise extend height
             to size of list or to default height (10)]],
-        default = true
+        default = false
     },
     preview = {
         auto_preview = {

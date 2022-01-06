@@ -6,7 +6,7 @@ local function init()
     config = vim.tbl_deep_extend('keep', bqf._config or {}, {
         auto_enable = true,
         magic_window = true,
-        auto_resize_height = true,
+        auto_resize_height = false,
         preview = {
             auto_preview = true,
             border_chars = {'│', '│', '─', '─', '╭', '╮', '╰', '╯', '█'},
