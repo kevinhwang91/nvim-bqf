@@ -21,9 +21,29 @@ local function build_id(qid, filewinid)
 end
 
 local function get_qflist(filewinid)
-    return filewinid > 0 and function(what)
-        return fn.getloclist(filewinid, what)
-    end or fn.getqflist
+    return function(what)
+        local list = filewinid > 0 and fn.getloclist(filewinid, what) or fn.getqflist(what)
+        -- TODO
+        -- upstream issue vimscript -> lua, function can't be transformed directly
+        -- quickfixtextfunc may be a Funcref value.
+        -- get the name of function in vimscript instead of function reference
+        local qftf = list.quickfixtextfunc
+        if type(qftf) == 'userdata' and qftf == vim.NIL then
+            local qftf_cmd
+            if filewinid > 0 then
+                qftf_cmd = [[echo getloclist(0, {'quickfixtextfunc': 0}).quickfixtextfunc]]
+            else
+                qftf_cmd = [[echo getqflist({'quickfixtextfunc': 0}).quickfixtextfunc]]
+            end
+            local func_name = api.nvim_exec(qftf_cmd, true)
+            local lambda_name = func_name:match('<lambda>%d+')
+            if lambda_name then
+                func_name = lambda_name
+            end
+            list.quickfixtextfunc = fn[func_name]
+        end
+        return list
+    end
 end
 
 local function set_qflist(filewinid)

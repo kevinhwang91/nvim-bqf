@@ -10,13 +10,13 @@ function M.filter_list(qwinid, co_wrap)
 
     local qs = qfs.get(qwinid)
     local qlist = qs:list()
-    local qinfo = qlist:get_qflist({size = 0, title = 0})
+    local qinfo = qlist:get_qflist({size = 0, title = 0, quickfixtextfunc = 0})
     local size = qinfo.size
     if size < 2 then
         return
     end
     local context = qlist:get_context()
-    local title = qinfo.title
+    local title, qftf = qinfo.title, qinfo.quickfixtextfunc
     local lsp_ranges, new_items = {}, {}
     for i, item in co_wrap do
         table.insert(new_items, item)
@@ -35,7 +35,13 @@ function M.filter_list(qwinid, co_wrap)
 
     title = '*' .. title
     qfs.save_winview(qwinid)
-    qlist:new_qflist({nr = '$', context = context, title = title, items = new_items})
+    qlist:new_qflist({
+        nr = '$',
+        context = context,
+        title = title,
+        items = new_items,
+        quickfixtextfunc = qftf
+    })
 end
 
 function M.run(reverse)
