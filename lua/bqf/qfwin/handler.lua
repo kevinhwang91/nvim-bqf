@@ -102,15 +102,10 @@ function M.nav_history(direction)
         return
     end
 
-    local ok, msg = pcall(cmd, ([[sil exe '%d%s%s']]):format(vim.v.count1, prefix,
-        direction and 'newer' or 'older'))
-    if not ok then
-        if msg:match(':E380: At bottom') then
-            cmd(([[sil exe '%d%snewer']]):format(last_nr - cur_nr, prefix))
-        elseif msg:match(':E381: At top') then
-            cmd(([[sil exe '%d%solder']]):format(last_nr - 1, prefix))
-        end
-    end
+    local count = vim.v.count1
+    local hist_num = (cur_nr - 1 + (direction and count or last_nr - count)) % last_nr + 1
+
+    cmd(([[sil exe '%d%shi']]):format(hist_num, prefix))
 
     local qinfo = qlist:get_qflist({nr = 0, size = 0, title = 0})
     local nr, size, title = qinfo.nr, qinfo.size, qinfo.title
