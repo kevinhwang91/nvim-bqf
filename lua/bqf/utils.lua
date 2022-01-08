@@ -202,7 +202,7 @@ function M.textoff(winid)
     vim.validate({winid = {winid, 'number'}})
     local textoff
     if M.has_06() then
-        textoff = fn.getwininfo(winid).textoff
+        textoff = fn.getwininfo(winid)[1].textoff
     end
 
     if not textoff then
