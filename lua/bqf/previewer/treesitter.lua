@@ -3,34 +3,10 @@ local M = {}
 local api = vim.api
 
 local parsers, configs
-local parsers_cache, queries_cache
-local parsers_litmit, queries_limit
+local parsers_cache
+local parsers_litmit
 local lru
 local initialized
-
-local function prepare_queries(ts_hl)
-    local q_meta = getmetatable(ts_hl._queries) or {}
-    local r_index = q_meta.__index
-    local r_newindex = q_meta.__newindex
-    q_meta.__index = function(t, k)
-        local v = queries_cache:get(k)
-        if v then
-            rawset(t, k, v)
-        elseif r_index then
-            v = r_index(t, k)
-        end
-        return v
-    end
-    q_meta.__newindex = function(t, k, v)
-        queries_cache:set(k, v)
-        if r_newindex then
-            r_newindex(t, k, v)
-        else
-            rawset(t, k, v)
-        end
-    end
-    setmetatable(ts_hl._queries, q_meta)
-end
 
 local function prepare_context(parser, pbufnr, fbufnr, loaded)
     local cb
@@ -46,8 +22,7 @@ local function prepare_context(parser, pbufnr, fbufnr, loaded)
     end
     local lang = parser:lang()
 
-    local ts_hl = vim.treesitter.highlighter.new(parser)
-    prepare_queries(ts_hl)
+    vim.treesitter.highlighter.new(parser)
 
     if loaded then
         parser._source = pbufnr
@@ -140,15 +115,6 @@ function M.shrink_cache()
             cnt = cnt - 1
         end
     end
-
-    cnt = queries_limit / 2
-    for bufnr in queries_cache:pairs() do
-        if cnt < 1 then
-            queries_cache:set(bufnr, nil)
-        else
-            cnt = cnt - 1
-        end
-    end
 end
 
 local function init()
@@ -160,9 +126,8 @@ local function init()
     configs = require('nvim-treesitter.configs')
     lru = require('bqf.struct.lru')
 
-    parsers_litmit, queries_limit = 48, 16
+    parsers_litmit = 48
     parsers_cache = lru:new(parsers_litmit)
-    queries_cache = lru:new(queries_limit)
 end
 
 init()
