@@ -33,8 +33,7 @@ function M.enable()
     vim.wo.foldenable, vim.wo.foldcolumn = false, '0'
     vim.wo.signcolumn = 'number'
 
-    layout.initialize(qwinid)
-
+    local adjust_height_cb = layout.initialize(qwinid)
     previewer.initialize(qwinid)
     keymap.initialize()
 
@@ -50,7 +49,7 @@ function M.enable()
     -- TODO
     -- After WinClosed callback in magic window, WinClosed in main can't be fired.
     -- WinClosed event in magic window must after in main
-    magicwin.attach(qwinid, pwinid)
+    magicwin.attach(qwinid, pwinid, nil, adjust_height_cb)
     vim.b.bqf_enabled = true
 end
 

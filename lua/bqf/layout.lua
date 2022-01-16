@@ -86,9 +86,9 @@ function M.initialize(qwinid)
     local qf_pos = wpos.get_pos(qwinid, pwinid)
     qf_pos = fix_default_qf(qwinid, pwinid, qlist.qf_type, qf_pos)
     adjust_width(qwinid, pwinid, qf_pos)
-    if auto_resize_height then
+    return auto_resize_height and function()
         adjust_height(qwinid, pwinid, qf_pos)
-    end
+    end or nil
 end
 
 function M.valid_qf_win()

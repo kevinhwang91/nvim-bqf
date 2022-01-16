@@ -28,7 +28,7 @@ M.jit_enabled = (function()
     local enabled
     return function()
         if enabled == nil then
-            enabled = jit and not M.is_windows()
+            enabled = jit and (not M.is_windows() or M.has_06())
         end
         return enabled
     end
@@ -239,11 +239,12 @@ function M.win_execute(winid, func, ...)
     if cur_winid ~= winid then
         cmd(noa_set_win:format(winid))
     end
-    local _, msg = pcall(func, ...)
+    local r = {pcall(func, ...)}
     if cur_winid ~= winid then
         cmd(noa_set_win:format(cur_winid))
     end
-    return msg
+    table.remove(r, 1)
+    return unpack(r)
 end
 
 local function syn_keyword(bufnr)
