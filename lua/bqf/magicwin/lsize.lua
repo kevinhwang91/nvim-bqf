@@ -1,6 +1,5 @@
 local api = vim.api
 local fn = vim.fn
-local wffi
 local utils = require('bqf.utils')
 
 local LSize
@@ -62,7 +61,7 @@ local LFFI = setmetatable({}, {__index = LBase})
 function LFFI:new()
     local obj = LBase:new(setmetatable({}, {
         __index = function(t, i)
-            local v = wffi.plines_win(i)
+            local v = self.wffi.plines_win(i)
             rawset(t, i, v)
             return v
         end
@@ -74,7 +73,7 @@ end
 
 function LFFI:nofill_size(lnum, winheight)
     winheight = winheight or true
-    return wffi.plines_win_nofill(lnum, winheight)
+    return self.wffi.plines_win_nofill(lnum, winheight)
 end
 
 function LFFI:fill_size(lnum)
@@ -82,7 +81,7 @@ function LFFI:fill_size(lnum)
 end
 
 function LFFI:pos_size(lnum, col)
-    return wffi.plines_win_col(lnum, col)
+    return self.wffi.plines_win_col(lnum, col)
 end
 
 local LNonFFI = setmetatable({}, {__index = LBase})
@@ -111,7 +110,7 @@ end
 
 LNonFFI.nofill_size = LNonFFI.size
 
-function LNonFFI:fill_size(_)
+function LNonFFI.fill_size(_)
     return 0
 end
 
@@ -121,7 +120,7 @@ end
 
 local function init()
     if utils.jit_enabled() then
-        wffi = require('bqf.wffi')
+        LFFI.wffi = require('bqf.wffi')
         LSize = LFFI
     else
         LSize = LNonFFI

@@ -49,8 +49,8 @@ local function guess_bwrow(qwinid, winid)
             bwrow = mcore.evaluate(awrow, aheight, bheight) or awrow
             log.debug('awrow:', awrow, 'aheight:', aheight, 'bheight:', bheight)
             log.debug('bwrow:', bwrow)
-            return bwrow
         end
+        return bwrow
     end)
     log.debug('guess_bwrow end', '\n')
     return bwrow
@@ -123,12 +123,7 @@ local function reset_win_top(qwinid, winid, qf_pos, bwrow)
             end
         end
 
-        aws:set({
-            height = aheight,
-            hrtime = hrtime,
-            tune_lnum = tune_lnum,
-            wv = awv
-        })
+        aws:set({height = aheight, hrtime = hrtime, tune_lnum = tune_lnum, wv = awv})
         log.debug('aws:', aws)
     end)
 end
