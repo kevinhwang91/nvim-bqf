@@ -9,7 +9,6 @@ function Win:new(winid)
     obj.winid = winid
     obj.height = nil
     obj.hrtime = nil
-    obj.pos = nil
     obj.tune_lnum = nil
     obj.wv = nil
     return obj
@@ -18,7 +17,6 @@ end
 function Win:set(o)
     self.height = o.height
     self.hrtime = o.hrtime
-    self.pos = o.pos
     self.tune_lnum = o.tune_lnum
     self.wv = o.wv
 end

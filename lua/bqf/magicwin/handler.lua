@@ -19,11 +19,11 @@ local LNUM = {KEEP = 0, UP = 1, DOWN = 2}
 local function register_winenter(qwinid)
     local qbufnr = api.nvim_win_get_buf(qwinid)
     cmd(('au BqfMagicWin WinEnter * %s'):format(
-        ([[lua require('bqf.magicwin.handler').reset_pos(%d)]]):format(qbufnr)))
+        ([[lua require('bqf.magicwin.handler').reset_lnum4wv(%d)]]):format(qbufnr)))
     -- check out whether current window is not a quickfix window.
     -- WinEnter event can't be fired if run quickfix command outside the quickfix window.
     vim.schedule(function()
-        M.reset_pos(qbufnr)
+        M.reset_lnum4wv(qbufnr)
     end)
 end
 
@@ -126,7 +126,6 @@ local function reset_win_top(qwinid, winid, qf_pos, bwrow)
         aws:set({
             height = aheight,
             hrtime = hrtime,
-            pos = {wv.lnum, wv.col + 1},
             tune_lnum = tune_lnum,
             wv = awv
         })
@@ -140,7 +139,7 @@ local function need_revert(qf_pos)
                POS.BOTTOM
 end
 
-function M.reset_pos(qbufnr)
+function M.reset_lnum4wv(qbufnr)
     local win_type = fn.win_gettype()
     if win_type == 'popup' or win_type == 'quickfix' or win_type == 'loclist' then
         return
@@ -154,18 +153,19 @@ function M.reset_pos(qbufnr)
         end
         for _, winid in ipairs(api.nvim_tabpage_list_wins(0)) do
             local aws = mgws.adjacent_win(qbufnr, winid)
-            if aws and aws.pos then
+            if aws and aws.wv then
                 utils.win_execute(winid, function()
                     local hrtime = aws.hrtime or 0
+                    local wv = aws.wv
+                    local lnum, col = wv.lnum, wv.col + 1
                     if uv.hrtime() - hrtime > 100000000 then
-                        local lnum, col = unpack(aws.pos)
                         fn.setpos([['']], {0, lnum, col, 0})
                     else
-                        api.nvim_win_set_cursor(0, aws.pos)
+                        api.nvim_win_set_cursor(0, {lnum, col})
                         cmd(('noa norm! %s'):format(aws.tune_lnum == LNUM.UP and 'zb' or 'zt'))
                     end
                 end)
-                aws.pos = nil
+                aws.wv.lnum = nil
             end
         end
     end)
@@ -215,7 +215,6 @@ local function revert_opening_wins(qwinid, pwinid, qf_pos, layout_cb)
         end
     end
     local bwrows = {}
-    local fwsos = {}
     keep_context(function()
         for _, winid in ipairs(wpos.find_adjacent_wins(qwinid, pwinid)) do
             if utils.is_win_valid(winid) then
@@ -223,7 +222,9 @@ local function revert_opening_wins(qwinid, pwinid, qf_pos, layout_cb)
                 if f_win_so ~= 0 then
                     -- turn off scrolloff to prepare for guessing bwrow
                     vim.wo[winid].scrolloff = 0
-                    fwsos[winid] = f_win_so
+                    cmd(('au BqfMagicWin WinLeave * ++once %s'):format(
+                        ([[lua vim.schedule(function() vim.wo[%d].scrolloff = %d end)]]):format(
+                            winid, f_win_so)))
                 end
 
                 bwrows[winid] = guess_bwrow(qwinid, winid)
@@ -235,9 +236,6 @@ local function revert_opening_wins(qwinid, pwinid, qf_pos, layout_cb)
     end
     for winid, bwrow in pairs(bwrows) do
         reset_win_top(qwinid, winid, qf_pos, bwrow)
-    end
-    for winid, so in pairs(fwsos) do
-        vim.wo[winid].scrolloff = so
     end
     for _, winid in ipairs(wfhs) do
         vim.wo[winid].winfixheight = true
