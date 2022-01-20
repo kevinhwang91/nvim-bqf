@@ -19,11 +19,11 @@ local LNUM = {KEEP = 0, UP = 1, DOWN = 2}
 local function register_winenter(qwinid)
     local qbufnr = api.nvim_win_get_buf(qwinid)
     cmd(('au BqfMagicWin WinEnter * %s'):format(
-        ([[lua require('bqf.magicwin.handler').reset_lnum4wv(%d)]]):format(qbufnr)))
+        ([[lua require('bqf.magicwin.handler').reset_winview(%d)]]):format(qbufnr)))
     -- check out whether current window is not a quickfix window.
     -- WinEnter event can't be fired if run quickfix command outside the quickfix window.
     vim.schedule(function()
-        M.reset_lnum4wv(qbufnr)
+        M.reset_winview(qbufnr)
     end)
 end
 
@@ -134,7 +134,7 @@ local function need_revert(qf_pos)
                POS.BOTTOM
 end
 
-function M.reset_lnum4wv(qbufnr)
+function M.reset_winview(qbufnr)
     local win_type = fn.win_gettype()
     if win_type == 'popup' or win_type == 'quickfix' or win_type == 'loclist' then
         return
@@ -160,7 +160,7 @@ function M.reset_lnum4wv(qbufnr)
                         cmd(('noa norm! %s'):format(aws.tune_lnum == LNUM.UP and 'zb' or 'zt'))
                     end
                 end)
-                aws.wv.lnum = nil
+                aws.wv = {}
             end
         end
     end)
@@ -260,7 +260,7 @@ local function revert_closing_wins(qwinid, pwinid, qf_pos, layout_cb)
         layout_cb()
     end
     for winid, aws in mgws.pairs(qbufnr) do
-        if aws and aws.wv then
+        if aws and aws.wv and aws.wv.topline and utils.is_win_valid(winid) then
             log.debug('revert_closing_wins:', aws.wv, '\n')
             utils.win_execute(winid, function()
                 mcore.resetview(aws.wv)
