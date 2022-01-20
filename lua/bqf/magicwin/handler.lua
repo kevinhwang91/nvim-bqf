@@ -242,11 +242,15 @@ local function revert_closing_wins(qwinid, pwinid, qf_pos, layout_cb)
         return
     end
 
+    local cur_bufnr = api.nvim_get_current_buf()
     local qbufnr = api.nvim_win_get_buf(qwinid)
     for _, winid in ipairs(wpos.find_adjacent_wins(qwinid, pwinid)) do
         local aws = mgws.adjacent_win(qbufnr, winid)
         if aws and aws.wv then
             local wv = utils.win_execute(winid, fn.winsaveview)
+            if cur_bufnr == api.nvim_win_get_buf(winid) then
+                aws.wv = {}
+            end
             local topline, topfill = wv.topline, wv.topfill
             if qf_pos[1] == POS.ABOVE or qf_pos[2] == POS.TOP then
                 topline, topfill = mcore.tune_top(winid, topline,
