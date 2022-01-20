@@ -177,10 +177,6 @@ function M.resetview(wv)
 end
 
 function M.tune_top(winid, topline, lsizes)
-    if not vim.wo[winid].wrap or lsizes == 0 then
-        return math.max(1, topline - lsizes), 0
-    end
-
     return utils.win_execute(winid, function()
         local i_start, i_end, i_inc, should_continue, len
         local folded_other_lnum
