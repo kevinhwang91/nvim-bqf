@@ -104,7 +104,7 @@ local function source_list(qwinid, signs)
                     last_is_kw = false
                 else
                     local hl_id = fn.synID(i, j, true)
-                    if j > start and hl_id > 0 and hl_id ~= last_hl_id then
+                    if j > start and last_hl_id > 0 and hl_id ~= last_hl_id then
                         table.insert(line_sect,
                             hl_id2ansi[last_hl_id]:format(line:sub(last_col, j - 1)))
                         last_col = j

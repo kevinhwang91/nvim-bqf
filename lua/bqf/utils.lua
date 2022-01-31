@@ -79,7 +79,9 @@ function M.render_str(str, group_name, def_fg, def_bg)
     })
     local gui = vim.o.termguicolors
     local ok, hl = pcall(api.nvim_get_hl_by_name, group_name, gui)
-    if not ok then
+    info(group_name, ok, hl)
+    if not ok or
+        not (hl.foreground or hl.background or hl.reverse or hl.bold or hl.italic or hl.underline) then
         return str
     end
     local fg, bg
