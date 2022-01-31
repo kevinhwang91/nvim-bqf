@@ -48,7 +48,7 @@ local function export4headless(bufnr, signs, fname)
     fd:close()
 end
 
-local function source_list(qwinid, signs)
+local function source_list(qwinid, signs, delim)
     local ret = {}
     local function hl_ansi(name, str)
         if not name then
@@ -69,7 +69,7 @@ local function source_list(qwinid, signs)
     local bufnr = qwinid and api.nvim_win_get_buf(qwinid) or 0
     local padding = (' '):rep(headless and headless.padding_nr or utils.textoff(qwinid) - 4)
     local sign_ansi = hl_ansi('BqfSign', '^')
-    local line_fmt = headless and '%d\t%s%s %s\n' or '%d\t%s%s %s'
+    local line_fmt = headless and '%d' .. delim .. '%s%s %s\n' or '%d' .. delim .. '%s%s %s'
 
     local is_keyword = utils.gen_is_keyword(bufnr)
 
@@ -126,7 +126,7 @@ local function source_list(qwinid, signs)
     return ret
 end
 
-local function source_cmd(qwinid, signs)
+local function source_cmd(qwinid, signs, delim)
     local tname = fn.tempname()
     local qfname = fn.fnameescape(tname)
     local sfname = fn.fnameescape(tname .. '.lua')
@@ -175,9 +175,8 @@ local function source_cmd(qwinid, signs)
         table.insert(script, [[require('bqf.log').set_level('debug')]])
     end
 
-    table.insert(script,
-        ([[require('bqf.filter.fzf').headless_run(%s, %d)]]):format(
-            vim.inspect(ansi_tbl, {newline = ''}), utils.textoff(qwinid) - 4))
+    table.insert(script, ([[require('bqf.filter.fzf').headless_run(%s, %d, %q)]]):format(
+        vim.inspect(ansi_tbl, {newline = ''}), utils.textoff(qwinid) - 4, delim))
 
     fd:write(table.concat(script, '\n'))
     fd:close()
@@ -265,12 +264,30 @@ local function watch_file(qwinid, tmpfile)
     return release
 end
 
-function M.headless_run(hl_ansi, padding_nr)
+local function parse_delimiter(options)
+    local delim
+    for i = #options, 1, -1 do
+        local o = options[i]
+        if o == '-d' or o == '--delimiter' then
+            delim = options[i + 1]
+            if delim then
+                break
+            end
+        end
+    end
+    if not delim or delim == [[\|]] then
+        delim = '|'
+    end
+    return delim
+end
+
+function M.headless_run(hl_ansi, padding_nr, delim)
     log.debug('hl_ansi:', hl_ansi)
     log.debug('padding_nr:', padding_nr)
+    log.debug('delim:', delim)
     if headless then
         headless.hl_ansi, headless.padding_nr = hl_ansi, padding_nr
-        source_list()
+        source_list(nil, nil, delim)
         cmd('q!')
     end
 end
@@ -334,13 +351,15 @@ function M.run()
     end
 
     vim.list_extend(base_opt, {
-        '--multi', '--ansi', '--with-nth', '2..', '--delimiter', '\t', '--header-lines', 0,
-        '--tiebreak', 'index', '--info', 'inline', '--prompt', prompt, '--no-border', '--layout',
-        'reverse-list', '--expect', expect_keys
+        '--multi', '--ansi', '--delimiter', [[\|]], '--with-nth', '2..', '--nth', '3..,1,2',
+        '--header-lines', 0, '--tiebreak', 'index', '--info', 'inline', '--prompt', prompt,
+        '--no-border', '--layout', 'reverse-list', '--expect', expect_keys
     })
+    local options = vim.list_extend(base_opt, extra_opts)
+    local delimiter = parse_delimiter(options)
     local opts = {
-        options = vim.list_extend(base_opt, extra_opts),
-        source = source(qwinid, qlist:get_sign():list()),
+        options = options,
+        source = source(qwinid, qlist:get_sign():list(), delimiter),
         ['sink*'] = function(lines)
             return handler(qwinid, lines)
         end,
