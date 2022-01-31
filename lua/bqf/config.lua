@@ -52,7 +52,8 @@ local function init()
                     ['ctrl-t'] = 'tabedit',
                     ['ctrl-v'] = 'vsplit',
                     ['ctrl-x'] = 'split',
-                    ['ctrl-q'] = 'signtoggle'
+                    ['ctrl-q'] = 'signtoggle',
+                    ['ctrl-c'] = 'closeall'
                 },
                 extra_opts = {'--bind', 'ctrl-o:toggle-all'}
             }

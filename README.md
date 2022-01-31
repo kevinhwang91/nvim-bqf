@@ -218,6 +218,10 @@ but exclude `session.lua` file.
                 ['ctrl-q'] = {
                     description = [[press ctrl-q to toggle sign for the selected items]],
                     default = 'signtoggle'
+                },
+                ['ctrl-c'] = {
+                    description = [[press ctrl-c to close quickfix window and abort fzf]],
+                    default = 'closeall'
                 }
             },
             extra_opts = {

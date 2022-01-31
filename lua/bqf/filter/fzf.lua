@@ -214,6 +214,8 @@ local function handler(qwinid, lines)
             sign:toggle(i, api.nvim_win_get_buf(qwinid))
         end
         set_qf_cursor(qwinid, selected_index[1])
+    elseif action == 'closeall' then
+        api.nvim_win_close(qwinid, false)
     else
         local items = qs:list():get_items()
         base.filter_list(qwinid, coroutine.wrap(function()
