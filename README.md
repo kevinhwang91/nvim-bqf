@@ -549,7 +549,7 @@ end
 Quickfix window default UI is extremely outdated and low level aesthetics. However, you can
 dress up your personal quickfix window:) Here is the configuration for demo:
 
-> This section is not `nvim-bqf` exclusive, you can use the configuration without `nvm-bqf`
+> This section is not `nvim-bqf` exclusive, you can use the configuration without `nvim-bqf`
 
 ### Format new quickfix
 
