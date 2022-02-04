@@ -604,7 +604,7 @@ vim.o.qftf = '{info -> v:lua._G.qftf(info)}'
 require('bqf').setup({
     filter = {
         fzf = {
-            extra_opts = {'--delimiter', '│'}
+            extra_opts = {'--bind', 'ctrl-o:toggle-all', '--delimiter', '│'}
         }
     }
 })

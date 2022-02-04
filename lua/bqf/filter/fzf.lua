@@ -273,14 +273,19 @@ local function parse_delimiter(options)
         if o == '-d' or o == '--delimiter' then
             delim = options[i + 1]
             if delim then
+                delim = vim.trim(delim)
+                if delim == [[\|]] then
+                    delim = '|'
+                    -- delim = '[\t| │]'
+                elseif delim:match('^%[[^%[%]]+%]$') then
+                    -- get second char of [chars], Lua can't handle unicode, use Vimscript instead
+                    delim = fn.strcharpart(delim, 1, 1)
+                end
                 break
             end
         end
     end
-    if not delim or delim == [[\|]] then
-        delim = '|'
-    end
-    return delim
+    return delim or '|'
 end
 
 function M.headless_run(hl_ansi, padding_nr, delim)
