@@ -1,3 +1,4 @@
+---@class BqfKeyMap
 local M = {}
 local api = vim.api
 
@@ -6,12 +7,12 @@ local config = require('bqf.config')
 local func_map
 
 local action_funcref = {
-    ptogglemode = {mode = 'n', module = 'previewer.handler', funcref = 'toggle_mode()'},
-    ptoggleitem = {mode = 'n', module = 'previewer.handler', funcref = 'toggle_item()'},
-    ptoggleauto = {mode = 'n', module = 'previewer.handler', funcref = 'toggle()'},
-    pscrollup = {mode = 'n', module = 'previewer.handler', funcref = 'scroll(-1)'},
-    pscrolldown = {mode = 'n', module = 'previewer.handler', funcref = 'scroll(1)'},
-    pscrollorig = {mode = 'n', module = 'previewer.handler', funcref = 'scroll(0)'},
+    ptogglemode = {mode = 'n', module = 'preview.handler', funcref = 'toggle_mode()'},
+    ptoggleitem = {mode = 'n', module = 'preview.handler', funcref = 'toggle_item()'},
+    ptoggleauto = {mode = 'n', module = 'preview.handler', funcref = 'toggle()'},
+    pscrollup = {mode = 'n', module = 'preview.handler', funcref = 'scroll(-1)'},
+    pscrolldown = {mode = 'n', module = 'preview.handler', funcref = 'scroll(1)'},
+    pscrollorig = {mode = 'n', module = 'preview.handler', funcref = 'scroll(0)'},
     open = {mode = 'n', module = 'qfwin.handler', funcref = 'open(false)'},
     openc = {mode = 'n', module = 'qfwin.handler', funcref = 'open(true)'},
     drop = {mode = 'n', module = 'qfwin.handler', funcref = [[open(true, 'drop')]]},

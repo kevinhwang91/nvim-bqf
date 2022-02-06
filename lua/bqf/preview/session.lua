@@ -1,13 +1,28 @@
 local api = vim.api
 local cmd = vim.cmd
 
-local floatwin = require('bqf.previewer.floatwin')
-local border = require('bqf.previewer.border')
+local floatwin = require('bqf.preview.floatwin')
+local border = require('bqf.preview.border')
 local utils = require('bqf.utils')
 
-local PreviewerSession = {pool = {}}
+---
+---@class BqfPreviewSession
+---@field private pool table<number, BqfPreviewSession>
+---@field winid number
+---@field win_height number
+---@field win_vheight number
+---@field wrap boolean
+---@field border_chars string[]
+---@field bufnr number
+---@field syntax boolean
+---@field full boolean
+local PreviewSession = {pool = {}}
 
-function PreviewerSession:new(winid, o)
+---
+---@param winid number
+---@param o table
+---@return BqfPreviewSession
+function PreviewSession:new(winid, o)
     o = o or {}
     local obj = {}
     setmetatable(obj, self)
@@ -20,24 +35,28 @@ function PreviewerSession:new(winid, o)
     obj.bufnr = nil
     obj.syntax = nil
     obj.full = false
+    self:clean()
     self.pool[winid] = obj
     return obj
 end
 
-function PreviewerSession.get(winid)
+---
+---@param winid number
+---@return BqfPreviewSession
+function PreviewSession.get(winid)
     winid = winid or api.nvim_get_current_win()
-    return PreviewerSession.pool[winid]
+    return PreviewSession.pool[winid]
 end
 
-function PreviewerSession.clean()
-    for w_id in pairs(PreviewerSession.pool) do
-        if not utils.is_win_valid(w_id) then
-            PreviewerSession.pool[w_id] = nil
+function PreviewSession.clean()
+    for winid in pairs(PreviewSession.pool) do
+        if not utils.is_win_valid(winid) then
+            PreviewSession.pool[winid] = nil
         end
     end
 end
 
-function PreviewerSession.floatbuf_reset()
+function PreviewSession.floatbuf_reset()
     local fwinid = floatwin.winid
     local fbufnr = floatwin.bufnr
     local bbufnr = border.bufnr
@@ -51,51 +70,51 @@ function PreviewerSession.floatbuf_reset()
 
 end
 
-function PreviewerSession.floatwin_exec(func)
-    if PreviewerSession.validate() then
+function PreviewSession.floatwin_exec(func)
+    if PreviewSession.validate() then
         utils.win_execute(floatwin.winid, func)
     end
 end
 
-function PreviewerSession.float_bufnr()
+function PreviewSession.float_bufnr()
     return floatwin.bufnr
 end
 
-function PreviewerSession.border_bufnr()
+function PreviewSession.border_bufnr()
     return border.bufnr
 end
 
-function PreviewerSession.float_winid()
+function PreviewSession.float_winid()
     return floatwin.winid
 end
 
-function PreviewerSession.border_winid()
+function PreviewSession.border_winid()
     return border.winid
 end
 
-function PreviewerSession.close()
+function PreviewSession.close()
     floatwin:close()
     border:close()
 end
 
-function PreviewerSession.validate()
+function PreviewSession.validate()
     return floatwin:validate() and border:validate()
 end
 
-function PreviewerSession.update_border(pbufnr, qidx, size)
+function PreviewSession.update_border(pbufnr, qidx, size)
     border:update(pbufnr, qidx, size)
 end
 
-function PreviewerSession.update_scrollbar()
+function PreviewSession.update_scrollbar()
     border:update_scrollbar()
 end
 
-function PreviewerSession.display()
+function PreviewSession.display()
     floatwin:display()
     border:display()
 end
 
-function PreviewerSession:valid_or_build(owinid)
+function PreviewSession:valid_or_build(owinid)
     if not floatwin:validate() then
         floatwin:build({qwinid = self.winid, pwinid = owinid, wrap = self.wrap})
     end
@@ -109,4 +128,4 @@ function PreviewerSession:valid_or_build(owinid)
     end
 end
 
-return PreviewerSession
+return PreviewSession

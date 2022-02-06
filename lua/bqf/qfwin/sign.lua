@@ -5,8 +5,13 @@ local cmd = vim.cmd
 local sprior
 local sgroup
 local sname
+
+---@class QfWinSign
+---@field items table<number, number>
 local Sign = {}
 
+---
+---@return QfWinSign
 function Sign:new()
     local obj = {}
     setmetatable(obj, self)
@@ -15,6 +20,9 @@ function Sign:new()
     return obj
 end
 
+---
+---@param lnum number|table<number, number>
+---@param bufnr number
 function Sign:place(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     if type(lnum) == 'table' then
@@ -53,6 +61,9 @@ function Sign:place(lnum, bufnr)
     end
 end
 
+---
+---@param lnum number|table<number, number>
+---@param bufnr number
 function Sign:unplace(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     if type(lnum) == 'table' then
@@ -88,6 +99,9 @@ function Sign:list()
     return self.items
 end
 
+---
+---@param lnum number|table<number, number>
+---@param bufnr number
 function Sign:toggle(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     if type(lnum) == 'table' then

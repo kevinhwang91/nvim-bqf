@@ -1,4 +1,10 @@
--- Singleton
+--- Singleton
+---@class BqfLog
+---@field trace fun(...)
+---@field debug fun(...)
+---@field info fun(...)
+---@field warn fun(...)
+---@field error fun(...)
 local M = {}
 local fn = vim.fn
 
@@ -20,6 +26,8 @@ local function get_level_nr(l)
     return nr
 end
 
+---
+---@param l number|string
 function M.set_level(l)
     level_nr = get_level_nr(l)
 end

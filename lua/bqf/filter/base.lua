@@ -1,21 +1,26 @@
+--- Singleton
+---@class BqfBaseFilter
 local M = {}
 local api = vim.api
 
 local qfs = require('bqf.qfwin.session')
 
+---
+---@param qwinid number
+---@param co_wrap fun(): number, BqfQfItem
 function M.filter_list(qwinid, co_wrap)
     if not co_wrap then
         return
     end
 
-    local qs = qfs.get(qwinid)
+    local qs = qfs:get(qwinid)
     local qlist = qs:list()
     local qinfo = qlist:get_qflist({size = 0, title = 0, quickfixtextfunc = 0})
     local size = qinfo.size
     if size < 2 then
         return
     end
-    local context = qlist:get_context()
+    local context = qlist:context()
     local title, qftf = qinfo.title, qinfo.quickfixtextfunc
     local lsp_ranges, new_items = {}, {}
     for i, item in co_wrap do
@@ -34,7 +39,7 @@ function M.filter_list(qwinid, co_wrap)
     end
 
     title = '*' .. title
-    qfs.save_winview(qwinid)
+    qfs:save_winview(qwinid)
     qlist:new_qflist({
         nr = '$',
         context = context,
@@ -46,14 +51,14 @@ end
 
 function M.run(reverse)
     local qwinid = api.nvim_get_current_win()
-    local qs = qfs.get(qwinid)
+    local qs = qfs:get(qwinid)
     local qlist = qs:list()
-    local signs = qlist:get_sign():list()
+    local signs = qlist:sign():list()
     if reverse and vim.tbl_isempty(signs) then
         return
     end
     M.filter_list(qwinid, coroutine.wrap(function()
-        local items = qlist:get_items()
+        local items = qlist:items()
         if reverse then
             for i in ipairs(items) do
                 if not signs[i] then

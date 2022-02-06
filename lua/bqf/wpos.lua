@@ -1,3 +1,4 @@
+---@class BqfWinPos
 local M = {}
 local fn = vim.fn
 
@@ -51,10 +52,16 @@ local function adjacent_wins(winlayout, is_bottom)
     return wins
 end
 
+---
+---@return number[]
 function M.find_bottom_wins()
     return adjacent_wins(fn.winlayout(), true)
 end
 
+---
+---@param winid number
+---@param owinid number
+---@return number[]
 function M.find_adjacent_wins(winid, owinid)
     local wins = {}
     local rel_pos, abs_pos = unpack(M.get_pos(winid, owinid))
@@ -71,6 +78,10 @@ function M.find_adjacent_wins(winid, owinid)
     return wins
 end
 
+---
+---@param winid number
+---@param owinid number
+---@return number[]
 function M.get_pos(winid, owinid)
     local layout = fn.winlayout()
     local nested = layout[2]

@@ -1,12 +1,13 @@
-local M = {}
 local api = vim.api
 local fn = vim.fn
 
 local list = require('bqf.qfwin.list')
 local utils = require('bqf.utils')
 
+---
+---@return fun(winid: number):boolean
 local validate = (function()
-    if fn.has('nvim-0.6') == 1 then
+    if utils.has_06() then
         return function(winid)
             local win_type = fn.win_gettype(winid)
             return win_type == 'quickfix' or win_type == 'loclist'
@@ -24,7 +25,7 @@ local validate = (function()
 end)()
 
 local is_normal_win_type = (function()
-    if fn.has('nvim-0.6') == 1 then
+    if utils.has_06() then
         return function(winid)
             return fn.win_gettype(winid) == ''
         end
@@ -35,6 +36,10 @@ local is_normal_win_type = (function()
     end
 end)()
 
+---
+---@param winid number
+---@param qlist BqfQfList
+---@return number
 local function get_pwinid(winid, qlist)
     local pwinid
     if qlist.type == 'loc' then
@@ -60,6 +65,12 @@ local function get_pwinid(winid, qlist)
     return pwinid
 end
 
+---
+---@class BqfQfSession
+---@field private pool table<number, BqfQfSession>
+---@field private _list BqfQfList
+---@field private _pwinid number
+---@field winid number
 local QfSession = {pool = {}}
 
 function QfSession:list()
@@ -77,40 +88,46 @@ function QfSession:validate()
     return validate(self.winid)
 end
 
-function M.new(winid)
+---
+---@param winid number
+---@return BqfQfSession
+function QfSession:new(winid)
     local obj = {}
-    setmetatable(obj, QfSession)
-    QfSession.__index = QfSession
+    setmetatable(obj, self)
+    self.__index = self
     obj.winid = winid
-    obj._list = list.get(winid)
+    obj._list = list:get(winid)
     if not obj._list then
         return nil
     end
-    obj._list:get_sign():reset()
+    obj._list:sign():reset()
     obj._pwinid = get_pwinid(winid, obj._list)
-    QfSession.pool[winid] = obj
+    self.pool[winid] = obj
     return obj
 end
 
-function M.get(winid)
+---
+---@param winid number
+---@return BqfQfSession
+function QfSession:get(winid)
     winid = winid or api.nvim_get_current_win()
-    return QfSession.pool[winid]
+    return self.pool[winid]
 end
 
-function M.save_winview(winid)
+function QfSession:save_winview(winid)
     if winid then
-        local obj = QfSession.pool[winid]
+        local obj = self.pool[winid]
         local wv = utils.win_execute(winid, fn.winsaveview)
         obj:list():set_winview(wv)
     end
 end
 
-function M.dispose()
-    for w_id in pairs(QfSession.pool) do
+function QfSession:dispose()
+    for w_id in pairs(self.pool) do
         if not utils.is_win_valid(w_id) then
             QfSession.pool[w_id] = nil
         end
     end
 end
 
-return M
+return QfSession

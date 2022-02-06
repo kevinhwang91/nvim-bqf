@@ -6,6 +6,10 @@
 
 `PATH`: ../README.md
 
+|nvim-bqf-default-config|
+
+`PATH`: ../lua/bqf/config.lua
+
 press `gf` or `CTRL-W gf` under the PATH value :)
 
 vim:ft=help

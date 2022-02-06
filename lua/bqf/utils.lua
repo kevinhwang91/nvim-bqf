@@ -1,9 +1,11 @@
+---@class BqfUtils
 local M = {}
 local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 local uv = vim.loop
 
+---@return fun(): boolean
 M.has_06 = (function()
     local has_06
     return function()
@@ -14,6 +16,7 @@ M.has_06 = (function()
     end
 end)()
 
+---@return fun(): boolean
 M.is_windows = (function()
     local is_win
     return function()
@@ -24,6 +27,7 @@ M.is_windows = (function()
     end
 end)()
 
+---@return fun(): boolean
 M.jit_enabled = (function()
     local enabled
     return function()
@@ -45,6 +49,9 @@ local function color2csi8b(color_num, fg)
     return ('%d;5;%d'):format(fg and 38 or 48, color_num)
 end
 
+---
+---@param bufnr number
+---@return string[]
 function M.syntax_list(bufnr)
     local list = {}
     local syn_info = api.nvim_buf_call(bufnr, function()
@@ -70,6 +77,12 @@ local ansi = {
     white = 37
 }
 
+---
+---@param str string
+---@param group_name string
+---@param def_fg string
+---@param def_bg string
+---@return string
 function M.render_str(str, group_name, def_fg, def_bg)
     vim.validate({
         str = {str, 'string'},
@@ -129,6 +142,11 @@ function M.zz()
     end
 end
 
+---
+---@param bufnr number
+---@param name string
+---@param off number
+---@return boolean
 function M.is_unname_buf(bufnr, name, off)
     name = name or api.nvim_buf_get_name(bufnr)
     off = off or api.nvim_buf_get_offset(bufnr, 1)
@@ -151,10 +169,19 @@ local function range2pos_list(lnum, col, end_lnum, end_col)
     return pos_list
 end
 
+---
+---@param lnum number
+---@param col number
+---@param end_lnum number
+---@param end_col number
+---@return table[]
 function M.qf_range2pos_list(lnum, col, end_lnum, end_col)
     return range2pos_list(lnum, col, end_lnum, end_col)
 end
 
+---
+---@param range table
+---@return table[]
 function M.lsp_range2pos_list(range)
     local s_line, s_char, e_line, e_char
     if not pcall(function()
@@ -168,6 +195,9 @@ function M.lsp_range2pos_list(range)
     return range2pos_list(lnum, col, end_lnum, end_col)
 end
 
+---
+---@param pattern string
+---@return table[]
 function M.pattern2pos_list(pattern)
     local lnum, col, end_lnum, end_col
     if not pcall(function()
@@ -180,6 +210,11 @@ function M.pattern2pos_list(pattern)
     return range2pos_list(lnum, col, end_lnum, end_col)
 end
 
+---
+---@param hl string
+---@param plist table[]
+---@param prior number
+---@return number[]
 function M.matchaddpos(hl, plist, prior)
     vim.validate({hl = {hl, 'string'}, plist = {plist, 'table'}, prior = {prior, 'number', true}})
     prior = prior or 10
@@ -199,6 +234,9 @@ function M.matchaddpos(hl, plist, prior)
     return ids
 end
 
+---
+---@param winid number
+---@return number
 function M.textoff(winid)
     vim.validate({winid = {winid, 'number'}})
     local textoff
@@ -217,14 +255,25 @@ function M.textoff(winid)
     return textoff
 end
 
+---
+---@param winid number
+---@return boolean
 function M.is_win_valid(winid)
     return winid and type(winid) == 'number' and winid > 0 and api.nvim_win_is_valid(winid)
 end
 
+---
+---@param bufnr number
+---@return boolean
 function M.is_buf_loaded(bufnr)
     return bufnr and type(bufnr) == 'number' and bufnr > 0 and api.nvim_buf_is_loaded(bufnr)
 end
 
+---
+---@param winid number
+---@param func fun()
+---@vararg any
+---@return any
 function M.win_execute(winid, func, ...)
     vim.validate({
         winid = {
@@ -259,6 +308,9 @@ local function syn_keyword(bufnr)
     return is_keyword
 end
 
+---
+---@param bufnr number
+---@return fun(b: number): boolean
 function M.gen_is_keyword(bufnr)
     local str = syn_keyword(bufnr)
     -- :h isfname get the edge cases
@@ -348,25 +400,21 @@ function M.gen_is_keyword(bufnr)
     end
 end
 
--- TODO upstream bug
--- local f_win_so = vim.wo[winid].scrolloff
--- return a big number like '1.4014575443238e+14' if window option is absent
--- Use getwinvar to workaround
+--- TODO upstream bug
+--- local f_win_so = vim.wo[winid].scrolloff
+--- return a big number like '1.4014575443238e+14' if window option is absent
+--- Use getwinvar to workaround
+---@param winid number
+---@return number
 function M.scrolloff(winid)
     return fn.getwinvar(winid, '&scrolloff')
 end
 
-function M.tbl_kv_map(func, tbl)
-    local new_tbl = {}
-    for k, v in pairs(tbl) do
-        new_tbl[k] = func(k, v)
-    end
-    return new_tbl
-end
-
--- 1. use uv read file will cause much cpu usage and memory usage
--- 2. type of result returned by read is string, it must convert to table first
--- 3. nvim_buf_set_lines is expensive for flushing all buffers
+--- 1. use uv read file will cause much cpu usage and memory usage
+--- 2. type of result returned by read is string, it must convert to table first
+--- 3. nvim_buf_set_lines is expensive for flushing all buffers
+---@param from number
+---@param to number
 function M.transfer_buf(from, to)
     local function transfer_file(rb, wb)
         local e_path = fn.fnameescape(api.nvim_buf_get_name(rb))
@@ -405,6 +453,11 @@ function M.transfer_buf(from, to)
     vim.bo[to].modified = false
 end
 
+---
+---@param str string
+---@param ts number
+---@param start number
+---@return string
 function M.expandtab(str, ts, start)
     start = start or 1
     local new = str:sub(1, start - 1)

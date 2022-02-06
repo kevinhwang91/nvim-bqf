@@ -4,8 +4,16 @@ local utils = require('bqf.utils')
 
 local LSize
 
+---
+---@class BqfLBase
+---@field foldenable boolean
+---@field fold_close_pairs table<number, number[]>
+---@field sizes table<number, number>
 local LBase = {}
 
+---
+---@param sizes table<number, number>
+---@return BqfLBase
 function LBase:new(sizes)
     local obj = {}
     setmetatable(obj, self)
@@ -16,10 +24,16 @@ function LBase:new(sizes)
     return obj
 end
 
+---
+---@param lnum number
+---@return number
 function LBase:size(lnum)
     return self.sizes[lnum]
 end
 
+---
+---@param lnum number
+---@return number
 function LBase:foldclosed(lnum)
     if not self.foldenable then
         return -1
@@ -38,6 +52,9 @@ function LBase:foldclosed(lnum)
     return s
 end
 
+---
+---@param lnum number
+---@return number
 function LBase:foldclosed_end(lnum)
     if not self.foldenable then
         return -1
@@ -56,12 +73,17 @@ function LBase:foldclosed_end(lnum)
     return e
 end
 
+---
+---@class BqfLFFI : BqfLBase
+---@field private _wffi BqfWffi
 local LFFI = setmetatable({}, {__index = LBase})
 
+---
+---@return BqfLFFI
 function LFFI:new()
     local obj = LBase:new(setmetatable({}, {
         __index = function(t, i)
-            local v = self.wffi.plines_win(i)
+            local v = self._wffi.plines_win(i)
             rawset(t, i, v)
             return v
         end
@@ -71,21 +93,37 @@ function LFFI:new()
     return obj
 end
 
+---
+---@param lnum number
+---@param winheight number
+---@return number
 function LFFI:nofill_size(lnum, winheight)
     winheight = winheight or true
-    return self.wffi.plines_win_nofill(lnum, winheight)
+    return self._wffi.plines_win_nofill(lnum, winheight)
 end
 
+---
+---@param lnum number
+---@return number
 function LFFI:fill_size(lnum)
     return self:size(lnum) - self:nofill_size(lnum, true)
 end
 
+---
+---@param lnum number
+---@param col number
+---@return number
 function LFFI:pos_size(lnum, col)
-    return self.wffi.plines_win_col(lnum, col)
+    return self._wffi.plines_win_col(lnum, col)
 end
 
+---
+---@class BqfLNonFFI : BqfLBase
+---@field per_lwidth number
 local LNonFFI = setmetatable({}, {__index = LBase})
 
+---
+---@return BqfLNonFFI
 function LNonFFI:new()
     local winid = api.nvim_get_current_win()
     local wrap = vim.wo[winid].wrap
@@ -110,17 +148,24 @@ end
 
 LNonFFI.nofill_size = LNonFFI.size
 
+---
+---@param _ any
+---@return number
 function LNonFFI.fill_size(_)
     return 0
 end
 
+---
+---@param lnum number
+---@param col number
+---@return number
 function LNonFFI:pos_size(lnum, col)
     return math.ceil(math.max(fn.virtcol({lnum, col}) - 1, 1) / self.per_lwidth)
 end
 
 local function init()
     if utils.jit_enabled() then
-        LFFI.wffi = require('bqf.wffi')
+        LFFI._wffi = require('bqf.wffi')
         LSize = LFFI
     else
         LSize = LNonFFI

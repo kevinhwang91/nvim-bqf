@@ -1,10 +1,16 @@
--- singleton
 local api = vim.api
 local fn = vim.fn
 
 local utils = require('bqf.utils')
 
-local FloatWin = require('bqf.previewer.floatwin')
+local FloatWin = require('bqf.preview.floatwin')
+
+--- Singleton
+---@class BqfPreviewBorder : BqfPreviewFloatWin
+---@field floatwin BqfPreviewFloatWin
+---@field chars string[]
+---@field winid number
+---@field bufnr number
 local Border = setmetatable({}, {__index = FloatWin})
 
 function Border:build(o)
@@ -97,7 +103,7 @@ function Border:update_title(title)
 end
 
 function Border:cal_wopts()
-    local wopts = self._wopts or self.floatwin:wopts()
+    local wopts = self._wopts or self.floatwin:cal_wopts()
     if vim.tbl_isempty(wopts) then
         return {}
     else

@@ -1,10 +1,11 @@
+---@class BqfPreviewTreesitter
 local M = {}
 
 local api = vim.api
 
 local parsers, configs
 local parsers_cache
-local parsers_litmit
+local parsers_limit
 local lru
 local initialized
 
@@ -35,6 +36,8 @@ local function prepare_context(parser, pbufnr, fbufnr, loaded)
     end
 end
 
+---
+---@param bufnr number
 function M.disable_active(bufnr)
     if not initialized then
         return
@@ -44,6 +47,10 @@ function M.disable_active(bufnr)
     end
 end
 
+---
+---@param pbufnr number
+---@param fbufnr number
+---@return boolean
 function M.try_attach(pbufnr, fbufnr)
     local ret = false
     if not initialized then
@@ -70,6 +77,11 @@ function M.try_attach(pbufnr, fbufnr)
     return ret
 end
 
+---
+---@param pbufnr number
+---@param fbufnr number
+---@param ft string
+---@return boolean
 function M.attach(pbufnr, fbufnr, ft)
     local ret = false
     if not initialized then
@@ -107,7 +119,7 @@ function M.shrink_cache()
     end
 
     -- shrink cache, keep usage of memory proper
-    local cnt = parsers_litmit / 4
+    local cnt = parsers_limit / 4
     for bufnr in parsers_cache:pairs() do
         if api.nvim_buf_is_loaded(bufnr) or not api.nvim_buf_is_valid(bufnr) or cnt < 1 then
             parsers_cache:set(bufnr, nil)
@@ -126,8 +138,8 @@ local function init()
     configs = require('nvim-treesitter.configs')
     lru = require('bqf.struct.lru')
 
-    parsers_litmit = 48
-    parsers_cache = lru:new(parsers_litmit)
+    parsers_limit = 48
+    parsers_cache = lru:new(parsers_limit)
 end
 
 init()

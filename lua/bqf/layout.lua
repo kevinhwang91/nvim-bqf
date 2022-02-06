@@ -1,3 +1,4 @@
+---@class BqfLayout
 local M = {}
 local api = vim.api
 local fn = vim.fn
@@ -47,7 +48,7 @@ local function adjust_width(qwinid, pwinid, qf_pos)
 end
 
 local function adjust_height(qwinid, pwinid, qf_pos)
-    local qlist = qfs.get(qwinid):list()
+    local qlist = qfs:get(qwinid):list()
     local size = math.max(qlist:get_qflist({size = 0}).size, 1)
     local qf_hei = api.nvim_win_get_height(qwinid)
     local inc_hei = 0
@@ -79,18 +80,23 @@ local function adjust_height(qwinid, pwinid, qf_pos)
     end
 end
 
+---
+---@param qwinid number
+---@return fun()
 function M.initialize(qwinid)
-    local qs = qfs.get(qwinid)
+    local qs = qfs:get(qwinid)
     local qlist = qs:list()
     local pwinid = qs:pwinid()
     local qf_pos = wpos.get_pos(qwinid, pwinid)
-    qf_pos = fix_default_qf(qwinid, pwinid, qlist.qf_type, qf_pos)
+    qf_pos = fix_default_qf(qwinid, pwinid, qlist.type, qf_pos)
     adjust_width(qwinid, pwinid, qf_pos)
     return auto_resize_height and function()
         adjust_height(qwinid, pwinid, qf_pos)
     end or nil
 end
 
+---
+---@return boolean
 function M.valid_qf_win()
     local win_h, win_j, win_k, win_l = fn.winnr('h'), fn.winnr('j'), fn.winnr('k'), fn.winnr('l')
     return not (win_h == win_j and win_h == win_k and win_h == win_l and win_j == win_k and win_j ==

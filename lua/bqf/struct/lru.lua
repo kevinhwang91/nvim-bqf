@@ -1,4 +1,17 @@
-local LRU = {Node = {}}
+---@class BqfLRU
+---@field size number
+---@field limit number
+---@field head BqfLRUNode
+---@field tail BqfLRUNode
+---@field entries table<number, BqfLRUNode>
+local LRU = {
+    ---@class BqfLRUNode
+    ---@field prev BqfLRUNode
+    ---@field next BqfLRUNode
+    ---@field id number|string
+    ---@field obj any
+    Node = {}
+}
 
 function LRU.Node:_new(o)
     local obj = {}
@@ -144,11 +157,7 @@ function LRU:pairs(reverse)
         local id, obj
         if node then
             id, obj = node.id, node.obj
-            if reverse then
-                node = node.prev
-            else
-                node = node.next
-            end
+            node = reverse and node.prev or node.next
         end
         return id, obj
     end

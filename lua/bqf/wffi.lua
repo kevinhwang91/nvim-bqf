@@ -1,4 +1,5 @@
 ---@diagnostic disable: undefined-field
+---@class BqfWffi
 local M = {}
 
 local utils
@@ -16,14 +17,25 @@ local function curwin()
     return cur_win
 end
 
+---
+---@param lnum number
+---@return number
 function M.plines_win(lnum)
     return C.plines_win(curwin(), lnum, true)
 end
 
+---
+---@param lnum number
+---@param col number
+---@return number
 function M.plines_win_col(lnum, col)
     return C.plines_win_col(curwin(), lnum, col)
 end
 
+---
+---@param lnum number
+---@param winheight number
+---@return number
 function M.plines_win_nofill(lnum, winheight)
     return C.plines_win_nofill(curwin(), lnum, winheight)
 end

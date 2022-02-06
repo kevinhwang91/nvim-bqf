@@ -1,10 +1,11 @@
+---@class BqfMain
 local M = {}
 local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
 local qfs = require('bqf.qfwin.session')
-local previewer = require('bqf.previewer.handler')
+local preview = require('bqf.preview.handler')
 local layout = require('bqf.layout')
 local magicwin = require('bqf.magicwin.handler')
 local keymap = require('bqf.keymap')
@@ -25,7 +26,7 @@ function M.enable()
 
     local qwinid = api.nvim_get_current_win()
 
-    local qs = qfs.new(qwinid)
+    local qs = qfs:new(qwinid)
     assert(qs, 'It is not a quickfix window')
 
     vim.wo.nu, vim.wo.rnu = true, false
@@ -34,7 +35,7 @@ function M.enable()
     vim.wo.signcolumn = 'number'
 
     local adjust_height_cb = layout.initialize(qwinid)
-    previewer.initialize(qwinid)
+    preview.initialize(qwinid)
     keymap.initialize()
 
     local pwinid = qs:pwinid()
@@ -58,14 +59,14 @@ function M.disable()
         return
     end
     local qwinid = api.nvim_get_current_win()
-    previewer.close(qwinid)
+    preview.close(qwinid)
     keymap.dispose()
     vim.b.bqf_enabled = false
     cmd('au! Bqf')
     cmd('sil! au! BqfPreview * <buffer>')
     cmd('sil! au! BqfFilterFzf * <buffer>')
     cmd('sil! au! BqfMagicWin')
-    qfs.dispose()
+    qfs:dispose()
 end
 
 local function close(winid)
@@ -81,12 +82,12 @@ end
 
 function M.save_winview()
     local winid = api.nvim_get_current_win()
-    qfs.save_winview(winid)
+    qfs:save_winview(winid)
 end
 
 function M.kill_alone_qf()
     local winid = api.nvim_get_current_win()
-    local qs = qfs.get(winid)
+    local qs = qfs:get(winid)
     if qs then
         if qs:pwinid() < 0 then
             close(winid)
@@ -97,8 +98,8 @@ end
 function M.close_qf()
     local winid = tonumber(fn.expand('<afile>'))
     if winid and api.nvim_win_is_valid(winid) then
-        qfs.dispose()
-        previewer.close(winid)
+        qfs:dispose()
+        preview.close(winid)
     end
 end
 

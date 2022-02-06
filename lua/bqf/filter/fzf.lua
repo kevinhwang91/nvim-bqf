@@ -1,3 +1,5 @@
+--- Singleton
+---@class BqfFzfFilter
 local M = {}
 local api = vim.api
 local fn = vim.fn
@@ -207,9 +209,9 @@ local function handler(qwinid, lines)
         return
     end
 
-    local qs = qfs.get(qwinid)
+    local qs = qfs:get(qwinid)
     if action == 'signtoggle' then
-        local sign = qs:list():get_sign()
+        local sign = qs:list():sign()
         for _, i in ipairs(selected_index) do
             sign:toggle(i, api.nvim_win_get_buf(qwinid))
         end
@@ -217,7 +219,7 @@ local function handler(qwinid, lines)
     elseif action == 'closeall' then
         api.nvim_win_close(qwinid, false)
     else
-        local items = qs:list():get_items()
+        local items = qs:list():items()
         base.filter_list(qwinid, coroutine.wrap(function()
             for _, i in ipairs(selected_index) do
                 coroutine.yield(i, items[i])
@@ -337,7 +339,7 @@ end
 
 function M.run()
     local qwinid = api.nvim_get_current_win()
-    local qlist = qfs.get(qwinid):list()
+    local qlist = qfs:get(qwinid):list()
     local prompt = qlist.type == 'loc' and ' Location> ' or ' Quickfix> '
     local size = qlist:get_qflist({size = 0}).size
     if size < 2 then
@@ -366,7 +368,7 @@ function M.run()
     local delimiter = parse_delimiter(options)
     local opts = {
         options = options,
-        source = source(qwinid, qlist:get_sign():list(), delimiter),
+        source = source(qwinid, qlist:sign():list(), delimiter),
         ['sink*'] = function(lines)
             return handler(qwinid, lines)
         end,
@@ -416,7 +418,7 @@ local function init()
         version = {version, 'string', 'version string'}
     })
 
-    phandler = require('bqf.previewer.handler')
+    phandler = require('bqf.preview.handler')
     qhandler = require('bqf.qfwin.handler')
     base = require('bqf.filter.base')
     qfs = require('bqf.qfwin.session')

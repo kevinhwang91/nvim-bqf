@@ -1,3 +1,4 @@
+---@class BqfPreviewHandler
 local M = {}
 local api = vim.api
 local fn = vim.fn
@@ -13,12 +14,12 @@ local PLACEHOLDER_TBL
 
 local config = require('bqf.config')
 local qfs = require('bqf.qfwin.session')
-local pvs = require('bqf.previewer.session')
-local ts = require('bqf.previewer.treesitter')
+local pvs = require('bqf.preview.session')
+local ts = require('bqf.preview.treesitter')
 local utils = require('bqf.utils')
 
-local function exec_preview(entry, lsp_range_hl, pattern_hl)
-    local lnum, col, pattern = entry.lnum, entry.col, entry.pattern
+local function exec_preview(item, lsp_range_hl, pattern_hl)
+    local lnum, col, pattern = item.lnum, item.col, item.pattern
 
     if lnum < 1 then
         api.nvim_win_set_cursor(0, {1, 0})
@@ -43,7 +44,7 @@ local function exec_preview(entry, lsp_range_hl, pattern_hl)
     elseif pattern_hl and pattern_hl ~= '' then
         pos_list = utils.pattern2pos_list(pattern_hl)
     elseif utils.has_06() then
-        local end_lnum, end_col = entry.end_lnum, entry.end_col
+        local end_lnum, end_col = item.end_lnum, item.end_col
         pos_list = utils.qf_range2pos_list(lnum, col, end_lnum, end_col)
     end
 
@@ -141,7 +142,7 @@ end
 
 function M.open(qwinid, qidx, force)
     qwinid = qwinid or api.nvim_get_current_win()
-    local qs = qfs.get(qwinid)
+    local qs = qfs:get(qwinid)
     local qlist = qs:list()
     local pwinid = qs:pwinid()
     local ps = preview_session(qwinid)
@@ -157,13 +158,13 @@ function M.open(qwinid, qidx, force)
 
     last_idx = qidx
 
-    local entry = qlist:get_entry(qidx)
-    if not entry then
+    local item = qlist:item(qidx)
+    if not item then
         M.close(qwinid)
         return
     end
 
-    local pbufnr = entry.bufnr
+    local pbufnr = item.bufnr
 
     if pbufnr == 0 or not api.nvim_buf_is_valid(pbufnr) then
         M.close(qwinid)
@@ -199,7 +200,7 @@ function M.open(qwinid, qidx, force)
         end, delay_syntax)
     end
 
-    local ctx = qlist:get_context().bqf or {}
+    local ctx = qlist:context().bqf or {}
     local lsp_ranges_hl, pattern_hl = ctx.lsp_ranges_hl, ctx.pattern_hl
     local lsp_range_hl
     if type(lsp_ranges_hl) == 'table' then
@@ -207,7 +208,7 @@ function M.open(qwinid, qidx, force)
     end
 
     pvs.floatwin_exec(function()
-        exec_preview(entry, lsp_range_hl, pattern_hl)
+        exec_preview(item, lsp_range_hl, pattern_hl)
         cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
 
@@ -217,7 +218,7 @@ end
 
 function M.scroll(direction)
     if pvs.validate() and direction then
-        local qs = qfs.get(api.nvim_get_current_win())
+        local qs = qfs:get(api.nvim_get_current_win())
         local pwinid = qs:pwinid()
         pvs.floatwin_exec(function()
             if direction == 0 then
@@ -283,9 +284,9 @@ function M.initialize(qwinid)
     cmd([[
         aug BqfPreview
             au! * <buffer>
-            au VimResized <buffer> lua require('bqf.previewer.handler').redraw_win()
-            au CursorMoved,WinEnter <buffer> lua require('bqf.previewer.handler').move_cursor()
-            au WinLeave,BufWipeout <buffer> lua require('bqf.previewer.handler').close()
+            au VimResized <buffer> lua require('bqf.preview.handler').redraw_win()
+            au CursorMoved,WinEnter <buffer> lua require('bqf.preview.handler').move_cursor()
+            au WinLeave,BufWipeout <buffer> lua require('bqf.preview.handler').close()
         aug END
     ]])
 
@@ -333,12 +334,13 @@ local function init()
         win_height = {win_height, 'number'},
         win_vheight = {win_vheight, 'number'}
     })
-    cmd('hi default link BqfPreviewFloat Normal')
-    cmd('hi default link BqfPreviewBorder Normal')
-    cmd('hi default link BqfPreviewCursor Cursor')
-    cmd('hi default link BqfPreviewRange IncSearch')
 
     cmd([[
+        hi default link BqfPreviewFloat Normal
+        hi default link BqfPreviewBorder Normal
+        hi default link BqfPreviewCursor Cursor
+        hi default link BqfPreviewRange IncSearch
+
         aug BqfPreview
             au!
         aug END

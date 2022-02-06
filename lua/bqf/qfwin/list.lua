@@ -1,9 +1,50 @@
-local M = {}
-
 local api = vim.api
 local fn = vim.fn
 
-local QfList = {item_cache = {id = 0, entryies = {}}}
+---@class BqfQfItem
+---@field bufnr number
+---@field module string
+---@field lnum number
+---@field end_lnum number
+---@field col number
+---@field end_col number
+---@field vcol number
+---@field nr number
+---@field pattern string
+---@field text string
+---@field type string
+---@field valid number
+
+---@class BqfQfDict
+---@field changedtick? number
+---@field context? table
+---@field id? number
+---@field idx? number
+---@field items? BqfQfItem[]
+---@field nr? number
+---@field size? number
+---@field title? number
+---@field winid? number
+---@field filewinid? number
+
+---@class BqfQfList
+---@field private items_cache BqfQfItemCache
+---@field private pool table<string, BqfQfList>
+---@field id number
+---@field filewinid number
+---@field type string
+---@field getqflist fun(param:table):BqfQfDict
+---@field setqflist fun(param:table):number
+---@field private _changedtick number
+---@field private _sign QfWinSign
+---@field private _context table
+local QfList = {
+    ---@class BqfQfItemCache
+    ---@field id number
+    ---@field items BqfQfItem[]
+    items_cache = {id = 0, items = {}}
+}
+
 QfList.pool = setmetatable({}, {
     __index = function(tbl, id0)
         rawset(tbl, id0, QfList:new(id0))
@@ -20,6 +61,9 @@ local function build_id(qid, filewinid)
     return ('%d:%d'):format(qid, filewinid or 0)
 end
 
+---
+---@param filewinid number
+---@return fun(param:table):BqfQfDict
 local function get_qflist(filewinid)
     return function(what)
         local list = filewinid > 0 and fn.getloclist(filewinid, what) or fn.getqflist(what)
@@ -52,6 +96,9 @@ local function set_qflist(filewinid)
     end or fn.setqflist
 end
 
+---
+---@param id0 string
+---@return BqfQfList
 function QfList:new(id0)
     local obj = {}
     setmetatable(obj, self)
@@ -62,79 +109,99 @@ function QfList:new(id0)
     obj.type = filewinid == 0 and 'qf' or 'loc'
     obj.getqflist = get_qflist(filewinid)
     obj.setqflist = set_qflist(filewinid)
-    obj.changedtick = 0
+    obj._changedtick = 0
     return obj
 end
 
+---
+---@param what table
+---@return boolean
 function QfList:new_qflist(what)
-    return self.setqflist({}, ' ', what)
+    return self.setqflist({}, ' ', what) ~= -1
 end
 
+---
+---@param what table
+---@return boolean
 function QfList:set_qflist(what)
-    return self.setqflist({}, 'r', what)
+    return self.setqflist({}, 'r', what) ~= -1
 end
 
+---
+---@param what table
+---@return BqfQfDict
 function QfList:get_qflist(what)
     return self.getqflist(what)
 end
 
-function QfList:get_changedtick()
+---
+---@return number
+function QfList:changedtick()
     local cd = self.getqflist({id = self.id, changedtick = 0}).changedtick
-    if cd ~= self.changedtick then
-        self.context = nil
-        self.sign = nil
-        QfList.item_cache = {id = 0, entryies = {}}
+    if cd ~= self._changedtick then
+        self._context = nil
+        self._sign = nil
+        QfList.items_cache = {id = 0, items = {}}
     end
     return cd
 end
 
-function QfList:get_context()
+---
+---@return table
+function QfList:context()
     local ctx
-    local cd = self:get_changedtick()
-    if not self.context then
-        local qinfo = self.getqflist({id = self.id, context = 0})
-        self.changedtick = cd
-        local c = qinfo.context
-        self.context = type(c) == 'table' and c or {}
+    local cd = self:changedtick()
+    if not self._context then
+        local qdict = self.getqflist({id = self.id, context = 0})
+        self._changedtick = cd
+        local c = qdict.context
+        self._context = type(c) == 'table' and c or {}
     end
-    ctx = self.context
+    ctx = self._context
     return ctx
 end
 
-function QfList:get_sign()
+---
+---@return QfWinSign
+function QfList:sign()
     local sg
-    local cd = self:get_changedtick()
-    if not self.sign then
-        self.changedtick = cd
-        self.sign = require('bqf.qfwin.sign'):new()
+    local cd = self:changedtick()
+    if not self._sign then
+        self._changedtick = cd
+        self._sign = require('bqf.qfwin.sign'):new()
     end
-    sg = self.sign
+    sg = self._sign
     return sg
 end
 
-function QfList:get_items()
-    local entryies
-    local c = QfList.item_cache
-    local c_id, c_entryies = c.id, c.entryies
-    local cd = self:get_changedtick()
-    if cd == self.changedtick and c_id == self.id then
-        entryies = c_entryies
+---
+---@return BqfQfItem[]
+function QfList:items()
+    local items
+    local c = QfList.items_cache
+    local c_id, c_items = c.id, c.items
+    local cd = self:changedtick()
+    if cd == self._changedtick and c_id == self.id then
+        items = c_items
     end
-    if not entryies then
-        local qinfo = self.getqflist({id = self.id, items = 0})
-        entryies = qinfo.items
-        QfList.item_cache = {id = self.id, entryies = entryies}
+    if not items then
+        local qdict = self.getqflist({id = self.id, items = 0})
+        items = qdict.items
+        QfList.items_cache = {id = self.id, items = items}
     end
-    return entryies
+    return items
 end
 
-function QfList:get_entry(idx)
-    local cd = self:get_changedtick()
+---
+---@param idx number
+---@return BqfQfItem
+function QfList:item(idx)
+    local cd = self:changedtick()
 
     local e
-    local c = QfList.item_cache
-    if cd == self.changedtick and c.id == self.id then
-        e = c.entryies[idx]
+    local c = QfList.items_cache
+    if cd == self._changedtick and c.id == self.id then
+        e = c.items[idx]
     else
         local items = self.getqflist({id = self.id, idx = idx, items = 0}).items
         if #items == 1 then
@@ -148,42 +215,52 @@ function QfList:change_idx(idx)
     local old_idx = self:get_qflist({idx = idx})
     if idx ~= old_idx then
         self:set_qflist({idx = idx})
-        self.changedtick = self.getqflist({id = self.id, changedtick = 0}).changedtick
+        self._changedtick = self.getqflist({id = self.id, changedtick = 0}).changedtick
     end
 end
 
+---
+---@return table
 function QfList:get_winview()
     return self.winview
 end
 
+---
+---@param winview table
 function QfList:set_winview(winview)
     self.winview = winview
 end
 
-function M.get(qwinid, id)
+local function verify(pool)
+    for id0, o in pairs(pool) do
+        if o.getqflist({id = o.id}).id ~= o.id then
+            pool[id0] = nil
+        end
+    end
+end
+
+---
+---@param qwinid number
+---@param id number
+---@return BqfQfList
+function QfList:get(qwinid, id)
     local qid, filewinid
     if not id then
         qwinid = qwinid or api.nvim_get_current_win()
         local what = {id = 0, filewinid = 0}
         local winfo = fn.getwininfo(qwinid)[1]
         if winfo.quickfix == 1 then
-            local qinfo = winfo.loclist == 1 and fn.getloclist(0, what) or fn.getqflist(what)
-            qid, filewinid = qinfo.id, qinfo.filewinid
+            ---@type BqfQfDict
+            local qdict = winfo.loclist == 1 and fn.getloclist(0, what) or fn.getqflist(what)
+            qid, filewinid = qdict.id, qdict.filewinid
         else
             return nil
         end
     else
         qid, filewinid = unpack(id)
     end
-    return QfList.pool[build_id(qid, filewinid or 0)]
+    verify(self.pool)
+    return self.pool[build_id(qid, filewinid or 0)]
 end
 
-function M.verify()
-    for id0, o in pairs(QfList.pool) do
-        if o.getqflist({id = o.id}).id ~= o.id then
-            QfList.pool[id0] = nil
-        end
-    end
-end
-
-return M
+return QfList

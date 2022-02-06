@@ -1,3 +1,4 @@
+---@class BqfMagicWinCore
 local M = {}
 local api = vim.api
 local fn = vim.fn
@@ -23,7 +24,11 @@ local function cal_wrow(fraction, height)
     return math.floor((fraction * height - 1) / 16384)
 end
 
--- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
+--- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
+---@param fraction number
+---@param ctx table
+---@param lsize_obj BqfLFFI|BqfLNonFFI
+---@return number
 local function evaluate_wrow(fraction, ctx, lsize_obj)
     local height = ctx.height
     local wrow = cal_wrow(fraction, height)
@@ -73,6 +78,11 @@ local function evaluate_wrow(fraction, ctx, lsize_obj)
     return wrow
 end
 
+---
+---@param frac_list number[]
+---@param ctx table
+---@param lsize_obj BqfLFFI|BqfLNonFFI
+---@return number[]
 local function do_filter(frac_list, ctx, lsize_obj)
     local t = {}
     local wv = ctx.wv
@@ -90,9 +100,13 @@ local function do_filter(frac_list, ctx, lsize_obj)
     return t
 end
 
--- If the lnum hasn't been changed, even if the window is resized, the fraction is still a constant.
--- And we can use this feature to find out the possible fraction with changing window height.
--- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
+--- If the lnum hasn't been changed, even if the window is resized, the fraction is still a constant.
+--- And we can use this feature to find out the possible fraction with changing window height.
+--- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
+---@param frac_list number[]
+---@param lsize_obj BqfLFFI|BqfLNonFFI
+---@param max_hei number
+---@return number[]
 local function filter_fraction(frac_list, lsize_obj, max_hei)
     local asc
     local height = api.nvim_win_get_height(0)
@@ -132,6 +146,11 @@ local function filter_fraction(frac_list, lsize_obj, max_hei)
     return frac_list
 end
 
+---
+---@param awrow number
+---@param aheight number
+---@param bheight number
+---@return number
 function M.evaluate(awrow, aheight, bheight)
     -- s_bwrow: the minimum bwrow value
     -- Below formula we can derive from the known conditions
@@ -176,6 +195,11 @@ function M.resetview(wv)
     fn.winline()
 end
 
+---
+---@param winid number
+---@param topline number
+---@param lsizes BqfLFFI|BqfLNonFFI
+---@return number, number
 function M.tune_top(winid, topline, lsizes)
     return utils.win_execute(winid, function()
         local i_start, i_end, i_inc, should_continue, len

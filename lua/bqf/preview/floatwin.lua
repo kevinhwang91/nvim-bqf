@@ -1,10 +1,20 @@
--- singleton
 local api = vim.api
 local fn = vim.fn
 
 local utils = require('bqf.utils')
 
-local FloatWin = {}
+--- Singleton
+---@class BqfPreviewFloatWin
+---@field wpos BqfWinPos
+---@field qwinid number
+---@field pwinid number
+---@field win_height number
+---@field win_vheight number
+---@field wrap boolean
+---@field winid number
+---@field bufnr number
+---@field private _wopts table
+local FloatWin = {wpos = require('bqf.wpos')}
 
 function FloatWin:build(o)
     o = o or {}
@@ -14,7 +24,6 @@ function FloatWin:build(o)
     self.win_height = o.win_height
     self.win_vheight = o.win_vheight
     self.wrap = o.wrap
-    self.wpos = require('bqf.wpos')
     self.winid = nil
     self.bufnr = nil
     return self

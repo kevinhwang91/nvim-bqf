@@ -1,3 +1,4 @@
+---@class BqfMagicWinHandler
 local M = {}
 local api = vim.api
 local fn = vim.fn
@@ -36,7 +37,7 @@ local function guess_bwrow(qwinid, winid)
 
         -- qf winodw height might be changed by user adds new qf items or navigates history
         -- we need a cache to store previous state
-        local aws = mgws.adjacent_win(qbufnr, winid)
+        local aws = mgws:adjacent_win(qbufnr, winid)
         local bheight, aheight = aws.height or qf_hei + win_hei + 1, win_hei
         local bwrow
 
@@ -59,7 +60,7 @@ end
 local function reset_win_top(qwinid, winid, qf_pos, bwrow)
     utils.win_execute(winid, function()
         local qbufnr = api.nvim_win_get_buf(qwinid)
-        local aws = mgws.adjacent_win(qbufnr, winid)
+        local aws = mgws:adjacent_win(qbufnr, winid)
         local wv = fn.winsaveview()
         local topline, lnum = wv.topline, wv.lnum
         local awrow = fn.winline() - 1
@@ -134,6 +135,8 @@ local function need_revert(qf_pos)
                POS.BOTTOM
 end
 
+---
+---@param qbufnr number
 function M.reset_winview(qbufnr)
     local win_type = fn.win_gettype()
     if win_type == 'popup' or win_type == 'quickfix' or win_type == 'loclist' then
@@ -147,7 +150,7 @@ function M.reset_winview(qbufnr)
             return
         end
         for _, winid in ipairs(api.nvim_tabpage_list_wins(0)) do
-            local aws = mgws.adjacent_win(qbufnr, winid)
+            local aws = mgws:adjacent_win(qbufnr, winid)
             if aws and aws.wv then
                 utils.win_execute(winid, function()
                     local hrtime = aws.hrtime or 0
@@ -245,7 +248,7 @@ local function revert_closing_wins(qwinid, pwinid, qf_pos, layout_cb)
     local cur_bufnr = api.nvim_get_current_buf()
     local qbufnr = api.nvim_win_get_buf(qwinid)
     for _, winid in ipairs(wpos.find_adjacent_wins(qwinid, pwinid)) do
-        local aws = mgws.adjacent_win(qbufnr, winid)
+        local aws = mgws:adjacent_win(qbufnr, winid)
         if aws and aws.wv then
             local wv = utils.win_execute(winid, fn.winsaveview)
             if cur_bufnr == api.nvim_win_get_buf(winid) then
@@ -263,7 +266,7 @@ local function revert_closing_wins(qwinid, pwinid, qf_pos, layout_cb)
     if type(layout_cb) == 'function' then
         layout_cb()
     end
-    for winid, aws in mgws.pairs(qbufnr) do
+    for winid, aws in pairs(mgws:get(qbufnr)) do
         if aws and aws.wv and aws.wv.topline and utils.is_win_valid(winid) then
             log.debug('revert_closing_wins:', aws.wv, '\n')
             utils.win_execute(winid, function()
@@ -350,6 +353,11 @@ function M.close(winid, last_winid, bufnr)
     M.detach(bufnr)
 end
 
+---
+---@param winid number
+---@param last_winid number
+---@param bufnr number
+---@param layout_cb fun()
 function M.attach(winid, last_winid, bufnr, layout_cb)
     winid = winid or api.nvim_get_current_win()
     last_winid = last_winid or fn.win_getid(fn.winnr('#'))
@@ -363,9 +371,11 @@ function M.attach(winid, last_winid, bufnr, layout_cb)
     ]]):format(winid, last_winid, bufnr))
 end
 
+---
+---@param bufnr number
 function M.detach(bufnr)
     cmd(([[au! BqfMagicWin * <buffer=%d>]]):format(bufnr))
-    mgws.clean(bufnr)
+    mgws:clean(bufnr)
 end
 
 local function init()
