@@ -11,6 +11,7 @@ local utils = require('bqf.utils')
 local log = require('bqf.log')
 
 local action_for, extra_opts, is_windows
+local ctx_action_for
 local version
 local headless
 
@@ -209,7 +210,7 @@ local function handler(qwinid, lines)
     end, lines)
     table.sort(selected_index)
 
-    local action = action_for[key]
+    local action = (ctx_action_for or action_for)[key]
     if not action or action == '' then
         return
     end
@@ -355,7 +356,6 @@ function M.run()
     end
     -- greater than 1000 items is worth using headless as stream to improve user experience
     local source = size > 1000 and source_cmd or source_list
-    local expect_keys = table.concat(vim.tbl_keys(action_for), ',')
 
     local base_opt = {}
     if compare_version(version, '0.25.0') >= 0 then
@@ -367,12 +367,21 @@ function M.run()
         table.insert(base_opt, utils.scrolloff(qwinid))
     end
 
+    -- TODO
+    -- ctx.fzf_extra_opts and ctx.fzf_action_for are used by myself, I'm not sure who wants them.
+    local ctx = qlist:context().bqf or {}
+    ctx_action_for = nil
+    if type(ctx.fzf_action_for) == 'table' then
+        ctx_action_for = vim.tbl_extend('keep', ctx.fzf_action_for, action_for)
+        filter_actions(ctx_action_for)
+    end
+    local expect_keys = table.concat(vim.tbl_keys(ctx_action_for or action_for), ',')
     vim.list_extend(base_opt, {
         '--multi', '--ansi', '--delimiter', [[\|]], '--with-nth', '2..', '--nth', '3..,1,2',
         '--header-lines', 0, '--tiebreak', 'index', '--info', 'inline', '--prompt', prompt,
         '--no-border', '--layout', 'reverse-list', '--expect', expect_keys
     })
-    local options = vim.list_extend(base_opt, extra_opts)
+    local options = vim.list_extend(base_opt, ctx.fzf_extra_opts or extra_opts)
     local delimiter = parse_delimiter(options)
     local opts = {
         options = options,
