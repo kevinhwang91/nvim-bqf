@@ -27,6 +27,14 @@ local function get_version()
     return ver
 end
 
+local function filter_actions(actions)
+    for key, action in pairs(actions) do
+        if type(action) ~= 'string' or action:match('^%s*$') then
+            actions[key] = nil
+        end
+    end
+end
+
 local function compare_version(a, b)
     local asecs = vim.split(a, '%.')
     local bsecs = vim.split(b, '%.')
@@ -201,11 +209,8 @@ local function handler(qwinid, lines)
     end, lines)
     table.sort(selected_index)
 
-    local idx
     local action = action_for[key]
-    if #selected_index == 1 then
-        idx = selected_index[1]
-        qhandler.open(true, action, qwinid, idx)
+    if not action or action == '' then
         return
     end
 
@@ -218,13 +223,16 @@ local function handler(qwinid, lines)
         set_qf_cursor(qwinid, selected_index[1])
     elseif action == 'closeall' then
         api.nvim_win_close(qwinid, false)
-    else
+    elseif #selected_index > 1 then
         local items = qs:list():items()
         base.filter_list(qwinid, coroutine.wrap(function()
             for _, i in ipairs(selected_index) do
                 coroutine.yield(i, items[i])
             end
         end))
+    elseif #selected_index == 1 then
+        local idx = selected_index[1]
+        qhandler.open(true, action, qwinid, idx)
     end
 end
 
@@ -417,6 +425,8 @@ local function init()
         extra_opts = {extra_opts, 'table'},
         version = {version, 'string', 'version string'}
     })
+
+    filter_actions(action_for)
 
     phandler = require('bqf.preview.handler')
     qhandler = require('bqf.qfwin.handler')
