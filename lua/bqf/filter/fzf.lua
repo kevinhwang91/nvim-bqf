@@ -223,7 +223,13 @@ local function handler(qwinid, lines)
         end
         set_qf_cursor(qwinid, selected_index[1])
     elseif action == 'closeall' then
-        api.nvim_win_close(qwinid, false)
+        -- Look fzf have switched back the previous window (qf)
+        cmd(('noa call nvim_set_current_win(%d)'):format(qwinid))
+        cmd([[
+            setlocal stl=%#Normal#
+            redrawstatus
+            close
+        ]])
     elseif #selected_index > 1 then
         local items = qs:list():items()
         base.filter_list(qwinid, coroutine.wrap(function()
@@ -323,17 +329,19 @@ function M.pre_handle(qwinid, size)
 
     -- keep fzf term away from dithering
     if vim.o.termguicolors then
-        vim.wo[qwinid].winbl = 100
+        local winid = api.nvim_get_current_win()
+        local winbl = vim.wo[winid].winbl
+        -- https://github.com/neovim/neovim/issues/14670
+        cmd('setlocal winbl=100')
         local stl
         local ok, msg = pcall(api.nvim_win_get_option, qwinid, 'stl')
         if ok then
             stl = msg
         end
-        local winid = api.nvim_get_current_win()
         vim.wo[qwinid].stl = '%#Normal#'
         vim.defer_fn(function()
             pcall(api.nvim_win_set_option, qwinid, 'stl', stl)
-            pcall(api.nvim_win_set_option, winid, 'winbl', 0)
+            pcall(api.nvim_win_set_option, winid, 'winbl', winbl)
         end, size > 1000 and 100 or 50)
     end
 
