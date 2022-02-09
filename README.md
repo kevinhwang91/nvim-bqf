@@ -556,6 +556,8 @@ dress up your personal quickfix window:) Here is the configuration for demo:
 Set `quickfixtextfunc` option and write down corresponding function:
 
 ```lua
+local fn = vim.fn
+
 function _G.qftf(info)
     local items
     local ret = {}
@@ -615,7 +617,7 @@ require('bqf').setup({
 Add `qf.vim` under your syntax path, for instance: `~/.config/nvim/syntax/qf.vim`
 
 ```vim
-if exists("b:current_syntax")
+if exists('b:current_syntax')
     finish
 endif
 
