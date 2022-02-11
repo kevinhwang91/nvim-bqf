@@ -211,7 +211,8 @@ local function handler(qwinid, lines)
     table.sort(selected_index)
 
     local action = (ctx_action_for or action_for)[key]
-    if not action or action == '' then
+    -- default action is nil, don't skip
+    if action == '' then
         return
     end
 
