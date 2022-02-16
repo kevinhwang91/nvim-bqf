@@ -179,7 +179,8 @@ but exclude `session.lua` file.
             default = 50
         },
         win_height = {
-            description = [[the height of preview window for horizontal layout]],
+            description = [[the height of preview window for horizontal layout,
+                large value (like 999) perform preview window as a "full" mode]],
             default = 15
         },
         win_vheight = {
