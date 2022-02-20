@@ -119,6 +119,8 @@ function M.nav_history(next)
     local hist_num = (cur_nr - 1 + (next and count or last_nr - count)) % last_nr + 1
 
     cmd(([[sil exe '%d%shi']]):format(hist_num, prefix))
+    cmd([[norm! m']])
+    M.restore_winview()
 
     local qinfo = qlist:get_qflist({nr = 0, size = 0, title = 0})
     local nr, size, title = qinfo.nr, qinfo.size, qinfo.title
