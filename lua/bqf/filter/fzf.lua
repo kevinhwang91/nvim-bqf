@@ -52,11 +52,17 @@ local function compare_version(a, b)
 end
 
 local function export4headless(bufnr, signs, fname)
-    local fd = assert(io.open(fname, 'w'))
+    local fname_data = fname .. '_data'
+    local fname_sign = fname .. '_sign'
+    local fd_data = assert(io.open(fname_data, 'w'))
+    local fd_sign = assert(io.open(fname_sign, 'w'))
     for i, line in pairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
-        fd:write(('%c %s\n'):format(signs[i] and 0 or 32, line))
+        fd_data:write(('%s\n'):format(line))
+        fd_sign:write(('%c'):format(signs[i] and 0 or 32))
     end
-    fd:close()
+    fd_data:close()
+    fd_sign:close()
+    return fname_data, fname_sign
 end
 
 local function source_list(qwinid, signs, delim)
@@ -81,15 +87,25 @@ local function source_list(qwinid, signs, delim)
     local padding = (' '):rep(headless and headless.padding_nr or utils.textoff(qwinid) - 4)
     local sign_ansi = hl_ansi('BqfSign', '^')
     local line_fmt = headless and '%d' .. delim .. '%s%s %s\n' or '%d' .. delim .. '%s%s %s'
+    if not signs then
+        local headless_sign_bufnr = fn.bufnr('#')
+        signs = api.nvim_buf_get_lines(headless_sign_bufnr, 0, 1, false)[1]
+    end
 
     local is_keyword = utils.gen_is_keyword(bufnr)
 
-    local start = headless and 3 or 1
     local ts = vim.bo[bufnr].ts
+    qwinid = qwinid and qwinid or 0
+    local conceal_enabled = vim.wo[qwinid].conceallevel > 0
+    local conceal_hl_id
+    if conceal_enabled then
+        conceal_hl_id = fn.hlID('conceal')
+    end
+
     for i, line in pairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
         local signed = ' '
         if headless then
-            if line:byte() == 0 then
+            if signs:byte(i) == 0 then
                 signed = sign_ansi
             end
             line = utils.expandtab(line, ts, 3)
@@ -103,26 +119,51 @@ local function source_list(qwinid, signs, delim)
         local line_sect = {}
         local last_hl_id = 0
         local last_is_kw = false
-        local last_col = start
-        local j = start
+        local last_cid = 0
+        local last_cchar = ''
+        local last_col = 1
+        local j = 1
         while j <= #line do
             local byte = line:byte(j)
             local is_kw = is_keyword(byte)
-            if not (last_is_kw and is_kw and
-                (byte >= 97 and byte <= 122 or byte >= 65 and byte <= 90)) then
-                -- TODO the filter is not good enough
-                if byte <= 32 then
-                    last_is_kw = false
-                else
-                    local hl_id = fn.synID(i, j, true)
-                    if j > start and last_hl_id > 0 and hl_id ~= last_hl_id then
-                        table.insert(line_sect,
-                            hl_id2ansi[last_hl_id]:format(line:sub(last_col, j - 1)))
-                        last_col = j
+            -- TODO the filter is not good enough
+            if last_is_kw and is_kw and (byte >= 97 and byte <= 122 or byte >= 65 and byte <= 90) then
+                goto continue
+            end
+
+            if byte <= 32 then
+                last_is_kw = false
+                goto continue
+            end
+
+            if conceal_enabled then
+                local concealed, cchar, cid = unpack(fn.synconcealed(i, j))
+                concealed = concealed == 1
+                if last_cid > 0 and cid ~= last_cid then
+                    if #last_cchar > 0 then
+                        table.insert(line_sect, hl_id2ansi[conceal_hl_id]:format(last_cchar))
                     end
-                    last_hl_id, last_is_kw = hl_id, is_kw
+                    last_col = j
+                    last_cid = 0
+                end
+
+                if concealed then
+                    last_cchar, last_cid = cchar, cid
+                    goto continue
                 end
             end
+
+            do
+                -- use do...end to skip `<goto continue> jumps into the scope of local` error
+                local hl_id = fn.synID(i, j, true)
+                if j > last_col and last_hl_id > 0 and hl_id ~= last_hl_id then
+                    table.insert(line_sect, hl_id2ansi[last_hl_id]:format(line:sub(last_col, j - 1)))
+                    last_col = j
+                end
+                last_hl_id, last_is_kw = hl_id, is_kw
+            end
+
+            ::continue::
             j = j + 1
         end
         local hl_fmt = last_hl_id > 0 and hl_id2ansi[last_hl_id] or '%s'
@@ -139,47 +180,75 @@ end
 
 local function source_cmd(qwinid, signs, delim)
     local tname = fn.tempname()
-    local qfname = fn.fnameescape(tname)
+    local fname = fn.fnameescape(tname)
     local sfname = fn.fnameescape(tname .. '.lua')
 
     local bufnr = api.nvim_win_get_buf(qwinid)
-    export4headless(bufnr, signs, qfname)
+    local fname_data, fname_sign = export4headless(bufnr, signs, fname)
     -- keep spawn process away from inheriting $NVIM_LISTEN_ADDRESS to call server_init()
     -- look like widnows can't clear env in cmdline
     local no_listen_env = is_windows and '' or 'NVIM_LISTEN_ADDRESS='
     local cmds = {
         no_listen_env, vim.v.progpath, '--clean -n --headless', '-c', ('so %q'):format(sfname)
     }
-    local script = {'vim.cmd([['}
+    local script = {'pcall(vim.cmd, [['}
 
     local fd = assert(io.open(sfname, 'w'))
 
+    table.insert(script, 'set hidden')
     local fenc = vim.bo[bufnr].fenc
-    table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', qfname))
+    table.insert(script, ('e %s'):format(fname_sign))
+    table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', fname_data))
+
+    local bqf_rtp
+    local qf_files = vim.tbl_extend('keep', api.nvim_get_runtime_file('syntax/qf.vim', true),
+        api.nvim_get_runtime_file('syntax/qf.lua', true))
+    local rtps, sorted_qf_files = {}, {}
+    for _, rtp in ipairs(api.nvim_list_runtime_paths()) do
+        if not bqf_rtp and rtp:find('nvim-bqf', 1, true) then
+            bqf_rtp = rtp
+        end
+
+        for _, f in ipairs(qf_files) do
+            if f:find(rtp, 1, true) then
+                table.insert(rtps, rtp)
+                if not vim.tbl_contains(sorted_qf_files, f) then
+                    table.insert(sorted_qf_files, f)
+                end
+                break
+            end
+        end
+    end
+    assert(bqf_rtp, [[Can't find nvim-bqf's runtime path]])
+    table.insert(rtps, bqf_rtp)
+
+    table.insert(script, ('set rtp+=%s'):format(table.concat(
+        vim.tbl_map(function(p)
+            return fn.fnameescape(p)
+        end, rtps), ',')))
+
+    for _, path in ipairs(sorted_qf_files) do
+        table.insert(script, ('so %s'):format(fn.fnameescape(path)))
+    end
 
     local ansi_tbl = {[('BqfSign'):upper()] = utils.render_str('^', 'BqfSign')}
+    local conceallevel = vim.wo[qwinid].conceallevel
+    if conceallevel > 0 then
+        ansi_tbl['CONCEAL'] = utils.render_str('%s', 'Conceal')
+    end
 
     for _, name in ipairs(utils.syntax_list(bufnr)) do
         name = name:upper()
         ansi_tbl[name] = utils.render_str('%s', name)
     end
 
-    for _, path in ipairs(api.nvim_get_runtime_file('syntax/qf.vim', true)) do
-        table.insert(script, ('sil! so %s'):format(fn.fnameescape(path)))
-    end
-
-    local bqf_path = vim.tbl_filter(function(p)
-        return p:match('nvim%-bqf$')
-    end, api.nvim_list_runtime_paths())[1]
-    assert(bqf_path, [[Can't find nvim-bqf's runtime path]])
-
     table.insert(script, ('set ts=%d'):format(vim.bo[bufnr].ts))
-
-    table.insert(script, ('set rtp+=%s'):format(fn.fnameescape(bqf_path)))
+    table.insert(script, ('set conceallevel=%d'):format(conceallevel))
 
     if not log.is_enabled('debug') then
-        table.insert(script, ([[sil! call delete('%s')]]):format(qfname))
-        table.insert(script, ([[sil! call delete('%s')]]):format(sfname))
+        table.insert(script, ([[call delete('%s')]]):format(fname_data))
+        table.insert(script, ([[call delete('%s')]]):format(fname_sign))
+        table.insert(script, ([[call delete('%s')]]):format(sfname))
         table.insert(script, ']])')
     else
         table.insert(script, ']])')
