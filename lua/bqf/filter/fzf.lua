@@ -262,6 +262,7 @@ local function watch_file(qwinid, tmpfile)
         uv.fs_close(fd, function(err)
             assert(not err, err)
         end)
+        os.remove(tmpfile)
     end
     watch_ev:start(tmpfile, {}, function(err, filename, events)
         assert(not err, err)
