@@ -95,26 +95,28 @@ local function reset_win_top(qwinid, winid, qf_pos, bwrow)
         local botline = fn.line('w$')
         log.debug('after topline:', topline, 'topfill:', topfill, 'lnum:', lnum, 'tune_lnum:',
             tune_lnum)
+        log.debug('botline:', botline)
 
-        local awv = aws.wv
+        local awinview = aws.wv
+        log.debug('adjacent winview:', awinview)
         local hrtime
-        if awv and awv.tune_lnum ~= LNUM.KEEP then
-            if awv.tune_lnum == LNUM.UP and wv.lnum <= awv.lnum then
+        if awinview and not vim.tbl_isempty(awinview) and aws.tune_lnum ~= LNUM.KEEP then
+            if aws.tune_lnum == LNUM.UP and wv.lnum <= awinview.lnum then
                 mcore.resetview({
                     topline = topline,
                     topfill = topfill,
-                    lnum = math.min(botline, awv.lnum)
+                    lnum = math.min(botline, awinview.lnum)
                 })
-            elseif awv.tune_lnum == LNUM.DOWN and wv.lnum >= awv.lnum then
+            elseif aws.tune_lnum == LNUM.DOWN and wv.lnum >= awinview.lnum then
                 mcore.resetview({
                     topline = topline,
                     topfill = topfill,
-                    lnum = math.max(topline, awv.lnum)
+                    lnum = math.max(topline, awinview.lnum)
                 })
             end
         else
             wv.topline, wv.topfill = topline, topfill
-            awv = wv
+            awinview = wv
             hrtime = uv.hrtime()
             if tune_lnum ~= LNUM.KEEP then
                 if tune_lnum == LNUM.UP then
@@ -124,8 +126,8 @@ local function reset_win_top(qwinid, winid, qf_pos, bwrow)
             end
         end
 
-        aws:set({height = aheight, hrtime = hrtime, tune_lnum = tune_lnum, wv = awv})
-        log.debug('aws:', aws)
+        aws:set({height = aheight, hrtime = hrtime, tune_lnum = tune_lnum, wv = awinview})
+        log.debug('adjacent window session:', aws)
     end)
 end
 
