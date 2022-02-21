@@ -201,7 +201,7 @@ local function source_cmd(qwinid, signs, delim)
     table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', fname_data))
 
     local bqf_rtp
-    local qf_files = vim.tbl_extend('keep', api.nvim_get_runtime_file('syntax/qf.vim', true),
+    local qf_files = vim.list_extend(api.nvim_get_runtime_file('syntax/qf.vim', true),
         api.nvim_get_runtime_file('syntax/qf.lua', true))
     local rtps, sorted_qf_files = {}, {}
     for _, rtp in ipairs(api.nvim_list_runtime_paths()) do
