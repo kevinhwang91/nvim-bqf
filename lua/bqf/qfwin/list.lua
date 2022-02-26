@@ -33,8 +33,8 @@ local fn = vim.fn
 ---@field id number
 ---@field filewinid number
 ---@field type string
----@field getqflist fun(param:table):BqfQfDict
----@field setqflist fun(param:table):number
+---@field getqflist fun(param:table): BqfQfDict
+---@field setqflist fun(param:table): number
 ---@field private _changedtick number
 ---@field private _sign QfWinSign
 ---@field private _context table

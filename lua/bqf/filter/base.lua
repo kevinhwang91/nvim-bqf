@@ -7,7 +7,7 @@ local qfs = require('bqf.qfwin.session')
 
 ---
 ---@param qwinid number
----@param co_wrap fun(): number, BqfQfItem
+---@param co_wrap fun(number, BqfQfItem)
 function M.filter_list(qwinid, co_wrap)
     if not co_wrap then
         return

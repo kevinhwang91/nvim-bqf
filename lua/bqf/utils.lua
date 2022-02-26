@@ -271,7 +271,7 @@ end
 
 ---
 ---@param winid number
----@param func fun()
+---@param func fun(): any[]
 ---@vararg any
 ---@return any
 function M.win_execute(winid, func, ...)

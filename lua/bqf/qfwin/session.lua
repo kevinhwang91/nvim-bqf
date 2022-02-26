@@ -5,7 +5,7 @@ local list = require('bqf.qfwin.list')
 local utils = require('bqf.utils')
 
 ---
----@return fun(winid: number):boolean
+---@return fun(winid: number): boolean
 local validate = (function()
     if utils.has_06() then
         return function(winid)
