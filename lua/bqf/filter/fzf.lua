@@ -199,6 +199,8 @@ local function source_cmd(qwinid, signs, delim)
     local fenc = vim.bo[bufnr].fenc
     table.insert(script, ('e %s'):format(fname_sign))
     table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', fname_data))
+    table.insert(script,
+        ('let w:quickfix_title=%q'):format(utils.getwinvar(qwinid, 'quickfix_title', '')))
 
     local bqf_rtp
     local qf_files = vim.list_extend(api.nvim_get_runtime_file('syntax/qf.vim', true),

@@ -410,6 +410,21 @@ function M.scrolloff(winid)
     return fn.getwinvar(winid, '&scrolloff')
 end
 
+---@param winid number
+---@param name string
+---@param def any
+function M.getwinvar(winid, name, def)
+    if M.has_06() then
+        if name:match('^&') then
+            return vim.wo[winid][name:sub(2)]
+        else
+            return vim.w[winid][name] or def
+        end
+    else
+        return fn.getwinvar(winid, name, def)
+    end
+end
+
 --- 1. use uv read file will cause much cpu usage and memory usage
 --- 2. type of result returned by read is string, it must convert to table first
 --- 3. nvim_buf_set_lines is expensive for flushing all buffers
