@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.1] - 2022-02-26
+
+### Bug Fixes
+
+#### FZF
+
+- Support conceal (#56)
+- Add w:quickfix_title as a context/id for spawning headless
+- Clean up tmpfile for preview
+
+#### MagicWin
+
+- Correct the validation of adjacent win session
+
 ## [0.3.0] - 2022-02-21
 
 ### Bug Fixes
