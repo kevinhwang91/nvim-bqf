@@ -17,12 +17,18 @@ local function coc_enabled()
     return coc_initialized
 end
 
+function M.clear_highlight(fbufnr)
+    if ns then
+        api.nvim_buf_clear_namespace(fbufnr, ns, 0, -1)
+    end
+end
+
 ---
 ---@param bufnr number
 ---@param fbufnr number
 ---@param topline number
 ---@param botline number
-function M.highlight(bufnr, fbufnr, topline, botline)
+function M.update_highlight(bufnr, fbufnr, topline, botline)
     if not coc_enabled() then
         return
     end
@@ -34,7 +40,7 @@ function M.highlight(bufnr, fbufnr, topline, botline)
 
     local extmarks = api.nvim_buf_get_extmarks(bufnr, coc_ns, {topline - 1, 0}, {botline - 1, -1},
         {details = true})
-    api.nvim_buf_clear_namespace(fbufnr, ns, 0, -1)
+    M.clear_highlight(fbufnr)
     for _, m in ipairs(extmarks) do
         local _, row, col, details = unpack(m)
         local end_row, end_col = details.end_row, details.end_col
