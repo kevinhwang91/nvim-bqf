@@ -70,7 +70,7 @@ function Border:update_scrollbar()
     local buf = api.nvim_win_get_buf(self.floatwin.winid)
     local line_count = api.nvim_buf_line_count(buf)
 
-    local winfo = fn.getwininfo(self.floatwin.winid)[1]
+    local winfo = utils.getwininfo(self.floatwin.winid)
     local topline, height = winfo.topline, winfo.height
 
     local bar_size = math.min(height, math.ceil(height * height / line_count))

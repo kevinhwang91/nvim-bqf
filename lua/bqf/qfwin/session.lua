@@ -17,7 +17,7 @@ local validate = (function()
             winid = winid or api.nvim_get_current_win()
             local ok, ret
             ok = pcall(function()
-                ret = fn.getwininfo(winid)[1].quickfix == 1
+                ret = utils.getwininfo(winid).quickfix == 1
             end)
             return ok and ret
         end

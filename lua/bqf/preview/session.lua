@@ -109,6 +109,10 @@ function PreviewSession.update_scrollbar()
     border:update_scrollbar()
 end
 
+function PreviewSession.visible_region()
+    return floatwin:visible_region()
+end
+
 function PreviewSession.display()
     floatwin:display()
     border:display()

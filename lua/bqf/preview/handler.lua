@@ -16,6 +16,7 @@ local config = require('bqf.config')
 local qfs = require('bqf.qfwin.session')
 local pvs = require('bqf.preview.session')
 local ts = require('bqf.preview.treesitter')
+local stoken = require('bqf.preview.semantictoken')
 local utils = require('bqf.utils')
 
 local function exec_preview(item, lsp_range_hl, pattern_hl)
@@ -185,13 +186,14 @@ function M.open(qwinid, qidx, force)
         return
     end
 
+    local loaded = api.nvim_buf_is_loaded(pbufnr)
     if ps.bufnr ~= pbufnr then
         pvs.floatbuf_reset()
         ts.disable_active(fbufnr)
 
         utils.transfer_buf(pbufnr, fbufnr)
         ps.bufnr = pbufnr
-        ps.syntax = ts.try_attach(pbufnr, fbufnr)
+        ps.syntax = ts.try_attach(pbufnr, fbufnr, loaded)
     end
 
     if not ps.syntax then
@@ -209,6 +211,10 @@ function M.open(qwinid, qidx, force)
 
     pvs.floatwin_exec(function()
         exec_preview(item, lsp_range_hl, pattern_hl)
+        if loaded then
+            local topline, botline = pvs.visible_region()
+            stoken.highlight(pbufnr, fbufnr, topline, botline)
+        end
         cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
 
@@ -218,7 +224,8 @@ end
 
 function M.scroll(direction)
     if pvs.validate() and direction then
-        local qs = qfs:get(api.nvim_get_current_win())
+        local qwinid = api.nvim_get_current_win()
+        local qs = qfs:get(qwinid)
         local pwinid = qs:pwinid()
         pvs.floatwin_exec(function()
             if direction == 0 then
@@ -228,6 +235,12 @@ function M.scroll(direction)
                 cmd(('norm! %c'):format(direction > 0 and 0x04 or 0x15))
             end
             utils.zz()
+            local ps = preview_session(qwinid)
+            local loaded = api.nvim_buf_is_loaded(ps.bufnr)
+            if loaded then
+                local topline, botline = pvs.visible_region()
+                stoken.highlight(ps.bufnr, ps.float_bufnr(), topline, botline)
+            end
             cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
         end)
         pvs.update_scrollbar()

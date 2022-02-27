@@ -236,12 +236,22 @@ end
 
 ---
 ---@param winid number
+---@return table
+function M.getwininfo(winid)
+    local winfos = fn.getwininfo(winid)
+    assert(type(winfos) == 'table' and #winfos == 1,
+        '`getwininfo` expected 1 table with single element.')
+    return winfos[1]
+end
+
+---
+---@param winid number
 ---@return number
 function M.textoff(winid)
     vim.validate({winid = {winid, 'number'}})
     local textoff
     if M.has_06() then
-        textoff = fn.getwininfo(winid)[1].textoff
+        textoff = M.getwininfo(winid).textoff
     end
 
     if not textoff then

@@ -1,6 +1,8 @@
 local api = vim.api
 local fn = vim.fn
 
+local utils = require('bqf.utils')
+
 ---@class BqfQfItem
 ---@field bufnr number
 ---@field module string
@@ -248,7 +250,7 @@ function QfList:get(qwinid, id)
     if not id then
         qwinid = qwinid or api.nvim_get_current_win()
         local what = {id = 0, filewinid = 0}
-        local winfo = fn.getwininfo(qwinid)[1]
+        local winfo = utils.getwininfo(qwinid)
         if winfo.quickfix == 1 then
             ---@type BqfQfDict
             local qdict = winfo.loclist == 1 and fn.getloclist(0, what) or fn.getqflist(what)

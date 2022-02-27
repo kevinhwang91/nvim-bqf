@@ -33,7 +33,7 @@ function FloatWin:cal_wopts()
     local POS = self.wpos.POS
     local rel_pos, abs_pos = unpack(self.wpos.get_pos(self.qwinid, self.pwinid))
 
-    local qinfo = fn.getwininfo(self.qwinid)[1]
+    local qinfo = utils.getwininfo(self.qwinid)
     local width, height, col, row, anchor
     if rel_pos == POS.ABOVE or rel_pos == POS.BELOW or abs_pos == POS.TOP or abs_pos == POS.BOTTOM then
         local row_pos = qinfo.winrow
@@ -96,6 +96,11 @@ end
 function FloatWin:open(bufnr, wopts)
     self.winid = api.nvim_open_win(bufnr, false, wopts)
     return self.winid
+end
+
+function FloatWin:visible_region()
+    local winfo = utils.getwininfo(self.winid)
+    return winfo.topline, winfo.botline
 end
 
 function FloatWin:close()

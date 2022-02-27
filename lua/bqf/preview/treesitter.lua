@@ -50,13 +50,13 @@ end
 ---
 ---@param pbufnr number
 ---@param fbufnr number
+---@param loaded boolean
 ---@return boolean
-function M.try_attach(pbufnr, fbufnr)
+function M.try_attach(pbufnr, fbufnr, loaded)
     local ret = false
     if not initialized then
         return ret
     end
-    local loaded = api.nvim_buf_is_loaded(pbufnr)
     local parser
     if loaded then
         parser = parsers.get_parser(pbufnr)
