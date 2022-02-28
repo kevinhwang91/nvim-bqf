@@ -71,7 +71,6 @@ So why not nvim-bqf?
 - [Neovim](https://github.com/neovim/neovim) 0.5 or later
 - [fzf](https://github.com/junegunn/fzf) (optional, 0.24.0 later)
 - [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (optional)
-- [coc.nvim](https://github.com/neoclide/coc.nvim) (optional)
 
 ### Installation
 
@@ -94,9 +93,6 @@ end
 
 -- optional, highly recommended
 use {'nvim-treesitter/nvim-treesitter', run = ':TSUpdate'}
-
--- optional, use semantic to enhance the highlighting in the preview window like normal buffer
-use {'neoclide/coc.nvim', branch = 'release'}
 ```
 
 The nvim-bqf's preview builds upon the buffers. I highly recommended to use
