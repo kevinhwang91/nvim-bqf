@@ -361,6 +361,12 @@ end
 ---@param bufnr number
 ---@param layout_cb fun()
 function M.attach(winid, last_winid, bufnr, layout_cb)
+    if not enable then
+        if type(layout_cb) == 'function' then
+            layout_cb()
+        end
+        return
+    end
     winid = winid or api.nvim_get_current_win()
     last_winid = last_winid or fn.win_getid(fn.winnr('#'))
     bufnr = bufnr or api.nvim_win_get_buf(winid)
