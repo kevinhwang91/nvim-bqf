@@ -16,7 +16,7 @@ local config = require('bqf.config')
 local qfs = require('bqf.qfwin.session')
 local pvs = require('bqf.preview.session')
 local ts = require('bqf.preview.treesitter')
-local stoken = require('bqf.preview.semantictoken')
+local extmark = require('bqf.preview.extmark')
 local utils = require('bqf.utils')
 
 local function exec_preview(item, lsp_range_hl, pattern_hl)
@@ -191,7 +191,7 @@ function M.open(qwinid, qidx, force)
         pvs.floatbuf_reset()
         ts.disable_active(fbufnr)
 
-        stoken.clear_highlight(fbufnr)
+        extmark.clear_highlight(fbufnr)
         utils.transfer_buf(pbufnr, fbufnr)
         ps.bufnr = pbufnr
         ps.syntax = ts.try_attach(pbufnr, fbufnr, loaded)
@@ -214,7 +214,7 @@ function M.open(qwinid, qidx, force)
         exec_preview(item, lsp_range_hl, pattern_hl)
         if loaded then
             local topline, botline = pvs.visible_region()
-            stoken.update_highlight(pbufnr, fbufnr, topline, botline)
+            extmark.update_highlight(pbufnr, fbufnr, topline, botline)
         end
         cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
@@ -240,7 +240,7 @@ function M.scroll(direction)
             local loaded = api.nvim_buf_is_loaded(ps.bufnr)
             if loaded then
                 local topline, botline = pvs.visible_region()
-                stoken.update_highlight(ps.bufnr, ps.float_bufnr(), topline, botline)
+                extmark.update_highlight(ps.bufnr, ps.float_bufnr(), topline, botline)
             end
             cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
         end)
