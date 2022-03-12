@@ -7,12 +7,11 @@
 ---@field error fun(...)
 local M = {}
 local fn = vim.fn
+local uv = vim.loop
 
 local levels
 local level_nr
 local level_default
-local log_file
-local log_date_fmt
 
 local function get_level_nr(l)
     local nr
@@ -59,18 +58,18 @@ local function inspect(v)
 end
 
 local function path_sep()
-    return vim.loop.os_uname().sysname == 'Windows' and [[\]] or '/'
+    return uv.os_uname().sysname == 'Windows_NT' and [[\]] or '/'
 end
 
 local function init()
     local log_dir = fn.stdpath('cache')
+    local log_file = table.concat({log_dir, 'bqf.log'}, path_sep())
+    local log_date_fmt = '%y-%m-%d %T'
+
     fn.mkdir(log_dir, 'p')
     levels = {TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4}
     level_default = 3
     M.set_level(vim.env.BQF_LOG)
-
-    log_file = table.concat({log_dir, 'bqf.log'}, path_sep())
-    log_date_fmt = '%y-%m-%d %T'
 
     for l in pairs(levels) do
         M[l:lower()] = function(...)
