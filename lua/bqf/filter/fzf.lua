@@ -297,11 +297,17 @@ local function handler(qwinid, lines)
     elseif action == 'closeall' then
         -- Look fzf have switched back the previous window (qf)
         cmd(('noa call nvim_set_current_win(%d)'):format(qwinid))
+        local ok, stl = pcall(api.nvim_win_get_option, qwinid, 'stl')
         cmd([[
             setlocal stl=%#Normal#
             redrawstatus
-            close
         ]])
+        if ok then
+            cmd(('setlocal stl=%s'):format(stl))
+        else
+            cmd('setlocal stl<')
+        end
+        api.nvim_win_close(qwinid, true)
     elseif #selected_index > 1 then
         local items = qs:list():items()
         base.filter_list(qwinid, coroutine.wrap(function()
