@@ -378,17 +378,19 @@ local function key2lhs(key)
         lhs = key:gsub('ctrl', 'c'):gsub('alt', 'm'):gsub('shift', 's'):gsub('enter', 'cr'):gsub(
             'bspace', 'bs'):gsub('btab', 's-tab')
     end
-    return lhs:match('^[a-z]$') and lhs or '<' .. lhs .. '>'
+    return lhs:match('^.$') and lhs or '<' .. lhs .. '>'
 end
 
 local function parse_bind(options)
     local bind_str
     local default_options = vim.env.FZF_DEFAULT_OPTS
-    for _, sect in ipairs(vim.split(default_options, '%s*%-%-')) do
-        if sect:match('bind=?%s*') then
-            local s, e = sect:find('bind=?%s*')
-            if s then
-                bind_str = sect:sub(e + 1)
+    if type(default_options) == 'string' then
+        for _, sect in ipairs(vim.split(default_options, '%s*%-%-')) do
+            if sect:match('bind=?%s*') then
+                local s, e = sect:find('bind=?%s*')
+                if s then
+                    bind_str = sect:sub(e + 1)
+                end
             end
         end
     end
