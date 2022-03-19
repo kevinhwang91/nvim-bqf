@@ -124,7 +124,16 @@ open up an item in a new tab, a new horizontal split, or in a new vertical split
 fzf becomes a quickfix filter and create a new quickfix list when multiple items are selected and
 accepted.
 
-fzf also support `ctrl-q` to toggle items' sign.
+nvim-bqf also supports `ctrl-q` to toggle items' sign and adapts
+`preview-half-page-up`, `preview-half-page-down` and `toggle-preview` fzf's actions for preview.
+
+Please run `man fzf` and check out `KEY/EVENT BINDINGS` section for details.
+
+There're two ways to adapt fzf's actions for preview function, use `alt-j`and `alt-k` keys as example.
+
+1. Make `$FZF_DEFAULT_OPTS` contains `--bind=alt-j:preview-half-page-down,alt-k:preview-half-page-up`;
+2. Inject `extra_opts = {'--bind', 'alt-j:preview-half-page-down,alt-k:preview-half-page-up,}` to
+   `setup` function;
 
 #### Filter items with signs demo
 

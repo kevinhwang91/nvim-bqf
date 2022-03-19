@@ -346,6 +346,10 @@ local function watch_file(qwinid, tmpfile)
         local _ = filename
         if events.change then
             uv.fs_read(fd, 4 * 1024, -1, function(err2, data)
+
+                if not phandler.auto_enabled() then
+                    return
+                end
                 assert(not err2, err2)
                 local idx = is_windows and tonumber(data:match('%d+')) or tonumber(data)
                 if idx and idx > 0 then
@@ -360,6 +364,42 @@ local function watch_file(qwinid, tmpfile)
         end
     end)
     return release
+end
+
+local function key2lhs(key)
+    local lhs
+    if key == 'pgup' then
+        lhs = 'pageup'
+    elseif key == 'pgdn' then
+        lhs = 'pagedown'
+    elseif key == 'del' then
+        lhs = 'delete'
+    else
+        lhs = key:gsub('ctrl', 'c'):gsub('alt', 'm'):gsub('shift', 's'):gsub('enter', 'cr'):gsub(
+            'bspace', 'bs'):gsub('btab', 's-tab')
+    end
+    return lhs:match('^[a-z]$') and lhs or '<' .. lhs .. '>'
+end
+
+local function parse_bind(options)
+    local bind_str
+    local default_options = vim.env.FZF_DEFAULT_OPTS
+    for _, sect in ipairs(vim.split(default_options, '%s*%-%-')) do
+        if sect:match('bind=?%s*') then
+            local s, e = sect:find('bind=?%s*')
+            if s then
+                bind_str = sect:sub(e + 1)
+            end
+        end
+    end
+    bind_str = bind_str or ''
+    for i, o in ipairs(options) do
+        if type(o) == 'string' and o:match('%-%-bind') and i < #options then
+            bind_str = ('%s,%s'):format(bind_str, options[i + 1])
+            break
+        end
+    end
+    return (bind_str or ''):lower()
 end
 
 local function parse_delimiter(options)
@@ -395,7 +435,7 @@ function M.headless_run(hl_ansi, padding_nr, delim)
     end
 end
 
-function M.pre_handle(qwinid, size)
+function M.pre_handle(qwinid, size, bind)
     local line_count = api.nvim_buf_line_count(0)
     api.nvim_win_set_config(0, {
         relative = 'win',
@@ -422,6 +462,23 @@ function M.pre_handle(qwinid, size)
             pcall(api.nvim_win_set_option, qwinid, 'stl', stl)
             pcall(api.nvim_win_set_option, winid, 'winbl', winbl)
         end, size > 1000 and 100 or 50)
+    end
+
+    local action_fmt = {
+        ['preview-half-page-up'] = [[<Cmd>lua require('bqf.preview.handler').scroll(-1, %d)<CR>]],
+        ['preview-half-page-down'] = [[<Cmd>lua require('bqf.preview.handler').scroll(1, %d)<CR>]],
+        ['toggle-preview'] = [[<Cmd>lua require('bqf.preview.handler').toggle(%d)<CR>]]
+    }
+
+    local bufnr = api.nvim_get_current_buf()
+    for _, sect in ipairs(vim.split(bind, ',')) do
+        local key, action = sect:match('([^:]+):([^:]+)')
+        local fmt = action_fmt[action]
+        if fmt then
+            local lhs = key2lhs(key)
+            local rhs = fmt:format(qwinid)
+            api.nvim_buf_set_keymap(bufnr, 't', lhs, rhs, {nowait = true})
+        end
     end
 
     if M.post_handle then
@@ -470,6 +527,7 @@ function M.run()
     })
     local options = vim.list_extend(base_opt, ctx.fzf_extra_opts or extra_opts)
     local delimiter = parse_delimiter(options)
+    local bind = parse_bind(options)
     local opts = {
         options = options,
         source = source(qwinid, qlist:sign():list(), delimiter),
@@ -485,20 +543,17 @@ function M.run()
         }
     }
 
-    if phandler.auto_enabled() then
-        local tmpfile = fn.tempname()
-        vim.list_extend(opts.options,
-            {'--preview-window', 0, '--preview', 'echo {1} >> ' .. tmpfile})
-        local release_cb = watch_file(qwinid, tmpfile)
-        M.post_handle = function()
-            release_cb()
-            M.post_handle = nil
-        end
-        phandler.keep_preview()
+    local tmpfile = fn.tempname()
+    vim.list_extend(opts.options, {'--preview-window', 0, '--preview', 'echo {1} >> ' .. tmpfile})
+    local release_cb = watch_file(qwinid, tmpfile)
+    M.post_handle = function()
+        release_cb()
+        M.post_handle = nil
     end
+    phandler.keep_preview()
 
     cmd(('au BqfFilterFzf FileType fzf ++once %s'):format(
-        ([[lua require('bqf.filter.fzf').pre_handle(%d, %d)]]):format(qwinid, size)))
+        ([[lua require('bqf.filter.fzf').pre_handle(%d, %d, %q)]]):format(qwinid, size, bind)))
 
     fn.BqfFzfWrapper(opts)
 end

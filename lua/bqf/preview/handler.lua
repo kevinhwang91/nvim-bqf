@@ -223,9 +223,9 @@ function M.open(qwinid, qidx, force)
     pvs.update_border(pbufnr, qidx, size)
 end
 
-function M.scroll(direction)
+function M.scroll(direction, qwinid)
     if pvs.validate() and direction then
-        local qwinid = api.nvim_get_current_win()
+        qwinid = qwinid or api.nvim_get_current_win()
         local qs = qfs:get(qwinid)
         local pwinid = qs:pwinid()
         pvs.floatwin_exec(function()
@@ -248,18 +248,19 @@ function M.scroll(direction)
     end
 end
 
-function M.toggle()
-    local ps = preview_session()
+function M.toggle(qwinid)
+    qwinid = qwinid or api.nvim_get_current_win()
+    local ps = preview_session(qwinid)
     if ps == PLACEHOLDER_TBL then
         return
     end
     auto_preview = auto_preview ~= true
     if auto_preview then
         api.nvim_echo({{'Enable preview automatically', 'WarningMsg'}}, true, {})
-        M.open()
+        M.open(qwinid)
     else
         api.nvim_echo({{'Disable preview automatically', 'WarningMsg'}}, true, {})
-        M.close()
+        M.close(qwinid)
     end
 end
 
