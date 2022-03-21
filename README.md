@@ -202,7 +202,7 @@ but exclude `session.lua` file.
         },
         should_preview_cb = {
             description = [[a callback function to decide whether to preview while switching buffer,
-                with a bufnr parameter]],
+                with (bufnr: number, qwinid: number) parameters]],
             default = nil
         }
     },
@@ -431,7 +431,7 @@ require('bqf').setup({
         win_vheight = 12,
         delay_syntax = 80,
         border_chars = {'┃', '┃', '━', '━', '┏', '┓', '┗', '┛', '█'},
-        should_preview_cb = function(bufnr)
+        should_preview_cb = function(bufnr, qwinid)
             local ret = true
             local bufname = vim.api.nvim_buf_get_name(bufnr)
             local fsize = vim.fn.getfsize(bufname)

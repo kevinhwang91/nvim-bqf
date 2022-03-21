@@ -153,7 +153,7 @@ function M.open(qwinid, qidx, force)
     end
 
     qidx = qidx or api.nvim_win_get_cursor(qwinid)[1]
-    if qidx == last_idx then
+    if not force and qidx == last_idx then
         return
     end
 
@@ -172,7 +172,8 @@ function M.open(qwinid, qidx, force)
         return
     end
 
-    if ps.bufnr ~= pbufnr and not force and should_preview_cb and not should_preview_cb(pbufnr) then
+    if ps.bufnr ~= pbufnr and not force and should_preview_cb and
+        not should_preview_cb(pbufnr, qwinid) then
         M.close(qwinid)
         return
     end
@@ -187,7 +188,7 @@ function M.open(qwinid, qidx, force)
     end
 
     local loaded = api.nvim_buf_is_loaded(pbufnr)
-    if ps.bufnr ~= pbufnr then
+    if force or ps.bufnr ~= pbufnr then
         pvs.floatbuf_reset()
         ts.disable_active(fbufnr)
 

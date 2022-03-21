@@ -14,7 +14,7 @@ local config = {}
 ---@field win_height number
 ---@field win_vheight number
 ---@field wrap boolean
----@field should_preview_cb fun(bufnr: number): boolean
+---@field should_preview_cb fun(bufnr: number, qwinid: number): boolean
 
 ---@class BqfConfigFilter
 ---@field fzf BqfConfigFilterFzf
