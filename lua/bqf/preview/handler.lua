@@ -111,8 +111,7 @@ function M.keep_preview()
     keep_preview = true
 end
 
-function M.toggle_mode()
-    local qwinid = api.nvim_get_current_win()
+function M.toggle_mode(qwinid)
     local ps = preview_session(qwinid)
     if ps == PLACEHOLDER_TBL then
         return
@@ -265,11 +264,11 @@ function M.toggle(qwinid)
     end
 end
 
-function M.toggle_item()
+function M.toggle_item(qwinid)
     if pvs.validate() then
-        M.close()
+        M.close(qwinid)
     else
-        M.open(nil, nil, true)
+        M.open(qwinid, nil, true)
     end
 end
 
@@ -281,18 +280,20 @@ function M.move_cursor()
     end
 
     if auto_preview then
-        M.open()
+        M.open(qwinid)
     else
         if api.nvim_win_get_cursor(qwinid)[1] ~= last_idx then
-            M.close()
+            M.close(qwinid)
         end
     end
 end
 
 function M.redraw_win()
     if pvs.validate() then
-        M.close()
-        M.open()
+        local bufnr = tonumber(fn.expand('<abuf>')) or api.nvim_get_current_buf()
+        local qwinid = fn.bufwinid(bufnr)
+        M.close(qwinid)
+        M.open(qwinid)
     end
 end
 
