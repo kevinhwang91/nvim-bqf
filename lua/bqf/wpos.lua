@@ -16,7 +16,7 @@ local POS = {
 
 M.POS = POS
 
-local function node_info(winlayout, parent, winid, level, index)
+local function nodeInfo(winlayout, parent, winid, level, index)
     level = level or 0
     index = index or 1
     local indicator = winlayout[1]
@@ -26,7 +26,7 @@ local function node_info(winlayout, parent, winid, level, index)
         end
     else
         for i = 1, #winlayout[2] do
-            local p, d, idx = node_info(winlayout[2][i], winlayout, winid, level + 1, i)
+            local p, d, idx = nodeInfo(winlayout[2][i], winlayout, winid, level + 1, i)
             if p then
                 return p, d, idx
             end
@@ -34,16 +34,16 @@ local function node_info(winlayout, parent, winid, level, index)
     end
 end
 
-local function adjacent_wins(winlayout, is_bottom)
+local function adjacentWins(winlayout, isBottom)
     local wins = {}
     local ind, tbl = winlayout[1], winlayout[2]
     if ind == 'leaf' then
         wins = {tbl}
     elseif ind == 'col' then
-        wins = adjacent_wins(tbl[is_bottom and #tbl or 1], is_bottom)
+        wins = adjacentWins(tbl[isBottom and #tbl or 1], isBottom)
     else
         for i = 1, #tbl do
-            local wins2 = adjacent_wins(tbl[i], is_bottom)
+            local wins2 = adjacentWins(tbl[i], isBottom)
             for j = 1, #wins2 do
                 wins[#wins + 1] = wins2[j]
             end
@@ -54,25 +54,25 @@ end
 
 ---
 ---@return number[]
-function M.find_bottom_wins()
-    return adjacent_wins(fn.winlayout(), true)
+function M.findBottomWins()
+    return adjacentWins(fn.winlayout(), true)
 end
 
 ---
 ---@param winid number
 ---@param owinid number
 ---@return number[]
-function M.find_adjacent_wins(winid, owinid)
+function M.findAdjacentWins(winid, owinid)
     local wins = {}
-    local rel_pos, abs_pos = unpack(M.get_pos(winid, owinid))
-    if rel_pos == POS.ABOVE or rel_pos == POS.BELOW then
+    local relPos, absPos = unpack(M.getPos(winid, owinid))
+    if relPos == POS.ABOVE or relPos == POS.BELOW then
         wins = {owinid}
-    elseif abs_pos == POS.TOP or abs_pos == POS.BOTTOM then
+    elseif absPos == POS.TOP or absPos == POS.BOTTOM then
         local nest = fn.winlayout()[2]
-        if abs_pos == POS.TOP then
-            wins = adjacent_wins(nest[2], false)
+        if absPos == POS.TOP then
+            wins = adjacentWins(nest[2], false)
         else
-            wins = adjacent_wins(nest[#nest - 1], true)
+            wins = adjacentWins(nest[#nest - 1], true)
         end
     end
     return wins
@@ -82,54 +82,54 @@ end
 ---@param winid number
 ---@param owinid number
 ---@return number[]
-function M.get_pos(winid, owinid)
+function M.getPos(winid, owinid)
     local layout = fn.winlayout()
     local nested = layout[2]
-    local rel_pos, abs_pos = POS.UNKNOWN, POS.UNKNOWN
+    local relPos, absPos = POS.UNKNOWN, POS.UNKNOWN
     if type(nested) ~= 'table' or #nested < 2 then
-        return {rel_pos, abs_pos}
+        return {relPos, absPos}
     end
-    local parent_layout, child_level, child_index = node_info(layout, nil, winid)
+    local parentLayout, childLevel, childIndex = nodeInfo(layout, nil, winid)
 
     -- winid doesn't exist in current tabpage
-    if not parent_layout or type(parent_layout) ~= 'table' then
-        return {rel_pos, abs_pos}
+    if not parentLayout or type(parentLayout) ~= 'table' then
+        return {relPos, absPos}
     end
-    local parent_indicator, child_layout = unpack(parent_layout)
-    if child_level == 1 then
-        if child_index == 1 then
-            if parent_indicator == 'col' then
-                abs_pos = POS.TOP
+    local parentIndicator, childLayout = unpack(parentLayout)
+    if childLevel == 1 then
+        if childIndex == 1 then
+            if parentIndicator == 'col' then
+                absPos = POS.TOP
             else
-                abs_pos = POS.LEFT_FAR
+                absPos = POS.LEFT_FAR
             end
-        elseif child_index == #nested then
-            if parent_indicator == 'col' then
-                abs_pos = POS.BOTTOM
+        elseif childIndex == #nested then
+            if parentIndicator == 'col' then
+                absPos = POS.BOTTOM
             else
-                abs_pos = POS.RIGHT_FAR
+                absPos = POS.RIGHT_FAR
             end
         end
     end
-    for i, wly in ipairs(child_layout) do
+    for i, wly in ipairs(childLayout) do
         if wly[1] == 'leaf' and wly[2] == owinid then
-            local offset_index = i - child_index
-            if parent_indicator == 'col' then
-                if offset_index == 1 then
-                    rel_pos = POS.ABOVE
-                elseif offset_index == -1 then
-                    rel_pos = POS.BELOW
+            local offsetIndex = i - childIndex
+            if parentIndicator == 'col' then
+                if offsetIndex == 1 then
+                    relPos = POS.ABOVE
+                elseif offsetIndex == -1 then
+                    relPos = POS.BELOW
                 end
-            elseif parent_indicator == 'row' then
-                if offset_index == 1 then
-                    rel_pos = POS.LEFT
-                elseif offset_index == -1 then
-                    rel_pos = POS.RIGHT
+            elseif parentIndicator == 'row' then
+                if offsetIndex == 1 then
+                    relPos = POS.LEFT
+                elseif offsetIndex == -1 then
+                    relPos = POS.RIGHT
                 end
             end
         end
     end
-    return {rel_pos, abs_pos}
+    return {relPos, absPos}
 end
 
 return M

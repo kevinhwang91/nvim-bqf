@@ -4,11 +4,11 @@ local api = vim.api
 
 local config = require('bqf.config')
 
-local func_map
+local funcMap
 
-local action_funcref = {
-    ptogglemode = {mode = 'n', module = 'preview.handler', funcref = 'toggle_mode()'},
-    ptoggleitem = {mode = 'n', module = 'preview.handler', funcref = 'toggle_item()'},
+local actionFuncref = {
+    ptogglemode = {mode = 'n', module = 'preview.handler', funcref = 'toggleMode()'},
+    ptoggleitem = {mode = 'n', module = 'preview.handler', funcref = 'toggleItem()'},
     ptoggleauto = {mode = 'n', module = 'preview.handler', funcref = 'toggle()'},
     pscrollup = {mode = 'n', module = 'preview.handler', funcref = 'scroll(-1)'},
     pscrolldown = {mode = 'n', module = 'preview.handler', funcref = 'scroll(1)'},
@@ -22,53 +22,53 @@ local action_funcref = {
     tabb = {mode = 'n', module = 'qfwin.handler', funcref = 'tabedit(true)'},
     tabc = {mode = 'n', module = 'qfwin.handler', funcref = [[open(true, 'tabedit')]]},
     tabdrop = {mode = 'n', module = 'qfwin.handler', funcref = [[open(true, 'tab drop')]]},
-    prevfile = {mode = '', module = 'qfwin.handler', funcref = 'nav_file(false)'},
-    nextfile = {mode = '', module = 'qfwin.handler', funcref = 'nav_file(true)'},
-    prevhist = {mode = 'n', module = 'qfwin.handler', funcref = 'nav_history(false)'},
-    nexthist = {mode = 'n', module = 'qfwin.handler', funcref = 'nav_history(true)'},
-    lastleave = {mode = '', module = 'qfwin.handler', funcref = 'restore_winview()'},
-    stoggleup = {mode = 'n', module = 'qfwin.handler', funcref = 'sign_toggle(-1)'},
-    stoggledown = {mode = 'n', module = 'qfwin.handler', funcref = 'sign_toggle(1)'},
-    stogglevm = {mode = 'x', module = 'qfwin.handler', funcref = 'sign_vm_toggle()'},
-    stogglebuf = {mode = 'n', module = 'qfwin.handler', funcref = 'sign_toggle_buf()'},
-    sclear = {mode = 'n', module = 'qfwin.handler', funcref = 'sign_clear()'},
+    prevfile = {mode = '', module = 'qfwin.handler', funcref = 'navFile(false)'},
+    nextfile = {mode = '', module = 'qfwin.handler', funcref = 'navFile(true)'},
+    prevhist = {mode = 'n', module = 'qfwin.handler', funcref = 'navHistory(false)'},
+    nexthist = {mode = 'n', module = 'qfwin.handler', funcref = 'navHistory(true)'},
+    lastleave = {mode = '', module = 'qfwin.handler', funcref = 'restoreWinView()'},
+    stoggleup = {mode = 'n', module = 'qfwin.handler', funcref = 'signToggle(-1)'},
+    stoggledown = {mode = 'n', module = 'qfwin.handler', funcref = 'signToggle(1)'},
+    stogglevm = {mode = 'x', module = 'qfwin.handler', funcref = 'signVMToggle()'},
+    stogglebuf = {mode = 'n', module = 'qfwin.handler', funcref = 'signToggleBuf()'},
+    sclear = {mode = 'n', module = 'qfwin.handler', funcref = 'signClear()'},
     filter = {mode = 'n', module = 'filter.base', funcref = 'run()'},
     filterr = {mode = 'n', module = 'filter.base', funcref = 'run(true)'},
     fzffilter = {mode = 'n', module = 'filter.fzf', funcref = 'run()'}
 }
 
-local function funcref_str(tbl_func)
-    return ([[<Cmd>lua require('bqf.%s').%s<CR>]]):format(tbl_func.module, tbl_func.funcref)
+local function funcrefStr(tblFunc)
+    return ([[<Cmd>lua require('bqf.%s').%s<CR>]]):format(tblFunc.module, tblFunc.funcref)
 end
 
 function M.initialize()
-    for action, keymap in pairs(func_map) do
-        local tbl_func = action_funcref[action]
-        if tbl_func and not vim.tbl_isempty(tbl_func) and keymap ~= '' then
-            api.nvim_buf_set_keymap(0, tbl_func.mode, keymap, funcref_str(tbl_func), {nowait = true})
+    for action, keymap in pairs(funcMap) do
+        local tblFunc = actionFuncref[action]
+        if tblFunc and not vim.tbl_isempty(tblFunc) and keymap ~= '' then
+            api.nvim_buf_set_keymap(0, tblFunc.mode, keymap, funcrefStr(tblFunc), {nowait = true})
         end
     end
 end
 
 function M.dispose()
-    local function do_unmap(mode, lhs, rhs)
+    local function doUnmap(mode, lhs, rhs)
         if rhs:match([[lua require%('bqf%..*'%)]]) then
             api.nvim_buf_del_keymap(0, mode, lhs)
         end
     end
 
     for _, maparg in pairs(api.nvim_buf_get_keymap(0, 'n')) do
-        do_unmap('n', maparg.lhs, maparg.rhs)
+        doUnmap('n', maparg.lhs, maparg.rhs)
     end
 
     for _, maparg in pairs(api.nvim_buf_get_keymap(0, 'x')) do
-        do_unmap('x', maparg.lhs, maparg.rhs)
+        doUnmap('x', maparg.lhs, maparg.rhs)
     end
 end
 
 local function init()
-    func_map = config.func_map
-    vim.validate({func_map = {func_map, 'table'}})
+    funcMap = config.func_map
+    vim.validate({funcMap = {funcMap, 'table'}})
 end
 
 init()

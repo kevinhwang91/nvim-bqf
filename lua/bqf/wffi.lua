@@ -6,38 +6,38 @@ local utils
 local C
 local ffi
 
-local function curwin()
-    local cur_win
-    if utils.is_windows() then
+local function curWinid()
+    local curWin
+    if utils.isWindows() then
         local err = ffi.new('Error')
-        cur_win = C.find_window_by_handle(0, err)
+        curWin = C.find_window_by_handle(0, err)
     else
-        cur_win = C.curwin
+        curWin = C.curwin
     end
-    return cur_win
+    return curWin
 end
 
 ---
 ---@param lnum number
 ---@return number
-function M.plines_win(lnum)
-    return C.plines_win(curwin(), lnum, true)
+function M.plinesWin(lnum)
+    return C.plines_win(curWinid(), lnum, true)
 end
 
 ---
 ---@param lnum number
 ---@param col number
 ---@return number
-function M.plines_win_col(lnum, col)
-    return C.plines_win_col(curwin(), lnum, col)
+function M.plinesWinCol(lnum, col)
+    return C.plines_win_col(curWinid(), lnum, col)
 end
 
 ---
 ---@param lnum number
 ---@param winheight number
 ---@return number
-function M.plines_win_nofill(lnum, winheight)
-    return C.plines_win_nofill(curwin(), lnum, winheight)
+function M.plinesWinNofill(lnum, winheight)
+    return C.plines_win_nofill(curWinid(), lnum, winheight)
 end
 
 local function init()
@@ -54,7 +54,7 @@ local function init()
     ]])
 
     utils = require('bqf.utils')
-    if utils.is_windows() then
+    if utils.isWindows() then
         ffi.cdef([[
             typedef struct {} Error;
             win_T *find_window_by_handle(int window, Error *err);

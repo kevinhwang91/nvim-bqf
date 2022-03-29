@@ -9,35 +9,35 @@ local M = {}
 local fn = vim.fn
 local uv = vim.loop
 
-local levels
-local level_nr
-local level_default
+local levelMap
+local levelNr
+local defaultLevel
 
-local function get_level_nr(l)
+local function getLevelNr(level)
     local nr
-    if type(l) == 'number' then
-        nr = l
-    elseif type(l) == 'string' then
-        nr = levels[l:upper()]
+    if type(level) == 'number' then
+        nr = level
+    elseif type(level) == 'string' then
+        nr = levelMap[level:upper()]
     else
-        nr = level_default
+        nr = defaultLevel
     end
     return nr
 end
 
 ---
 ---@param l number|string
-function M.set_level(l)
-    level_nr = get_level_nr(l)
+function M.setLevel(l)
+    levelNr = getLevelNr(l)
 end
 
-function M.is_enabled(l)
-    return get_level_nr(l) >= level_nr
+function M.isEnabled(l)
+    return getLevelNr(l) >= levelNr
 end
 
 function M.level()
-    for l, nr in pairs(levels) do
-        if nr == level_nr then
+    for l, nr in pairs(levelMap) do
+        if nr == levelNr then
             return l
         end
     end
@@ -57,37 +57,37 @@ local function inspect(v)
     return s
 end
 
-local function path_sep()
+local function pathSep()
     return uv.os_uname().sysname == 'Windows_NT' and [[\]] or '/'
 end
 
 local function init()
-    local log_dir = fn.stdpath('cache')
-    local log_file = table.concat({log_dir, 'bqf.log'}, path_sep())
-    local log_date_fmt = '%y-%m-%d %T'
+    local logDir = fn.stdpath('cache')
+    local logFile = table.concat({logDir, 'bqf.log'}, pathSep())
+    local logDateFmt = '%y-%m-%d %T'
 
-    fn.mkdir(log_dir, 'p')
-    levels = {TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4}
-    level_default = 3
-    M.set_level(vim.env.BQF_LOG)
+    fn.mkdir(logDir, 'p')
+    levelMap = {TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4}
+    defaultLevel = 3
+    M.setLevel(vim.env.BQF_LOG)
 
-    for l in pairs(levels) do
+    for l in pairs(levelMap) do
         M[l:lower()] = function(...)
             local argc = select('#', ...)
-            if argc == 0 or levels[l] < level_nr then
+            if argc == 0 or levelMap[l] < levelNr then
                 return
             end
-            local msg_tbl = {}
+            local msgTbl = {}
             for i = 1, argc do
                 local arg = select(i, ...)
-                table.insert(msg_tbl, inspect(arg))
+                table.insert(msgTbl, inspect(arg))
             end
-            local msg = table.concat(msg_tbl, ' ')
+            local msg = table.concat(msgTbl, ' ')
             local info = debug.getinfo(2, 'Sl')
             local linfo = info.short_src:match('[^/]*$') .. ':' .. info.currentline
 
-            local fp = assert(io.open(log_file, 'a+'))
-            local str = string.format('[%s] [%s] %s : %s\n', os.date(log_date_fmt), l, linfo, msg)
+            local fp = assert(io.open(logFile, 'a+'))
+            local str = string.format('[%s] [%s] %s : %s\n', os.date(logDateFmt), l, linfo, msg)
             fp:write(str)
             fp:close()
         end

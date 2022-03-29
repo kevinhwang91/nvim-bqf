@@ -9,10 +9,10 @@ local utils = require('bqf.utils')
 ---@class BqfPreviewSession
 ---@field private pool table<number, BqfPreviewSession>
 ---@field winid number
----@field win_height number
----@field win_vheight number
+---@field winHeight number
+---@field winVHeight number
 ---@field wrap boolean
----@field border_chars string[]
+---@field borderChars string[]
 ---@field bufnr number
 ---@field syntax boolean
 ---@field full boolean
@@ -28,10 +28,10 @@ function PreviewSession:new(winid, o)
     setmetatable(obj, self)
     self.__index = self
     obj.winid = winid
-    obj.win_height = o.win_height
-    obj.win_vheight = o.win_vheight
+    obj.winHeight = o.winHeight
+    obj.winVHeight = o.winVHeight
     obj.wrap = o.wrap
-    obj.border_chars = o.border_chars
+    obj.borderChars = o.borderChars
     obj.bufnr = nil
     obj.syntax = nil
     obj.full = false
@@ -50,13 +50,13 @@ end
 
 function PreviewSession.clean()
     for winid in pairs(PreviewSession.pool) do
-        if not utils.is_win_valid(winid) then
+        if not utils.isWinValid(winid) then
             PreviewSession.pool[winid] = nil
         end
     end
 end
 
-function PreviewSession.floatbuf_reset()
+function PreviewSession.floatBufReset()
     local fwinid = floatwin.winid
     local fbufnr = floatwin.bufnr
     local bbufnr = border.bufnr
@@ -70,25 +70,25 @@ function PreviewSession.floatbuf_reset()
 
 end
 
-function PreviewSession.floatwin_exec(func)
+function PreviewSession.floatWinExec(func)
     if PreviewSession.validate() then
-        utils.win_execute(floatwin.winid, func)
+        utils.winExecute(floatwin.winid, func)
     end
 end
 
-function PreviewSession.float_bufnr()
+function PreviewSession.floatBufnr()
     return floatwin.bufnr
 end
 
-function PreviewSession.border_bufnr()
+function PreviewSession.borderBufnr()
     return border.bufnr
 end
 
-function PreviewSession.float_winid()
+function PreviewSession.floatWinid()
     return floatwin.winid
 end
 
-function PreviewSession.border_winid()
+function PreviewSession.borderWinid()
     return border.winid
 end
 
@@ -101,16 +101,16 @@ function PreviewSession.validate()
     return floatwin:validate() and border:validate()
 end
 
-function PreviewSession.update_border(pbufnr, qidx, size)
+function PreviewSession.updateBorder(pbufnr, qidx, size)
     border:update(pbufnr, qidx, size)
 end
 
-function PreviewSession.update_scrollbar()
-    border:update_scrollbar()
+function PreviewSession.updateScrollBar()
+    border:updateScrollBar()
 end
 
-function PreviewSession.visible_region()
-    return floatwin:visible_region()
+function PreviewSession.visibleRegion()
+    return floatwin:visibleRegion()
 end
 
 function PreviewSession.display()
@@ -118,17 +118,17 @@ function PreviewSession.display()
     border:display()
 end
 
-function PreviewSession:valid_or_build(owinid)
+function PreviewSession:validOrBuild(owinid)
     if not floatwin:validate() then
         floatwin:build({qwinid = self.winid, pwinid = owinid, wrap = self.wrap})
     end
     if not border:validate() then
-        border:build({chars = self.border_chars})
+        border:build({chars = self.borderChars})
     end
     if self.full then
-        floatwin.win_height, floatwin.win_vheight = 999, 999
+        floatwin:setHeight(999, 999)
     else
-        floatwin.win_height, floatwin.win_vheight = self.win_height, self.win_vheight
+        floatwin:setHeight(self.winHeight, self.winVHeight)
     end
 end
 

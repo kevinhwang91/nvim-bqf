@@ -10,25 +10,25 @@ local phandler, qhandler, base, config, qfs
 local utils = require('bqf.utils')
 local log = require('bqf.log')
 
-local action_for, extra_opts, is_windows
-local ctx_action_for
+local actionFor, extraOpts, isWindows
+local ctxActionFor
 local version
 local headless
 
-local function get_version()
+local function getVersion()
     local exe = fn['fzf#exec']()
-    local msg_tbl = fn.systemlist({exe, '--version'})
-    local sh_error = vim.v.shell_error
+    local msgTbl = fn.systemlist({exe, '--version'})
+    local shError = vim.v.shell_error
     local ver
-    if sh_error == 0 and type(msg_tbl) == 'table' and #msg_tbl > 0 then
-        ver = msg_tbl[1]:match('[0-9.]+')
+    if shError == 0 and type(msgTbl) == 'table' and #msgTbl > 0 then
+        ver = msgTbl[1]:match('[0-9.]+')
     else
         ver = ''
     end
     return ver
 end
 
-local function filter_actions(actions)
+local function filterActions(actions)
     for key, action in pairs(actions) do
         if type(action) ~= 'string' or action:match('^%s*$') then
             actions[key] = nil
@@ -36,7 +36,7 @@ local function filter_actions(actions)
     end
 end
 
-local function compare_version(a, b)
+local function compareVersion(a, b)
     local asecs = vim.split(a, '%.')
     local bsecs = vim.split(b, '%.')
     for i = 1, math.max(#asecs, #bsecs) do
@@ -52,144 +52,144 @@ local function compare_version(a, b)
 end
 
 local function export4headless(bufnr, signs, fname)
-    local fname_data = fname .. '_data'
-    local fname_sign = fname .. '_sign'
-    local fd_data = assert(io.open(fname_data, 'w'))
-    local fd_sign = assert(io.open(fname_sign, 'w'))
+    local fnameData = fname .. '_data'
+    local fnameSign = fname .. '_sign'
+    local fdData = assert(io.open(fnameData, 'w'))
+    local fdSign = assert(io.open(fnameSign, 'w'))
     for i, line in pairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
-        fd_data:write(('%s\n'):format(line))
-        fd_sign:write(('%c'):format(signs[i] and 0 or 32))
+        fdData:write(('%s\n'):format(line))
+        fdSign:write(('%c'):format(signs[i] and 0 or 32))
     end
-    fd_data:close()
-    fd_sign:close()
-    return fname_data, fname_sign
+    fdData:close()
+    fdSign:close()
+    return fnameData, fnameSign
 end
 
-local function source_list(qwinid, signs, delim)
+local function sourceList(qwinid, signs, delim)
     local ret = {}
-    local function hl_ansi(name, str)
+    local function hlAnsi(name, str)
         if not name then
             return ''
         end
-        return headless and headless.hl_ansi[name:upper()] or utils.render_str(str or '%s', name)
+        return headless and headless.hlAnsi[name:upper()] or utils.renderStr(str or '%s', name)
     end
 
-    local hl_id2ansi = setmetatable({}, {
+    local hlIdToAnsi = setmetatable({}, {
         __index = function(tbl, id)
             local name = fn.synIDattr(id, 'name')
-            local ansi_code = hl_ansi(name)
-            rawset(tbl, id, ansi_code)
-            return ansi_code
+            local ansiCode = hlAnsi(name)
+            rawset(tbl, id, ansiCode)
+            return ansiCode
         end
     })
 
     local bufnr = qwinid and api.nvim_win_get_buf(qwinid) or 0
-    local padding = (' '):rep(headless and headless.padding_nr or utils.textoff(qwinid) - 4)
-    local sign_ansi = hl_ansi('BqfSign', '^')
-    local line_fmt = headless and '%d' .. delim .. '%s%s %s\n' or '%d' .. delim .. '%s%s %s'
+    local padding = (' '):rep(headless and headless.paddingNr or utils.textoff(qwinid) - 4)
+    local signAnsi = hlAnsi('BqfSign', '^')
+    local lineFmt = headless and '%d' .. delim .. '%s%s %s\n' or '%d' .. delim .. '%s%s %s'
     if not signs then
-        local headless_sign_bufnr = fn.bufnr('#')
-        signs = api.nvim_buf_get_lines(headless_sign_bufnr, 0, 1, false)[1]
+        local headlessSignBufnr = fn.bufnr('#')
+        signs = api.nvim_buf_get_lines(headlessSignBufnr, 0, 1, false)[1]
     end
 
-    local is_keyword = utils.gen_is_keyword(bufnr)
+    local isKeyword = utils.genIsKeyword(bufnr)
 
     local ts = vim.bo[bufnr].ts
     qwinid = qwinid and qwinid or 0
-    local conceal_enabled = vim.wo[qwinid].conceallevel > 0
-    local conceal_hl_id
-    if conceal_enabled then
-        conceal_hl_id = fn.hlID('conceal')
+    local concealEnabled = vim.wo[qwinid].conceallevel > 0
+    local concealHlId
+    if concealEnabled then
+        concealHlId = fn.hlID('conceal')
     end
 
     for i, line in pairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
         local signed = ' '
         if headless then
             if signs:byte(i) == 0 then
-                signed = sign_ansi
+                signed = signAnsi
             end
             line = utils.expandtab(line, ts, 3)
         else
             if signs[i] then
-                signed = sign_ansi
+                signed = signAnsi
             end
             line = utils.expandtab(line, ts)
         end
 
-        local line_sect = {}
-        local last_hl_id = 0
-        local last_is_kw = false
-        local last_cid = 0
-        local last_cchar = ''
-        local last_col = 1
+        local lineSect = {}
+        local lastHlId = 0
+        local lastIsKw = false
+        local lastCid = 0
+        local lastCchar = ''
+        local lastCol = 1
         local j = 1
         while j <= #line do
             local byte = line:byte(j)
-            local is_kw = is_keyword(byte)
+            local isKw = isKeyword(byte)
             -- TODO the filter is not good enough
-            if last_is_kw and is_kw and (byte >= 97 and byte <= 122 or byte >= 65 and byte <= 90) then
+            if lastIsKw and isKw and (byte >= 97 and byte <= 122 or byte >= 65 and byte <= 90) then
                 goto continue
             end
 
             if byte <= 32 then
-                last_is_kw = false
+                lastIsKw = false
                 goto continue
             end
 
-            if conceal_enabled then
+            if concealEnabled then
                 local concealed, cchar, cid = unpack(fn.synconcealed(i, j))
                 concealed = concealed == 1
-                if last_cid > 0 and cid ~= last_cid then
-                    if #last_cchar > 0 then
-                        table.insert(line_sect, hl_id2ansi[conceal_hl_id]:format(last_cchar))
+                if lastCid > 0 and cid ~= lastCid then
+                    if #lastCchar > 0 then
+                        table.insert(lineSect, hlIdToAnsi[concealHlId]:format(lastCchar))
                     end
-                    last_col = j
-                    last_cid = 0
+                    lastCol = j
+                    lastCid = 0
                 end
 
                 if concealed then
-                    last_cchar, last_cid = cchar, cid
+                    lastCchar, lastCid = cchar, cid
                     goto continue
                 end
             end
 
             do
                 -- use do...end to skip `<goto continue> jumps into the scope of local` error
-                local hl_id = fn.synID(i, j, true)
-                if j > last_col and last_hl_id > 0 and hl_id ~= last_hl_id then
-                    table.insert(line_sect, hl_id2ansi[last_hl_id]:format(line:sub(last_col, j - 1)))
-                    last_col = j
+                local hlId = fn.synID(i, j, true)
+                if j > lastCol and lastHlId > 0 and hlId ~= lastHlId then
+                    table.insert(lineSect, hlIdToAnsi[lastHlId]:format(line:sub(lastCol, j - 1)))
+                    lastCol = j
                 end
-                last_hl_id, last_is_kw = hl_id, is_kw
+                lastHlId, lastIsKw = hlId, isKw
             end
 
             ::continue::
             j = j + 1
         end
-        local hl_fmt = last_hl_id > 0 and hl_id2ansi[last_hl_id] or '%s'
-        table.insert(line_sect, hl_fmt:format(line:sub(last_col, #line):gsub('%c*$', '')))
-        local processed_line = line_fmt:format(i, padding, signed, table.concat(line_sect, ''))
+        local hlFmt = lastHlId > 0 and hlIdToAnsi[lastHlId] or '%s'
+        table.insert(lineSect, hlFmt:format(line:sub(lastCol, #line):gsub('%c*$', '')))
+        local processedLine = lineFmt:format(i, padding, signed, table.concat(lineSect, ''))
         if headless then
-            io.write(processed_line)
+            io.write(processedLine)
         else
-            table.insert(ret, processed_line)
+            table.insert(ret, processedLine)
         end
     end
     return ret
 end
 
-local function source_cmd(qwinid, signs, delim)
+local function sourceCmd(qwinid, signs, delim)
     local tname = fn.tempname()
     local fname = fn.fnameescape(tname)
     local sfname = fn.fnameescape(tname .. '.lua')
 
     local bufnr = api.nvim_win_get_buf(qwinid)
-    local fname_data, fname_sign = export4headless(bufnr, signs, fname)
+    local fnameData, fnameSign = export4headless(bufnr, signs, fname)
     -- keep spawn process away from inheriting $NVIM_LISTEN_ADDRESS to call server_init()
     -- look like widnows can't clear env in cmdline
-    local no_listen_env = is_windows and '' or 'NVIM_LISTEN_ADDRESS='
+    local noListenEnv = isWindows and '' or 'NVIM_LISTEN_ADDRESS='
     local cmds = {
-        no_listen_env, vim.v.progpath, '--clean -n --headless', '-c', ('so %q'):format(sfname)
+        noListenEnv, vim.v.progpath, '-u NONE --clean -n --headless', '-c', ('so %q'):format(sfname)
     }
     local script = {'pcall(vim.cmd, [['}
 
@@ -197,91 +197,91 @@ local function source_cmd(qwinid, signs, delim)
 
     table.insert(script, 'set hidden')
     local fenc = vim.bo[bufnr].fenc
-    table.insert(script, ('e %s'):format(fname_sign))
-    table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', fname_data))
+    table.insert(script, ('e %s'):format(fnameSign))
+    table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', fnameData))
     table.insert(script,
         ('let w:quickfix_title=%q'):format(utils.getwinvar(qwinid, 'quickfix_title', '')))
 
-    local bqf_rtp
-    local qf_files = vim.list_extend(api.nvim_get_runtime_file('syntax/qf.vim', true),
+    local bqfRtp
+    local qfFiles = vim.list_extend(api.nvim_get_runtime_file('syntax/qf.vim', true),
         api.nvim_get_runtime_file('syntax/qf.lua', true))
-    local rtps, sorted_qf_files = {}, {}
+    local rtps, sortedQfFiles = {}, {}
     for _, rtp in ipairs(api.nvim_list_runtime_paths()) do
-        if not bqf_rtp and rtp:find('nvim-bqf', 1, true) then
-            bqf_rtp = rtp
+        if not bqfRtp and rtp:find('nvim-bqf', 1, true) then
+            bqfRtp = rtp
         end
 
-        for _, f in ipairs(qf_files) do
+        for _, f in ipairs(qfFiles) do
             if f:find(rtp, 1, true) then
                 table.insert(rtps, rtp)
-                if not vim.tbl_contains(sorted_qf_files, f) then
-                    table.insert(sorted_qf_files, f)
+                if not vim.tbl_contains(sortedQfFiles, f) then
+                    table.insert(sortedQfFiles, f)
                 end
                 break
             end
         end
     end
-    assert(bqf_rtp, [[Can't find nvim-bqf's runtime path]])
-    table.insert(rtps, bqf_rtp)
+    assert(bqfRtp, [[Can't find nvim-bqf's runtime path]])
+    table.insert(rtps, bqfRtp)
 
     table.insert(script, ('set rtp+=%s'):format(table.concat(
         vim.tbl_map(function(p)
             return fn.fnameescape(p)
         end, rtps), ',')))
 
-    for _, path in ipairs(sorted_qf_files) do
+    for _, path in ipairs(sortedQfFiles) do
         table.insert(script, ('so %s'):format(fn.fnameescape(path)))
     end
 
-    local ansi_tbl = {[('BqfSign'):upper()] = utils.render_str('^', 'BqfSign')}
+    local ansiTbl = {[('BqfSign'):upper()] = utils.renderStr('^', 'BqfSign')}
     local conceallevel = vim.wo[qwinid].conceallevel
     if conceallevel > 0 then
-        ansi_tbl['CONCEAL'] = utils.render_str('%s', 'Conceal')
+        ansiTbl['CONCEAL'] = utils.renderStr('%s', 'Conceal')
     end
 
-    for _, name in ipairs(utils.syntax_list(bufnr)) do
+    for _, name in ipairs(utils.syntaxList(bufnr)) do
         name = name:upper()
-        ansi_tbl[name] = utils.render_str('%s', name)
+        ansiTbl[name] = utils.renderStr('%s', name)
     end
 
     table.insert(script, ('set ts=%d'):format(vim.bo[bufnr].ts))
     table.insert(script, ('set conceallevel=%d'):format(conceallevel))
 
-    if not log.is_enabled('debug') then
-        table.insert(script, ([[call delete('%s')]]):format(fname_data))
-        table.insert(script, ([[call delete('%s')]]):format(fname_sign))
+    if not log.isEnabled('debug') then
+        table.insert(script, ([[call delete('%s')]]):format(fnameData))
+        table.insert(script, ([[call delete('%s')]]):format(fnameSign))
         table.insert(script, ([[call delete('%s')]]):format(sfname))
         table.insert(script, ']])')
     else
         table.insert(script, ']])')
-        table.insert(script, [[require('bqf.log').set_level('debug')]])
+        table.insert(script, [[require('bqf.log').setLevel('debug')]])
     end
 
-    table.insert(script, ([[require('bqf.filter.fzf').headless_run(%s, %d, %q)]]):format(
-        vim.inspect(ansi_tbl, {newline = ''}), utils.textoff(qwinid) - 4, delim))
+    table.insert(script, ([[require('bqf.filter.fzf').headlessRun(%s, %d, %q)]]):format(
+        vim.inspect(ansiTbl, {newline = ''}), utils.textoff(qwinid) - 4, delim))
 
     fd:write(table.concat(script, '\n'))
     fd:close()
 
     local cout = table.concat(cmds, ' ')
 
-    log.debug('cmd_out:', cout)
+    log.debug('cmdOut:', cout)
     return cout
 end
 
-local function set_qf_cursor(winid, lnum)
+local function setQfCursor(winid, lnum)
     local col = api.nvim_win_get_cursor(winid)[2]
     api.nvim_win_set_cursor(winid, {lnum, col})
 end
 
 local function handler(qwinid, lines)
     local key = table.remove(lines, 1)
-    local selected_index = vim.tbl_map(function(e)
+    local selectedIndex = vim.tbl_map(function(e)
         return tonumber(e:match('%d+'))
     end, lines)
-    table.sort(selected_index)
+    table.sort(selectedIndex)
 
-    local action = (ctx_action_for or action_for)[key]
+    local action = (ctxActionFor or actionFor)[key]
     -- default action is nil, don't skip
     if action == '' then
         return
@@ -290,10 +290,10 @@ local function handler(qwinid, lines)
     local qs = qfs:get(qwinid)
     if action == 'signtoggle' then
         local sign = qs:list():sign()
-        for _, i in ipairs(selected_index) do
+        for _, i in ipairs(selectedIndex) do
             sign:toggle(i, api.nvim_win_get_buf(qwinid))
         end
-        set_qf_cursor(qwinid, selected_index[1])
+        setQfCursor(qwinid, selectedIndex[1])
     elseif action == 'closeall' then
         -- Look fzf have switched back the previous window (qf)
         cmd(('noa call nvim_set_current_win(%d)'):format(qwinid))
@@ -308,32 +308,32 @@ local function handler(qwinid, lines)
             cmd('setlocal stl<')
         end
         api.nvim_win_close(qwinid, true)
-    elseif #selected_index > 1 then
+    elseif #selectedIndex > 1 then
         local items = qs:list():items()
-        base.filter_list(qwinid, coroutine.wrap(function()
-            for _, i in ipairs(selected_index) do
+        base.filterList(qwinid, coroutine.wrap(function()
+            for _, i in ipairs(selectedIndex) do
                 coroutine.yield(i, items[i])
             end
         end))
-    elseif #selected_index == 1 then
-        local idx = selected_index[1]
+    elseif #selectedIndex == 1 then
+        local idx = selectedIndex[1]
         qhandler.open(true, action, qwinid, idx)
     end
 end
 
-local function watch_file(qwinid, tmpfile)
+local function watchFile(qwinid, tmpfile)
     local fd
-    if is_windows then
+    if isWindows then
         -- two processes can't write same file meanwhile in Windows :(
         io.open(tmpfile, 'w'):close()
         fd = assert(uv.fs_open(tmpfile, 'r', 438))
     else
         fd = assert(uv.fs_open(tmpfile, 'w+', 438))
     end
-    local watch_ev = assert(uv.new_fs_event())
+    local watchEvent = assert(uv.new_fs_event())
     local function release()
-        -- watch_ev:stop and :close have the same effect
-        watch_ev:close(function(err)
+        -- watchEvent:stop and :close have the same effect
+        watchEvent:close(function(err)
             assert(not err, err)
         end)
         uv.fs_close(fd, function(err)
@@ -341,20 +341,20 @@ local function watch_file(qwinid, tmpfile)
         end)
         os.remove(tmpfile)
     end
-    watch_ev:start(tmpfile, {}, function(err, filename, events)
+    watchEvent:start(tmpfile, {}, function(err, filename, events)
         assert(not err, err)
         local _ = filename
         if events.change then
             uv.fs_read(fd, 4 * 1024, -1, function(err2, data)
 
-                if not phandler.auto_enabled() then
+                if not phandler.autoEnabled() then
                     return
                 end
                 assert(not err2, err2)
-                local idx = is_windows and tonumber(data:match('%d+')) or tonumber(data)
+                local idx = isWindows and tonumber(data:match('%d+')) or tonumber(data)
                 if idx and idx > 0 then
                     vim.schedule(function()
-                        set_qf_cursor(qwinid, idx)
+                        setQfCursor(qwinid, idx)
                         phandler.open(qwinid, idx)
                     end)
                 end
@@ -366,7 +366,7 @@ local function watch_file(qwinid, tmpfile)
     return release
 end
 
-local function key2lhs(key)
+local function keyToLHS(key)
     local lhs
     if key == 'pgup' then
         lhs = 'pageup'
@@ -381,30 +381,30 @@ local function key2lhs(key)
     return lhs:match('^.$') and lhs or '<' .. lhs .. '>'
 end
 
-local function parse_bind(options)
-    local bind_str
-    local default_options = vim.env.FZF_DEFAULT_OPTS
-    if type(default_options) == 'string' then
-        for _, sect in ipairs(vim.split(default_options, '%s*%-%-')) do
+local function parseBind(options)
+    local bindStr
+    local defaultOptions = vim.env.FZF_DEFAULT_OPTS
+    if type(defaultOptions) == 'string' then
+        for _, sect in ipairs(vim.split(defaultOptions, '%s*%-%-')) do
             if sect:match('bind=?%s*') then
                 local s, e = sect:find('bind=?%s*')
                 if s then
-                    bind_str = sect:sub(e + 1)
+                    bindStr = sect:sub(e + 1)
                 end
             end
         end
     end
-    bind_str = bind_str or ''
+    bindStr = bindStr or ''
     for i, o in ipairs(options) do
         if type(o) == 'string' and o:match('%-%-bind') and i < #options then
-            bind_str = ('%s,%s'):format(bind_str, options[i + 1])
+            bindStr = ('%s,%s'):format(bindStr, options[i + 1])
             break
         end
     end
-    return (bind_str or ''):lower()
+    return (bindStr or ''):lower()
 end
 
-local function parse_delimiter(options)
+local function parseDelimiter(options)
     local delim
     for i = #options, 1, -1 do
         local o = options[i]
@@ -426,24 +426,24 @@ local function parse_delimiter(options)
     return delim or '|'
 end
 
-function M.headless_run(hl_ansi, padding_nr, delim)
-    log.debug('hl_ansi:', hl_ansi)
-    log.debug('padding_nr:', padding_nr)
+function M.headlessRun(hlAnsi, paddingNr, delim)
+    log.debug('hlAnsi:', hlAnsi)
+    log.debug('paddingNr:', paddingNr)
     log.debug('delim:', delim)
     if headless then
-        headless.hl_ansi, headless.padding_nr = hl_ansi, padding_nr
-        source_list(nil, nil, delim)
+        headless.hlAnsi, headless.paddingNr = hlAnsi, paddingNr
+        sourceList(nil, nil, delim)
         cmd('q!')
     end
 end
 
-function M.pre_handle(qwinid, size, bind)
-    local line_count = api.nvim_buf_line_count(0)
+function M.preHandle(qwinid, size, bind)
+    local lineCount = api.nvim_buf_line_count(0)
     api.nvim_win_set_config(0, {
         relative = 'win',
         win = qwinid,
         width = api.nvim_win_get_width(qwinid),
-        height = math.min(api.nvim_win_get_height(qwinid) + 1, line_count + 1),
+        height = math.min(api.nvim_win_get_height(qwinid) + 1, lineCount + 1),
         row = 0,
         col = 0
     })
@@ -466,7 +466,7 @@ function M.pre_handle(qwinid, size, bind)
         end, size > 1000 and 100 or 50)
     end
 
-    local action_fmt = {
+    local actionFmt = {
         ['preview-half-page-up'] = [[<Cmd>lua require('bqf.preview.handler').scroll(-1, %d)<CR>]],
         ['preview-half-page-down'] = [[<Cmd>lua require('bqf.preview.handler').scroll(1, %d)<CR>]],
         ['toggle-preview'] = [[<Cmd>lua require('bqf.preview.handler').toggle(%d)<CR>]]
@@ -475,18 +475,18 @@ function M.pre_handle(qwinid, size, bind)
     local bufnr = api.nvim_get_current_buf()
     for _, sect in ipairs(vim.split(bind, ',')) do
         local key, action = sect:match('([^:]+):([^:]+)')
-        local fmt = action_fmt[action]
+        local fmt = actionFmt[action]
         if fmt then
-            local lhs = key2lhs(key)
+            local lhs = keyToLHS(key)
             local rhs = fmt:format(qwinid)
             api.nvim_buf_set_keymap(bufnr, 't', lhs, rhs, {nowait = true})
         end
     end
 
-    if M.post_handle then
+    if M.postHandle then
         cmd([[
             aug BqfFilterFzf')
-                au BufWipeout <buffer> lua require('bqf.filter.fzf').post_handle()
+                au BufWipeout <buffer> lua require('bqf.filter.fzf').postHandle()
             aug END
         ]])
     end
@@ -496,40 +496,40 @@ function M.run()
     local qwinid = api.nvim_get_current_win()
     local qlist = qfs:get(qwinid):list()
     local prompt = qlist.type == 'loc' and ' Location> ' or ' Quickfix> '
-    local size = qlist:get_qflist({size = 0}).size
+    local size = qlist:getQfList({size = 0}).size
     if size < 2 then
         return
     end
     -- greater than 1000 items is worth using headless as stream to improve user experience
-    local source = size > 1000 and source_cmd or source_list
+    local source = size > 1000 and sourceCmd or sourceList
 
-    local base_opt = {}
-    if compare_version(version, '0.25.0') >= 0 then
-        table.insert(base_opt, '--color')
-        table.insert(base_opt, 'gutter:-1')
+    local baseOpt = {}
+    if compareVersion(version, '0.25.0') >= 0 then
+        table.insert(baseOpt, '--color')
+        table.insert(baseOpt, 'gutter:-1')
     end
-    if compare_version(version, '0.27.4') >= 0 then
-        table.insert(base_opt, '--scroll-off')
-        table.insert(base_opt, utils.scrolloff(qwinid))
+    if compareVersion(version, '0.27.4') >= 0 then
+        table.insert(baseOpt, '--scroll-off')
+        table.insert(baseOpt, utils.scrolloff(qwinid))
     end
 
     -- TODO
     -- ctx.fzf_extra_opts and ctx.fzf_action_for are used by myself, I'm not sure who wants them.
     local ctx = qlist:context().bqf or {}
-    ctx_action_for = nil
+    ctxActionFor = nil
     if type(ctx.fzf_action_for) == 'table' then
-        ctx_action_for = vim.tbl_extend('keep', ctx.fzf_action_for, action_for)
-        filter_actions(ctx_action_for)
+        ctxActionFor = vim.tbl_extend('keep', ctx.fzf_action_for, actionFor)
+        filterActions(ctxActionFor)
     end
-    local expect_keys = table.concat(vim.tbl_keys(ctx_action_for or action_for), ',')
-    vim.list_extend(base_opt, {
+    local expectKeys = table.concat(vim.tbl_keys(ctxActionFor or actionFor), ',')
+    vim.list_extend(baseOpt, {
         '--multi', '--ansi', '--delimiter', [[\|]], '--with-nth', '2..', '--nth', '3..,1,2',
         '--header-lines', 0, '--tiebreak', 'index', '--info', 'inline', '--prompt', prompt,
-        '--no-border', '--layout', 'reverse-list', '--expect', expect_keys
+        '--no-border', '--layout', 'reverse-list', '--expect', expectKeys
     })
-    local options = vim.list_extend(base_opt, ctx.fzf_extra_opts or extra_opts)
-    local delimiter = parse_delimiter(options)
-    local bind = parse_bind(options)
+    local options = vim.list_extend(baseOpt, ctx.fzf_extra_opts or extraOpts)
+    local delimiter = parseDelimiter(options)
+    local bind = parseBind(options)
     local opts = {
         options = options,
         source = source(qwinid, qlist:sign():list(), delimiter),
@@ -547,15 +547,15 @@ function M.run()
 
     local tmpfile = fn.tempname()
     vim.list_extend(opts.options, {'--preview-window', 0, '--preview', 'echo {1} >> ' .. tmpfile})
-    local release_cb = watch_file(qwinid, tmpfile)
-    M.post_handle = function()
-        release_cb()
-        M.post_handle = nil
+    local releaseCallBack = watchFile(qwinid, tmpfile)
+    M.postHandle = function()
+        releaseCallBack()
+        M.postHandle = nil
     end
-    phandler.keep_preview()
+    phandler.keepPreview()
 
     cmd(('au BqfFilterFzf FileType fzf ++once %s'):format(
-        ([[lua require('bqf.filter.fzf').pre_handle(%d, %d, %q)]]):format(qwinid, size, bind)))
+        ([[lua require('bqf.filter.fzf').preHandle(%d, %d, %q)]]):format(qwinid, size, bind)))
 
     fn.BqfFzfWrapper(opts)
 end
@@ -567,25 +567,25 @@ local function init()
     end
     assert(vim.g.loaded_fzf or fn.exists('*fzf#run') == 1,
         'fzf#run function not found. You also need Vim plugin from the main fzf repository')
-    version = get_version()
+    version = getVersion()
 
     config = require('bqf.config')
 
-    local fzf_conf = config.filter.fzf
-    action_for, extra_opts = fzf_conf.action_for, fzf_conf.extra_opts
+    local fzfConf = config.filter.fzf
+    actionFor, extraOpts = fzfConf.action_for, fzfConf.extra_opts
     vim.validate({
-        action_for = {action_for, 'table'},
-        extra_opts = {extra_opts, 'table'},
+        action_for = {actionFor, 'table'},
+        extra_opts = {extraOpts, 'table'},
         version = {version, 'string', 'version string'}
     })
 
-    filter_actions(action_for)
+    filterActions(actionFor)
 
     phandler = require('bqf.preview.handler')
     qhandler = require('bqf.qfwin.handler')
     base = require('bqf.filter.base')
     qfs = require('bqf.qfwin.session')
-    is_windows = utils.is_windows()
+    isWindows = utils.isWindows()
 
     cmd([[
         aug BqfFilterFzf

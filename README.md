@@ -129,10 +129,10 @@ nvim-bqf also supports `ctrl-q` to toggle items' sign and adapts
 
 Please run `man fzf` and check out `KEY/EVENT BINDINGS` section for details.
 
-There're two ways to adapt fzf's actions for preview function, use `alt-j`and `alt-k` keys as example.
+There're two ways to adapt fzf's actions for preview function, use `ctrl-f`and `ctrl-b` keys as example.
 
-1. Make `$FZF_DEFAULT_OPTS` contains `--bind=alt-j:preview-half-page-down,alt-k:preview-half-page-up`;
-2. Inject `extra_opts = {'--bind', 'alt-j:preview-half-page-down,alt-k:preview-half-page-up,}` to
+1. Make `$FZF_DEFAULT_OPTS` contains `--bind=ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up`;
+2. Inject `extra_opts = {'--bind', 'ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up'}` to
    `setup` function;
 
 #### Filter items with signs demo
@@ -342,7 +342,7 @@ local cmd = vim.cmd
 local api = vim.api
 local fn = vim.fn
 
-local function create_qf()
+local function createQf()
     cmd('enew')
     local bufnr = api.nvim_get_current_buf()
     local lines = {}
@@ -356,41 +356,41 @@ local function create_qf()
     })
 end
 
-function _G.bqf_pattern()
-    create_qf()
-    fn.setqflist({}, 'r', {context = {bqf = {pattern_hl = [[\d\+]]}}, title = 'pattern_hl'})
+function _G.bqfPattern()
+    createQf()
+    fn.setqflist({}, 'r', {context = {bqf = {pattern_hl = [[\d\+]]}}, title = 'patternHl'})
     cmd('cw')
 end
 
-function _G.bqf_lsp_ranges()
-    create_qf()
-    local lsp_ranges = {}
-    table.insert(lsp_ranges,
+function _G.bqfLspRanges()
+    createQf()
+    local lspRanges = {}
+    table.insert(lspRanges,
         {start = {line = 0, character = 4}, ['end'] = {line = 0, character = 8}})
-    table.insert(lsp_ranges,
+    table.insert(lspRanges,
         {start = {line = 1, character = 9}, ['end'] = {line = 1, character = 11}})
-    table.insert(lsp_ranges,
+    table.insert(lspRanges,
         {start = {line = 2, character = 12}, ['end'] = {line = 2, character = 14}})
-    fn.setqflist({}, 'r', {context = {bqf = {lsp_ranges_hl = lsp_ranges}}, title = 'lsp_ranges_hl'})
+    fn.setqflist({}, 'r', {context = {bqf = {lsp_ranges_hl = lspRanges}}, title = 'lspRangesHl'})
     cmd('cw')
 end
 
-function _G.qf_ranges()
+function _G.qfRanges()
     if fn.has('nvim-0.6') == 1 then
-        create_qf()
+        createQf()
         local items = fn.getqflist()
         local it1, it2, it3 = items[1], items[2], items[3]
         it1.end_lnum, it1.end_col = it1.lnum, it1.col + 4
         it2.end_lnum, it2.end_col = it2.lnum, it2.col + 2
         it3.end_lnum, it3.end_col = it3.lnum, it3.col + 2
-        fn.setqflist({}, 'r', {items = items, title = 'qf_ranges_hl'})
+        fn.setqflist({}, 'r', {items = items, title = 'qfRangesHl'})
         cmd('cw')
     else
         error([[couldn't support quickfix ranges highlight before Neovim 0.6]])
     end
 end
 
--- Save and source me(`so %`). Run `:lua bqf_pattern()`, `:lua bqf_lsp_ranges()` and `:lua qf_ranges()`
+-- Save and source me(`so %`). Run `:lua bqfPattern()`, `:lua bqfLspRanges()` and `:lua qfRanges()`
 ```
 
 nvim-bqf actually works with context in
@@ -504,7 +504,7 @@ vim.g.coc_enable_locationlist = 0
 cmd([[
     aug Coc
         au!
-        au User CocLocationsChange ++nested lua _G.jump2loc()
+        au User CocLocationsChange lua _G.jumpToLoc()
     aug END
 ]])
 
@@ -515,7 +515,7 @@ cmd([[
 
 -- just use `_G` prefix as a global function for a demo
 -- please use module instead in reality
-function _G.jump2loc(locs)
+function _G.jumpToLoc(locs)
     locs = locs or vim.g.coc_jump_locations
     fn.setloclist(0, {}, ' ', {title = 'CocLocationList', items = locs})
     local winid = fn.getloclist(0, {winid = 0}).winid
@@ -577,8 +577,8 @@ function _G.qftf(info)
         items = fn.getloclist(info.winid, {id = info.id, items = 0}).items
     end
     local limit = 31
-    local fname_fmt1, fname_fmt2 = '%-' .. limit .. 's', '…%.' .. (limit - 1) .. 's'
-    local valid_fmt = '%s │%5d:%-3d│%s %s'
+    local fnameFmt1, fnameFmt2 = '%-' .. limit .. 's', '…%.' .. (limit - 1) .. 's'
+    local validFmt = '%s │%5d:%-3d│%s %s'
     for i = info.start_idx, info.end_idx do
         local e = items[i]
         local fname = ''
@@ -593,15 +593,15 @@ function _G.qftf(info)
                 end
                 -- char in fname may occur more than 1 width, ignore this issue in order to keep performance
                 if #fname <= limit then
-                    fname = fname_fmt1:format(fname)
+                    fname = fnameFmt1:format(fname)
                 else
-                    fname = fname_fmt2:format(fname:sub(1 - limit))
+                    fname = fnameFmt2:format(fname:sub(1 - limit))
                 end
             end
             local lnum = e.lnum > 99999 and -1 or e.lnum
             local col = e.col > 999 and -1 or e.col
             local qtype = e.type == '' and '' or ' ' .. e.type:sub(1, 1):upper()
-            str = valid_fmt:format(fname, lnum, col, qtype, e.text)
+            str = validFmt:format(fname, lnum, col, qtype, e.text)
         else
             str = e.text
         end

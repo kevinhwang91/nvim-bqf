@@ -4,41 +4,26 @@ local M = {}
 local api = vim.api
 
 local parsers, configs
-local parsers_cache
-local parsers_limit
+local parsersCache
+local parsersLimit
 local lru
 local initialized
 
-local function prepare_context(parser, pbufnr, fbufnr, loaded)
-    local cb
+local function injectParserForHighlight(parser, srcBufnr, dstBufnr, loaded)
     if loaded then
-        parser._source = fbufnr
-        cb = parser._callbacks
-        parser._callbacks = vim.deepcopy(cb)
+        parser._source = dstBufnr
     end
-
-    local hl_config = configs.get_module('highlight')
-    for k, v in pairs(hl_config.custom_captures) do
-        vim.treesitter.highlighter.hl_map[k] = v
-    end
-    local lang = parser:lang()
 
     vim.treesitter.highlighter.new(parser)
 
     if loaded then
-        parser._source = pbufnr
-        parser._callbacks = cb
-    end
-    local is_table = type(hl_config.additional_vim_regex_highlighting) == 'table'
-    if hl_config.additional_vim_regex_highlighting and
-        (not is_table or vim.tbl_contains(hl_config.additional_vim_regex_highlighting, lang)) then
-        vim.bo[pbufnr].syntax = 'on'
+        parser._source = srcBufnr
     end
 end
 
 ---
 ---@param bufnr number
-function M.disable_active(bufnr)
+function M.disableActive(bufnr)
     if not initialized then
         return
     end
@@ -48,81 +33,78 @@ function M.disable_active(bufnr)
 end
 
 ---
----@param pbufnr number
----@param fbufnr number
+---@param srcBufnr number
+---@param dstBufnr number
 ---@param loaded boolean
 ---@return boolean
-function M.try_attach(pbufnr, fbufnr, loaded)
+function M.tryAttach(srcBufnr, dstBufnr, loaded)
     local ret = false
     if not initialized then
         return ret
     end
     local parser
     if loaded then
-        parser = parsers.get_parser(pbufnr)
+        parser = parsers.get_parser(srcBufnr)
     else
-        parser = parsers_cache:get(pbufnr)
-        if parser then
-            local sbufnr = parser:source()
-            if not api.nvim_buf_is_valid(sbufnr) then
-                parser = nil
-                parsers_cache:set(pbufnr, nil)
-            end
+        parser = parsersCache:get(srcBufnr)
+        if parser and not api.nvim_buf_is_valid(parser:source()) then
+            parser = nil
+            parsersCache:set(srcBufnr, nil)
         end
     end
     if parser and configs.is_enabled('highlight', parser:lang()) then
-        prepare_context(parser, pbufnr, fbufnr, loaded)
+        injectParserForHighlight(parser, srcBufnr, dstBufnr, loaded)
         ret = true
     end
     return ret
 end
 
 ---
----@param pbufnr number
----@param fbufnr number
----@param ft string
+---@param srcBufnr number
+---@param dstBufnr number
+---@param fileType string
 ---@return boolean
-function M.attach(pbufnr, fbufnr, ft)
+function M.attach(srcBufnr, dstBufnr, fileType)
     local ret = false
     if not initialized then
         return ret
     end
-    local lang = parsers.ft_to_lang(ft)
+    local lang = parsers.ft_to_lang(fileType)
     if not configs.is_enabled('highlight', lang) then
         return ret
     end
 
     local parser
-    local loaded = api.nvim_buf_is_loaded(pbufnr)
+    local loaded = api.nvim_buf_is_loaded(srcBufnr)
 
-    parser = parsers_cache:get(pbufnr)
     if loaded then
-        if parser then
-            -- delete old cache if buffer has loaded
-            parsers_cache:set(pbufnr, nil)
-        end
-        parser = parsers.get_parser(pbufnr, lang)
+        -- delete old cache if buffer has loaded
+        parsersCache:set(srcBufnr, nil)
+        parser = parsers.get_parser(srcBufnr, lang)
     else
-        parser = parsers.get_parser(fbufnr, lang)
-        parsers_cache:set(pbufnr, parser)
+        parser = parsers.get_parser(dstBufnr, lang)
+        -- no need to deepcopy the parser for the cache, upstream only dereference parser and
+        -- invalidate it to make self._tree up to date, so we can cache the parser and reuse it
+        -- to speed up rendering buffer.
+        parsersCache:set(srcBufnr, parser)
     end
     if parser then
-        prepare_context(parser, pbufnr, fbufnr, loaded)
+        injectParserForHighlight(parser, srcBufnr, dstBufnr, loaded)
         ret = true
     end
     return ret
 end
 
-function M.shrink_cache()
+function M.shrinkCache()
     if not initialized then
         return
     end
 
     -- shrink cache, keep usage of memory proper
-    local cnt = parsers_limit / 4
-    for bufnr in parsers_cache:pairs() do
-        if api.nvim_buf_is_loaded(bufnr) or not api.nvim_buf_is_valid(bufnr) or cnt < 1 then
-            parsers_cache:set(bufnr, nil)
+    local cnt = parsersLimit / 4
+    for bufnr in parsersCache:pairs() do
+        if cnt < 1 or api.nvim_buf_is_loaded(bufnr) or not api.nvim_buf_is_valid(bufnr) then
+            parsersCache:set(bufnr, nil)
         else
             cnt = cnt - 1
         end
@@ -138,8 +120,8 @@ local function init()
     configs = require('nvim-treesitter.configs')
     lru = require('bqf.struct.lru')
 
-    parsers_limit = 48
-    parsers_cache = lru:new(parsers_limit)
+    parsersLimit = 48
+    parsersCache = lru:new(parsersLimit)
 end
 
 init()

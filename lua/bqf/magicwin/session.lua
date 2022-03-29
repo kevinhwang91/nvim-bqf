@@ -5,8 +5,8 @@ local utils = require('bqf.utils')
 ---@field winid number
 ---@field height number
 ---@field hrtime number
----@field tune_lnum number
----@field wv table
+---@field tuneLnum number
+---@field winView table
 local Win = {}
 
 ---
@@ -19,16 +19,16 @@ function Win:new(winid)
     obj.winid = winid
     obj.height = nil
     obj.hrtime = nil
-    obj.tune_lnum = nil
-    obj.wv = nil
+    obj.tuneLnum = nil
+    obj.winView = nil
     return obj
 end
 
 function Win:set(o)
     self.height = o.height
     self.hrtime = o.hrtime
-    self.tune_lnum = o.tune_lnum
-    self.wv = o.wv
+    self.tuneLnum = o.tuneLnum
+    self.winView = o.winView
 end
 
 ---
@@ -55,7 +55,7 @@ end
 ---@param qbufnr number
 ---@param winid number
 ---@return BqfMagicWin
-function MagicWinSession:adjacent_win(qbufnr, winid)
+function MagicWinSession:adjacentWin(qbufnr, winid)
     return self:get(qbufnr)[winid]
 end
 
@@ -66,7 +66,7 @@ function MagicWinSession:clean(qbufnr)
         self.pool[qbufnr] = nil
     end
     for bufnr in pairs(self.pool) do
-        if not utils.is_buf_loaded(bufnr) then
+        if not utils.isBufLoaded(bufnr) then
             self.pool[bufnr] = nil
         end
     end

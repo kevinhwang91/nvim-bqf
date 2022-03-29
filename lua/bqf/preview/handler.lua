@@ -4,12 +4,12 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local auto_preview, delay_syntax
-local should_preview_cb
-local keep_preview, orig_pos
-local win_height, win_vheight
-local wrap, border_chars
-local last_idx
+local autoPreview, delaySyntax
+local shouldPreviewCallBack
+local keepPreview, origPos
+local winHeight, winVHeight
+local wrap, borderChars
+local lastIdx
 local PLACEHOLDER_TBL
 
 local config = require('bqf.config')
@@ -19,7 +19,7 @@ local ts = require('bqf.preview.treesitter')
 local extmark = require('bqf.preview.extmark')
 local utils = require('bqf.utils')
 
-local function exec_preview(item, lsp_range_hl, pattern_hl)
+local function execPreview(item, lspRangeHl, patternHl)
     local lnum, col, pattern = item.lnum, item.col, item.pattern
 
     if lnum < 1 then
@@ -32,50 +32,50 @@ local function exec_preview(item, lsp_range_hl, pattern_hl)
     end
 
     utils.zz()
-    orig_pos = api.nvim_win_get_cursor(0)
+    origPos = api.nvim_win_get_cursor(0)
 
     -- scrolling horizontally reset
     cmd('norm! ze')
 
     fn.clearmatches()
 
-    local pos_list = {}
-    if lsp_range_hl and not vim.tbl_isempty(lsp_range_hl) then
-        pos_list = utils.lsp_range2pos_list(lsp_range_hl)
-    elseif pattern_hl and pattern_hl ~= '' then
-        pos_list = utils.pattern2pos_list(pattern_hl)
-    elseif utils.has_06() then
-        local end_lnum, end_col = item.end_lnum, item.end_col
-        pos_list = utils.qf_range2pos_list(lnum, col, end_lnum, end_col)
+    local posList = {}
+    if lspRangeHl and not vim.tbl_isempty(lspRangeHl) then
+        posList = utils.lspRangeToPosList(lspRangeHl)
+    elseif patternHl and patternHl ~= '' then
+        posList = utils.patternToPosList(patternHl)
+    elseif utils.has06() then
+        local endLnum, endCol = item.end_lnum, item.end_col
+        posList = utils.qfRangeToPosList(lnum, col, endLnum, endCol)
     end
 
-    if not vim.tbl_isempty(pos_list) then
-        utils.matchaddpos('BqfPreviewRange', pos_list)
+    if not vim.tbl_isempty(posList) then
+        utils.matchAddPos('BqfPreviewRange', posList)
     else
         if lnum < 1 then
             fn.matchadd('BqfPreviewRange', pattern)
         elseif col < 1 then
-            fn.matchaddpos('BqfPreviewRange', {{lnum}})
+            utils.matchAddPos('BqfPreviewRange', {{lnum}})
         end
     end
 
     if lnum > 0 then
-        fn.matchaddpos('BqfPreviewCursor', {{lnum, math.max(1, col)}}, 11)
+        utils.matchAddPos('BqfPreviewCursor', {{lnum, math.max(1, col)}}, 11)
     end
 end
 
-local function preview_session(qwinid)
+local function previewSession(qwinid)
     qwinid = qwinid or api.nvim_get_current_win()
     return pvs.get(qwinid) or PLACEHOLDER_TBL
 end
 
-local function do_syntax(qwinid, idx, pbufnr)
-    local ps = preview_session(qwinid)
-    if ps == PLACEHOLDER_TBL or idx ~= last_idx or (pbufnr == ps.bufnr and ps.syntax) then
+local function doSyntax(qwinid, idx, pbufnr)
+    local ps = previewSession(qwinid)
+    if ps == PLACEHOLDER_TBL or idx ~= lastIdx or (pbufnr == ps.bufnr and ps.syntax) then
         return
     end
 
-    local fbufnr = ps.float_bufnr()
+    local fbufnr = ps.floatBufnr()
 
     -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
     -- fuxx min.js!
@@ -83,7 +83,7 @@ local function do_syntax(qwinid, idx, pbufnr)
     local bytes = api.nvim_buf_get_offset(fbufnr, lcount)
     -- bytes / lcount < 500 LGTM :)
     if bytes / lcount < 500 then
-        local ei_bak = vim.o.ei
+        local eiBak = vim.o.ei
         local ok, ft = pcall(api.nvim_buf_call, fbufnr, function()
             vim.o.ei = 'FileType'
             vim.bo.ft = 'bqfpreview'
@@ -91,7 +91,7 @@ local function do_syntax(qwinid, idx, pbufnr)
                 fn.fnameescape(api.nvim_buf_get_name(ps.bufnr))))
             return vim.bo.ft
         end)
-        vim.o.ei = ei_bak
+        vim.o.ei = eiBak
 
         if ok and ft ~= 'bqfpreview' then
             ps.syntax = ts.attach(pbufnr, fbufnr, ft)
@@ -103,38 +103,38 @@ local function do_syntax(qwinid, idx, pbufnr)
     end
 end
 
-function M.auto_enabled()
-    return auto_preview
+function M.autoEnabled()
+    return autoPreview
 end
 
-function M.keep_preview()
-    keep_preview = true
+function M.keepPreview()
+    keepPreview = true
 end
 
-function M.toggle_mode(qwinid)
-    local ps = preview_session(qwinid)
+function M.toggleMode(qwinid)
+    local ps = previewSession(qwinid)
     if ps == PLACEHOLDER_TBL then
         return
     end
 
     ps.full = ps.full ~= true
-    last_idx = -1
+    lastIdx = -1
     M.open(qwinid, nil, true)
 end
 
 function M.close(qwinid)
-    if keep_preview then
-        keep_preview = nil
+    if keepPreview then
+        keepPreview = nil
         return
     end
 
-    last_idx = -1
+    lastIdx = -1
     pvs.close()
 
-    ts.shrink_cache()
+    ts.shrinkCache()
 
     qwinid = qwinid or api.nvim_get_current_win()
-    local ps = preview_session(qwinid)
+    local ps = previewSession(qwinid)
     if ps then
         ps.bufnr = nil
     end
@@ -144,19 +144,19 @@ function M.open(qwinid, qidx, force)
     qwinid = qwinid or api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
-    local pwinid = qs:pwinid()
-    local ps = preview_session(qwinid)
+    local pwinid = qs:previousWinid()
+    local ps = previewSession(qwinid)
 
     if ps == PLACEHOLDER_TBL or api.nvim_tabpage_list_wins(0) == 1 or fn.win_gettype(pwinid) ~= '' then
         return
     end
 
     qidx = qidx or api.nvim_win_get_cursor(qwinid)[1]
-    if not force and qidx == last_idx then
+    if not force and qidx == lastIdx then
         return
     end
 
-    last_idx = qidx
+    lastIdx = qidx
 
     local item = qlist:item(qidx)
     if not item then
@@ -171,91 +171,91 @@ function M.open(qwinid, qidx, force)
         return
     end
 
-    if ps.bufnr ~= pbufnr and not force and should_preview_cb and
-        not should_preview_cb(pbufnr, qwinid) then
+    if ps.bufnr ~= pbufnr and not force and shouldPreviewCallBack and
+        not shouldPreviewCallBack(pbufnr, qwinid) then
         M.close(qwinid)
         return
     end
 
-    ps:valid_or_build(pwinid)
+    ps:validOrBuild(pwinid)
 
     pvs.display()
 
-    local fbufnr = pvs.float_bufnr()
+    local fbufnr = pvs.floatBufnr()
     if not fbufnr then
         return
     end
 
     local loaded = api.nvim_buf_is_loaded(pbufnr)
     if force or ps.bufnr ~= pbufnr then
-        pvs.floatbuf_reset()
-        ts.disable_active(fbufnr)
+        pvs.floatBufReset()
+        ts.disableActive(fbufnr)
 
-        extmark.clear_highlight(fbufnr)
-        utils.transfer_buf(pbufnr, fbufnr)
+        extmark.clearHighlight(fbufnr)
+        utils.transferBuf(pbufnr, fbufnr)
         ps.bufnr = pbufnr
-        ps.syntax = ts.try_attach(pbufnr, fbufnr, loaded)
+        ps.syntax = ts.tryAttach(pbufnr, fbufnr, loaded)
     end
 
     if not ps.syntax then
         vim.defer_fn(function()
-            do_syntax(qwinid, qidx, pbufnr)
-        end, delay_syntax)
+            doSyntax(qwinid, qidx, pbufnr)
+        end, delaySyntax)
     end
 
     local ctx = qlist:context().bqf or {}
-    local lsp_ranges_hl, pattern_hl = ctx.lsp_ranges_hl, ctx.pattern_hl
-    local lsp_range_hl
-    if type(lsp_ranges_hl) == 'table' then
-        lsp_range_hl = lsp_ranges_hl[qidx]
+    local lspRangeHlList, patternl = ctx.lsp_ranges_hl, ctx.pattern_hl
+    local lspRangeHl
+    if type(lspRangeHlList) == 'table' then
+        lspRangeHl = lspRangeHlList[qidx]
     end
 
-    pvs.floatwin_exec(function()
-        exec_preview(item, lsp_range_hl, pattern_hl)
+    pvs.floatWinExec(function()
+        execPreview(item, lspRangeHl, patternl)
         if loaded then
-            local topline, botline = pvs.visible_region()
-            extmark.update_highlight(pbufnr, fbufnr, topline, botline)
+            local topline, botline = pvs.visibleRegion()
+            extmark.updateHighlight(pbufnr, fbufnr, topline, botline)
         end
         cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
 
-    local size = qlist:get_qflist({size = 0}).size
-    pvs.update_border(pbufnr, qidx, size)
+    local size = qlist:getQfList({size = 0}).size
+    pvs.updateBorder(pbufnr, qidx, size)
 end
 
 function M.scroll(direction, qwinid)
     if pvs.validate() and direction then
         qwinid = qwinid or api.nvim_get_current_win()
         local qs = qfs:get(qwinid)
-        local pwinid = qs:pwinid()
-        pvs.floatwin_exec(function()
+        local pwinid = qs:previousWinid()
+        pvs.floatWinExec(function()
             if direction == 0 then
-                api.nvim_win_set_cursor(0, orig_pos)
+                api.nvim_win_set_cursor(0, origPos)
             else
                 -- ^D = 0x04, ^U = 0x15
                 cmd(('norm! %c'):format(direction > 0 and 0x04 or 0x15))
             end
             utils.zz()
-            local ps = preview_session(qwinid)
+            local ps = previewSession(qwinid)
             local loaded = api.nvim_buf_is_loaded(ps.bufnr)
             if loaded then
-                local topline, botline = pvs.visible_region()
-                extmark.update_highlight(ps.bufnr, ps.float_bufnr(), topline, botline)
+                local topline, botline = pvs.visibleRegion()
+                extmark.updateHighlight(ps.bufnr, ps.floatBufnr(), topline, botline)
             end
             cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
         end)
-        pvs.update_scrollbar()
+        pvs.updateScrollBar()
     end
 end
 
 function M.toggle(qwinid)
     qwinid = qwinid or api.nvim_get_current_win()
-    local ps = preview_session(qwinid)
+    local ps = previewSession(qwinid)
     if ps == PLACEHOLDER_TBL then
         return
     end
-    auto_preview = auto_preview ~= true
-    if auto_preview then
+    autoPreview = autoPreview ~= true
+    if autoPreview then
         api.nvim_echo({{'Enable preview automatically', 'WarningMsg'}}, true, {})
         M.open(qwinid)
     else
@@ -264,7 +264,7 @@ function M.toggle(qwinid)
     end
 end
 
-function M.toggle_item(qwinid)
+function M.toggleItem(qwinid)
     if pvs.validate() then
         M.close(qwinid)
     else
@@ -272,23 +272,23 @@ function M.toggle_item(qwinid)
     end
 end
 
-function M.move_cursor()
+function M.moveCursor()
     local qwinid = api.nvim_get_current_win()
-    local ps = preview_session(qwinid)
+    local ps = previewSession(qwinid)
     if ps == PLACEHOLDER_TBL then
         return
     end
 
-    if auto_preview then
+    if autoPreview then
         M.open(qwinid)
     else
-        if api.nvim_win_get_cursor(qwinid)[1] ~= last_idx then
+        if api.nvim_win_get_cursor(qwinid)[1] ~= lastIdx then
             M.close(qwinid)
         end
     end
 end
 
-function M.redraw_win()
+function M.redrawWin()
     if pvs.validate() then
         local bufnr = tonumber(fn.expand('<abuf>')) or api.nvim_get_current_buf()
         local qwinid = fn.bufwinid(bufnr)
@@ -301,28 +301,28 @@ function M.initialize(qwinid)
     cmd([[
         aug BqfPreview
             au! * <buffer>
-            au VimResized <buffer> lua require('bqf.preview.handler').redraw_win()
-            au CursorMoved,WinEnter <buffer> lua require('bqf.preview.handler').move_cursor()
+            au VimResized <buffer> lua require('bqf.preview.handler').redrawWin()
+            au CursorMoved,WinEnter <buffer> lua require('bqf.preview.handler').moveCursor()
             au WinLeave,BufWipeout <buffer> lua require('bqf.preview.handler').close()
         aug END
     ]])
 
     pvs:new(qwinid, {
-        win_height = win_height,
-        win_vheight = win_vheight,
+        winHeight = winHeight,
+        winVHeight = winVHeight,
         wrap = wrap,
-        border_chars = border_chars
+        borderChars = borderChars
     })
 
     -- some plugins will change the quickfix window, preview window should init later
     vim.defer_fn(function()
-        last_idx = -1
+        lastIdx = -1
         -- delayed called, qwinid maybe invalid
-        if not utils.is_win_valid(qwinid) then
+        if not utils.isWinValid(qwinid) then
             return
         end
 
-        if auto_preview and api.nvim_get_current_win() == qwinid then
+        if autoPreview and api.nvim_get_current_win() == qwinid then
             M.open(qwinid)
         end
     end, 50)
@@ -331,25 +331,25 @@ end
 local function init()
     local pconf = config.preview
     vim.validate({preview = {pconf, 'table'}})
-    auto_preview = pconf.auto_preview
-    delay_syntax = tonumber(pconf.delay_syntax)
+    autoPreview = pconf.auto_preview
+    delaySyntax = tonumber(pconf.delay_syntax)
     wrap = pconf.wrap
-    should_preview_cb = pconf.should_preview_cb
-    border_chars = pconf.border_chars
-    win_height = tonumber(pconf.win_height)
-    win_vheight = tonumber(pconf.win_vheight or win_height)
+    shouldPreviewCallBack = pconf.should_preview_cb
+    borderChars = pconf.border_chars
+    winHeight = tonumber(pconf.win_height)
+    winVHeight = tonumber(pconf.win_vheight or winHeight)
     vim.validate({
-        auto_preview = {auto_preview, 'boolean'},
-        delay_syntax = {delay_syntax, 'number'},
+        auto_preview = {autoPreview, 'boolean'},
+        delay_syntax = {delaySyntax, 'number'},
         wrap = {wrap, 'boolean'},
-        should_preview_cb = {should_preview_cb, 'function', true},
+        should_preview_cb = {shouldPreviewCallBack, 'function', true},
         border_chars = {
-            border_chars, function(chars)
+            borderChars, function(chars)
                 return type(chars) == 'table' and #chars == 9
             end, 'a table with 9 chars'
         },
-        win_height = {win_height, 'number'},
-        win_vheight = {win_vheight, 'number'}
+        win_height = {winHeight, 'number'},
+        win_vheight = {winVHeight, 'number'}
     })
 
     cmd([[

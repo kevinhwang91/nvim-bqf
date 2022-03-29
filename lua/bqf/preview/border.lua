@@ -24,24 +24,24 @@ function Border:build(o)
 end
 
 function Border:update(pbufnr, idx, size)
-    local pos_str = ('[%d/%d]'):format(idx, size)
-    local buf_str = ('buf %d:'):format(pbufnr)
+    local posStr = ('[%d/%d]'):format(idx, size)
+    local bufStr = ('buf %d:'):format(pbufnr)
     local modified = vim.bo[pbufnr].modified and '[+] ' or ''
     local name = fn.bufname(pbufnr):gsub('^' .. vim.env.HOME, '~')
     local width = api.nvim_win_get_width(self.winid)
-    local pad_fit = width - 10 - fn.strwidth(buf_str) - fn.strwidth(pos_str)
-    if pad_fit - fn.strwidth(name) < 0 then
+    local padFit = width - 10 - fn.strwidth(bufStr) - fn.strwidth(posStr)
+    if padFit - fn.strwidth(name) < 0 then
         name = fn.pathshorten(name)
-        if pad_fit - fn.strwidth(name) < 0 then
+        if padFit - fn.strwidth(name) < 0 then
             name = ''
         end
     end
-    local title = (' %s %s %s %s'):format(pos_str, buf_str, name, modified)
-    self:update_title(title)
-    self:update_scrollbar()
+    local title = (' %s %s %s %s'):format(posStr, bufStr, name, modified)
+    self:updateTitle(title)
+    self:updateScrollBar()
 end
 
-function Border:update_buf(opts)
+function Border:updateBuf(opts)
     local width, height = opts.width, opts.height
     local top = self.chars[5] .. self.chars[3]:rep(width - 2) .. self.chars[6]
     local mid = self.chars[1] .. (' '):rep(width - 2) .. self.chars[2]
@@ -51,7 +51,7 @@ function Border:update_buf(opts)
         table.insert(lines, mid)
     end
     table.insert(lines, bot)
-    if not utils.is_buf_loaded(self.bufnr) then
+    if not utils.isBufLoaded(self.bufnr) then
         local bufnr = fn.bufnr('^BqfPreviewBorder$')
         if bufnr > 0 then
             self.bufnr = bufnr
@@ -66,35 +66,35 @@ function Border:update_buf(opts)
     api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
 end
 
-function Border:update_scrollbar()
+function Border:updateScrollBar()
     local buf = api.nvim_win_get_buf(self.floatwin.winid)
-    local line_count = api.nvim_buf_line_count(buf)
+    local lineCount = api.nvim_buf_line_count(buf)
 
-    local winfo = utils.getwininfo(self.floatwin.winid)
+    local winfo = utils.getWinInfo(self.floatwin.winid)
     local topline, height = winfo.topline, winfo.height
 
-    local bar_size = math.min(height, math.ceil(height * height / line_count))
+    local barSize = math.min(height, math.ceil(height * height / lineCount))
 
-    local bar_pos = math.ceil(height * topline / line_count)
-    if bar_pos + bar_size > height then
-        bar_pos = height - bar_size + 1
+    local barPos = math.ceil(height * topline / lineCount)
+    if barPos + barSize > height then
+        barPos = height - barSize + 1
     end
 
     local lines = api.nvim_buf_get_lines(self.bufnr, 1, -2, true)
     for i = 1, #lines do
-        local bar_char
-        if i >= bar_pos and i < bar_pos + bar_size then
-            bar_char = self.chars[#self.chars]
+        local barChar
+        if i >= barPos and i < barPos + barSize then
+            barChar = self.chars[#self.chars]
         else
-            bar_char = self.chars[2]
+            barChar = self.chars[2]
         end
         local line = lines[i]
-        lines[i] = fn.strcharpart(line, 0, fn.strwidth(line) - 1) .. bar_char
+        lines[i] = fn.strcharpart(line, 0, fn.strwidth(line) - 1) .. barChar
     end
     api.nvim_buf_set_lines(self.bufnr, 1, -2, false, lines)
 end
 
-function Border:update_title(title)
+function Border:updateTitle(title)
     local top = api.nvim_buf_get_lines(self.bufnr, 0, 1, 0)[1]
     local prefix = fn.strcharpart(top, 0, 3)
     local suffix = fn.strcharpart(top, fn.strwidth(title) + 3, fn.strwidth(top))
@@ -102,8 +102,8 @@ function Border:update_title(title)
     api.nvim_buf_set_lines(self.bufnr, 0, 1, true, {title})
 end
 
-function Border:cal_wopts()
-    local wopts = self._wopts or self.floatwin:cal_wopts()
+function Border:calculateWinOpts()
+    local wopts = self._wopts or self.floatwin:calculateWinOpts()
     if vim.tbl_isempty(wopts) then
         return {}
     else
@@ -122,18 +122,18 @@ function Border:cal_wopts()
 end
 
 function Border:display()
-    local wopts = self:cal_wopts()
+    local wopts = self:calculateWinOpts()
 
     if vim.tbl_isempty(wopts) then
         return
     end
 
     if self:validate() then
-        self:update_buf(wopts)
+        self:updateBuf(wopts)
         wopts.noautocmd = nil
         api.nvim_win_set_config(self.winid, wopts)
     else
-        self:update_buf(wopts)
+        self:updateBuf(wopts)
         Border:open(self.bufnr, wopts)
         vim.wo[self.winid].winhl = 'Normal:BqfPreviewBorder'
     end

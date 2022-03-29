@@ -24,7 +24,7 @@ function LRU.Node:_new(o)
     return obj
 end
 
-function LRU:_after_access(node)
+function LRU:_afterAccess(node)
     local id = node.id
     if id ~= self.head.id then
         local np = node.prev
@@ -36,10 +36,10 @@ function LRU:_after_access(node)
             np.next = nn
             nn.prev = np
         end
-        local old_head = self.head
-        old_head.prev = node
+        local oldHead = self.head
+        oldHead.prev = node
         node.prev = nil
-        node.next = old_head
+        node.next = oldHead
         self.head = node
     end
 end
@@ -57,20 +57,20 @@ function LRU:new(limit)
 end
 
 function LRU:first()
-    local first_id, first_obj
+    local firstId, firstObj
     if self.head then
-        first_id, first_obj = self.head.id, self.head.obj
+        firstId, firstObj = self.head.id, self.head.obj
     end
-    return first_id, first_obj
+    return firstId, firstObj
 end
 
 function LRU:last()
-    local last_id, last_obj
+    local lastId, lastObj
     if self.tail then
-        last_id, last_obj = self.tail.id, self.tail.obj
-        self:_after_access(self.tail)
+        lastId, lastObj = self.tail.id, self.tail.obj
+        self:_afterAccess(self.tail)
     end
-    return last_id, last_obj
+    return lastId, lastObj
 end
 
 function LRU:get(id)
@@ -78,7 +78,7 @@ function LRU:get(id)
     local node = self.entries[id]
     if node then
         obj = node.obj
-        self:_after_access(node)
+        self:_afterAccess(node)
     end
     return obj
 end
@@ -121,32 +121,32 @@ function LRU:set(id, obj)
         if obj then
             old = node.obj
             node.obj = obj
-            self:_after_access(node)
+            self:_afterAccess(node)
         else
             old = self:_del(id)
         end
     elseif obj then
-        local new_node = LRU.Node:_new({prev = nil, next = nil, id = id, obj = obj})
+        local newNode = LRU.Node:_new({prev = nil, next = nil, id = id, obj = obj})
         if self.head then
-            local old_head = self.head
-            new_node.next = old_head
-            old_head.prev = new_node
-            self.head = new_node
+            local oldHead = self.head
+            newNode.next = oldHead
+            oldHead.prev = newNode
+            self.head = newNode
         else
-            self.head = new_node
+            self.head = newNode
             self.tail = self.head
         end
 
         if self.size + 1 > self.limit then
-            local old_tail = self.tail
-            self.entries[old_tail.id] = nil
-            local new_tail = old_tail.prev
-            new_tail.next = nil
-            self.tail = new_tail
+            local oldTail = self.tail
+            self.entries[oldTail.id] = nil
+            local newTail = oldTail.prev
+            newTail.next = nil
+            self.tail = newTail
         else
             self.size = self.size + 1
         end
-        self.entries[id] = new_node
+        self.entries[id] = newNode
     end
     return old
 end

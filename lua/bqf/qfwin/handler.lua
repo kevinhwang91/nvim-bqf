@@ -7,7 +7,7 @@ local fn = vim.fn
 local qfs = require('bqf.qfwin.session')
 local utils = require('bqf.utils')
 
-function M.sign_reset()
+function M.signReset()
     local qwinid = api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
@@ -19,7 +19,7 @@ end
 ---@param rel number
 ---@param lnum number
 ---@param bufnr number
-function M.sign_toggle(rel, lnum, bufnr)
+function M.signToggle(rel, lnum, bufnr)
     lnum = lnum or api.nvim_win_get_cursor(0)[1]
     bufnr = bufnr or api.nvim_get_current_buf()
     local qwinid = api.nvim_get_current_win()
@@ -35,27 +35,27 @@ end
 ---
 ---@param lnum number
 ---@param bufnr number
-function M.sign_toggle_buf(lnum, bufnr)
+function M.signToggleBuf(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     lnum = lnum or api.nvim_win_get_cursor(0)[1]
     local qwinid = api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
     local items = qlist:items()
-    local entry_bufnr = items[lnum].bufnr
-    local lnum_list = {}
+    local entryBufnr = items[lnum].bufnr
+    local lnumList = {}
     for l, entry in ipairs(items) do
-        if entry.bufnr == entry_bufnr then
-            table.insert(lnum_list, l)
+        if entry.bufnr == entryBufnr then
+            table.insert(lnumList, l)
         end
     end
     local sign = qlist:sign()
-    sign:toggle(lnum_list, bufnr)
+    sign:toggle(lnumList, bufnr)
 end
 
 --- only work under map with <Cmd>
 ---@param bufnr number
-function M.sign_vm_toggle(bufnr)
+function M.signVMToggle(bufnr)
     local mode = api.nvim_get_mode().mode
     vim.validate({
         mode = {
@@ -68,22 +68,22 @@ function M.sign_vm_toggle(bufnr)
     -- ^[ = 0x1b
     cmd(('norm! %c'):format(0x1b))
     bufnr = bufnr or api.nvim_get_current_buf()
-    local s_lnum = api.nvim_buf_get_mark(bufnr, '<')[1]
-    local e_lnum = api.nvim_buf_get_mark(bufnr, '>')[1]
-    local lnum_list = {}
-    for i = s_lnum, e_lnum do
-        table.insert(lnum_list, i)
+    local startLnum = api.nvim_buf_get_mark(bufnr, '<')[1]
+    local endLnum = api.nvim_buf_get_mark(bufnr, '>')[1]
+    local lnumList = {}
+    for i = startLnum, endLnum do
+        table.insert(lnumList, i)
     end
     local qwinid = api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
     local sign = qlist:sign()
-    sign:toggle(lnum_list, bufnr)
+    sign:toggle(lnumList, bufnr)
 end
 
 ---
 ---@param bufnr number
-function M.sign_clear(bufnr)
+function M.signClear(bufnr)
     local qwinid = api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
@@ -91,11 +91,11 @@ function M.sign_clear(bufnr)
     sign:clear(bufnr)
 end
 
-function M.restore_winview()
+function M.restoreWinView()
     local qwinid = api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
-    local wv = qlist:get_winview()
+    local wv = qlist:getWinView()
     if wv then
         fn.winrestview(wv)
     end
@@ -103,48 +103,48 @@ end
 
 ---
 ---@param next boolean
-function M.nav_history(next)
+function M.navHistory(next)
     local qwinid = api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
-    qlist:set_winview(fn.winsaveview())
+    qlist:setWinView(fn.winsaveview())
 
     local prefix = qlist.type == 'loc' and 'l' or 'c'
-    local cur_nr, last_nr = qlist:get_qflist({nr = 0}).nr, qlist:get_qflist({nr = '$'}).nr
-    if last_nr <= 1 then
+    local curNr, lastNr = qlist:getQfList({nr = 0}).nr, qlist:getQfList({nr = '$'}).nr
+    if lastNr <= 1 then
         return
     end
 
     local count = vim.v.count1
-    local hist_num = (cur_nr - 1 + (next and count or last_nr - count)) % last_nr + 1
+    local histNum = (curNr - 1 + (next and count or lastNr - count)) % lastNr + 1
 
-    cmd(([[sil exe '%d%shi']]):format(hist_num, prefix))
+    cmd(([[sil exe '%d%shi']]):format(histNum, prefix))
     cmd([[norm! m']])
-    M.restore_winview()
+    M.restoreWinView()
 
-    local qinfo = qlist:get_qflist({nr = 0, size = 0, title = 0})
+    local qinfo = qlist:getQfList({nr = 0, size = 0, title = 0})
     local nr, size, title = qinfo.nr, qinfo.size, qinfo.title
 
     api.nvim_echo({
-        {'('}, {tostring(nr), 'Identifier'}, {' of '}, {tostring(last_nr), 'Identifier'}, {') ['},
+        {'('}, {tostring(nr), 'Identifier'}, {' of '}, {tostring(lastNr), 'Identifier'}, {') ['},
         {tostring(size), 'Type'}, {'] '}, {' >> ' .. title, 'Title'}
     }, false, {})
 end
 
 ---
 ---@param next boolean
-function M.nav_file(next)
+function M.navFile(next)
     local lnum, col = unpack(api.nvim_win_get_cursor(0))
     local qwinid = api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
-    local items, size = qlist:items(), qlist:get_qflist({size = 0}).size
-    local cur_bufnr = items[lnum].bufnr
+    local items, size = qlist:items(), qlist:getQfList({size = 0}).size
+    local curBufnr = items[lnum].bufnr
     local start, stop, step = unpack(next and {lnum + 1, size, 1} or {lnum - 1, 1, -1})
 
     for i = start, stop, step do
-        if items[i].valid == 1 and items[i].bufnr ~= cur_bufnr then
-            qlist:change_idx(i)
+        if items[i].valid == 1 and items[i].bufnr ~= curBufnr then
+            qlist:changeIdx(i)
             api.nvim_win_set_cursor(0, {i, col})
             return
         end
@@ -152,27 +152,27 @@ function M.nav_file(next)
     api.nvim_echo({{'No more items', 'WarningMsg'}}, true, {})
 end
 
-local function validate_size(qlist)
-    local valid = qlist:get_qflist({size = 0}).size > 0
+local function validateSize(qlist)
+    local valid = qlist:getQfList({size = 0}).size > 0
     if not valid then
         api.nvim_err_writeln('E42: No Errors')
     end
     return valid
 end
 
-local function do_edit(qwinid, idx, close, action)
+local function doEdit(qwinid, idx, close, action)
     qwinid = qwinid or api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
-    local pwinid = qs:pwinid()
-    assert(utils.is_win_valid(pwinid), 'file window is invalid')
+    local pwinid = qs:previousWinid()
+    assert(utils.isWinValid(pwinid), 'file window is invalid')
 
     local qlist = qs:list()
-    if not validate_size(qlist) then
+    if not validateSize(qlist) then
         return false
     end
 
     idx = idx or api.nvim_win_get_cursor(qwinid)[1]
-    qlist:change_idx(idx)
+    qlist:changeIdx(idx)
     local entry = qlist:item(idx)
     local bufnr, lnum, col = entry.bufnr, entry.lnum, entry.col
     if bufnr == 0 then
@@ -186,10 +186,10 @@ local function do_edit(qwinid, idx, close, action)
 
     api.nvim_set_current_win(pwinid)
 
-    local last_bufnr = api.nvim_get_current_buf()
-    local last_bufname = api.nvim_buf_get_name(last_bufnr)
-    local last_bufoff = api.nvim_buf_get_offset(0, 1)
-    if action and not utils.is_unname_buf(last_bufnr, last_bufname, last_bufoff) then
+    local lastBufnr = api.nvim_get_current_buf()
+    local lastBufname = api.nvim_buf_get_name(lastBufnr)
+    local lastBufoff = api.nvim_buf_get_offset(0, 1)
+    if action and not utils.isUnnameBuf(lastBufnr, lastBufname, lastBufoff) then
         action(bufnr)
     else
         api.nvim_set_current_buf(bufnr)
@@ -203,29 +203,29 @@ local function do_edit(qwinid, idx, close, action)
     end
     utils.zz()
 
-    if utils.is_unname_buf(last_bufnr, last_bufname, last_bufoff) then
-        api.nvim_buf_delete(last_bufnr, {})
+    if utils.isUnnameBuf(lastBufnr, lastBufname, lastBufoff) then
+        api.nvim_buf_delete(lastBufnr, {})
     end
     return true
 end
 
 ---
 ---@param close boolean
----@param jump_cmd boolean
+---@param jumpCmd boolean
 ---@param qwinid number
 ---@param idx number
-function M.open(close, jump_cmd, qwinid, idx)
-    do_edit(qwinid, idx, close, function(bufnr)
-        if jump_cmd then
+function M.open(close, jumpCmd, qwinid, idx)
+    doEdit(qwinid, idx, close, function(bufnr)
+        if jumpCmd then
             local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
-            if jump_cmd == 'drop' then
-                local buf_info = fn.getbufinfo(bufnr)
-                if #buf_info == 1 and #buf_info[1].windows == 0 then
+            if jumpCmd == 'drop' then
+                local bufInfo = fn.getbufinfo(bufnr)
+                if #bufInfo == 1 and #bufInfo[1].windows == 0 then
                     api.nvim_set_current_buf(bufnr)
                     return
                 end
             end
-            cmd(('%s %s'):format(jump_cmd, fname))
+            cmd(('%s %s'):format(jumpCmd, fname))
         else
             api.nvim_set_current_buf(bufnr)
         end
@@ -237,21 +237,21 @@ end
 ---@param qwinid number
 ---@param idx number
 function M.tabedit(stay, qwinid, idx)
-    local last_tp = api.nvim_get_current_tabpage()
+    local lastTabPage = api.nvim_get_current_tabpage()
     qwinid = qwinid or api.nvim_get_current_win()
-    local unname_buf = true
-    if do_edit(qwinid, idx, false, function(bufnr)
-        unname_buf = false
+    local unnameBuf = true
+    if doEdit(qwinid, idx, false, function(bufnr)
+        unnameBuf = false
         local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
         cmd(('tabedit %s'):format(fname))
     end) then
-        local cur_tp = api.nvim_get_current_tabpage()
-        if not unname_buf then
+        local curTabPage = api.nvim_get_current_tabpage()
+        if not unnameBuf then
             api.nvim_set_current_win(qwinid)
         end
 
-        if last_tp ~= cur_tp and not stay then
-            api.nvim_set_current_tabpage(cur_tp)
+        if lastTabPage ~= curTabPage and not stay then
+            api.nvim_set_current_tabpage(curTabPage)
         end
     end
 end

@@ -4,4 +4,4 @@ endif
 
 let g:loaded_bqf = 1
 
-com! BqfAutoToggle lua require('bqf').toggle_auto()
+com! BqfAutoToggle lua require('bqf').toggleAuto()
