@@ -32,7 +32,7 @@ M.jitEnabled = (function()
     local enabled
     return function()
         if enabled == nil then
-            enabled = jit and (not M.isWindows() or M.has06())
+            enabled = jit ~= nil and (not M.isWindows() or M.has06())
         end
         return enabled
     end
@@ -104,7 +104,7 @@ function M.renderStr(str, groupName, defaultFg, defaultBg)
         fg = hl.foreground
         bg = hl.background
     end
-    local escapePrefix = ('\x1b[%s%s%s'):format(hl.bold and ';1' or '', hl.italic and ';3' or '',
+    local escapePrefix = ('\027[%s%s%s'):format(hl.bold and ';1' or '', hl.italic and ';3' or '',
         hl.underline and ';4' or '')
 
     local colorToCSI = gui and colorToCSI24b or colorToCSI8b
@@ -120,7 +120,7 @@ function M.renderStr(str, groupName, defaultFg, defaultBg)
         escapeFg = ansi[defaultBg]
     end
 
-    return ('%s%s%sm%s\x1b[m'):format(escapePrefix, escapeFg, escapeBg, str)
+    return ('%s%s%sm%s\027[m'):format(escapePrefix, escapeFg, escapeBg, str)
 end
 
 function M.zz()

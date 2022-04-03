@@ -128,42 +128,34 @@ local function sourceList(qwinid, signs, delim)
             local isKw = isKeyword(byte)
             -- TODO the filter is not good enough
             if lastIsKw and isKw and (byte >= 97 and byte <= 122 or byte >= 65 and byte <= 90) then
-                goto continue
-            end
-
-            if byte <= 32 then
+                _ = _
+            elseif byte <= 32 then
                 lastIsKw = false
-                goto continue
-            end
-
-            if concealEnabled then
-                local concealed, cchar, cid = unpack(fn.synconcealed(i, j))
-                concealed = concealed == 1
-                if lastCid > 0 and cid ~= lastCid then
-                    if #lastCchar > 0 then
-                        table.insert(lineSect, hlIdToAnsi[concealHlId]:format(lastCchar))
+            else
+                local concealed = false
+                if concealEnabled then
+                    local concealed0, cchar, cid = unpack(fn.synconcealed(i, j))
+                    concealed = concealed0 == 1
+                    if lastCid > 0 and cid ~= lastCid then
+                        if #lastCchar > 0 then
+                            table.insert(lineSect, hlIdToAnsi[concealHlId]:format(lastCchar))
+                        end
+                        lastCol = j
+                        lastCid = 0
                     end
-                    lastCol = j
-                    lastCid = 0
+                    if concealed then
+                        lastCchar, lastCid = cchar, cid
+                    end
                 end
-
-                if concealed then
-                    lastCchar, lastCid = cchar, cid
-                    goto continue
+                if not concealed then
+                    local hlId = fn.synID(i, j, true)
+                    if j > lastCol and lastHlId > 0 and hlId ~= lastHlId then
+                        table.insert(lineSect, hlIdToAnsi[lastHlId]:format(line:sub(lastCol, j - 1)))
+                        lastCol = j
+                    end
+                    lastHlId, lastIsKw = hlId, isKw
                 end
             end
-
-            do
-                -- use do...end to skip `<goto continue> jumps into the scope of local` error
-                local hlId = fn.synID(i, j, true)
-                if j > lastCol and lastHlId > 0 and hlId ~= lastHlId then
-                    table.insert(lineSect, hlIdToAnsi[lastHlId]:format(line:sub(lastCol, j - 1)))
-                    lastCol = j
-                end
-                lastHlId, lastIsKw = hlId, isKw
-            end
-
-            ::continue::
             j = j + 1
         end
         local hlFmt = lastHlId > 0 and hlIdToAnsi[lastHlId] or '%s'
