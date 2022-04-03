@@ -43,7 +43,7 @@ So why not nvim-bqf?
 * [Advanced configuration](#advanced-configuration)
   * [Customize configuration](#customize-configuration)
   * [Integrate with other plugins](#integrate-with-other-plugins)
-* [Customize quickfix window (Easter egg)](#customize-quickfix-window-(easter-egg))
+* [Customize quickfix window (Easter egg)](#customize-quickfix-window-easter-egg)
   * [Format new quickfix](#format-new-quickfix)
   * [Rebuild syntax for quickfix](#rebuild-syntax-for-quickfix)
 * [Feedback](#feedback)
