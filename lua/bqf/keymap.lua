@@ -57,11 +57,11 @@ function M.dispose()
         end
     end
 
-    for _, maparg in pairs(api.nvim_buf_get_keymap(0, 'n')) do
+    for _, maparg in ipairs(api.nvim_buf_get_keymap(0, 'n')) do
         doUnmap('n', maparg.lhs, maparg.rhs)
     end
 
-    for _, maparg in pairs(api.nvim_buf_get_keymap(0, 'x')) do
+    for _, maparg in ipairs(api.nvim_buf_get_keymap(0, 'x')) do
         doUnmap('x', maparg.lhs, maparg.rhs)
     end
 end

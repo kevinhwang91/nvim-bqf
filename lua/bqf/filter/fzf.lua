@@ -56,7 +56,7 @@ local function export4headless(bufnr, signs, fname)
     local fnameSign = fname .. '_sign'
     local fdData = assert(io.open(fnameData, 'w'))
     local fdSign = assert(io.open(fnameSign, 'w'))
-    for i, line in pairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+    for i, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
         fdData:write(('%s\n'):format(line))
         fdSign:write(('%c'):format(signs[i] and 0 or 32))
     end
@@ -102,7 +102,7 @@ local function sourceList(qwinid, signs, delim)
         concealHlId = fn.hlID('conceal')
     end
 
-    for i, line in pairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+    for i, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
         local signed = ' '
         if headless then
             if signs:byte(i) == 0 then

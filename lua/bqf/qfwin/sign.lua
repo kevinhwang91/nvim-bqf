@@ -100,7 +100,7 @@ function Sign:list()
 end
 
 ---
----@param lnum number|table<number, number>
+---@param lnum number|number[]
 ---@param bufnr number
 function Sign:toggle(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
