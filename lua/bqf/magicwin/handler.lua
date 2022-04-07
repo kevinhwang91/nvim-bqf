@@ -250,13 +250,12 @@ local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallBack)
         return
     end
 
-    local curBufNr = api.nvim_get_current_buf()
     local qbufnr = api.nvim_win_get_buf(qwinid)
     for _, winid in ipairs(wpos.findAdjacentWins(qwinid, pwinid)) do
         local aws = mgws:adjacentWin(qbufnr, winid)
         if aws and aws.winView then
             local winView = utils.winExecute(winid, fn.winsaveview)
-            if curBufNr == api.nvim_win_get_buf(winid) then
+            if aws.winView.topline ~= winView.topline or aws.winView.topfill ~= winView.topfill then
                 aws.winView = {}
             end
             local topline, topfill = winView.topline, winView.topfill
