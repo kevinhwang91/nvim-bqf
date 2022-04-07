@@ -477,7 +477,7 @@ function M.preHandle(qwinid, size, bind)
 
     if M.postHandle then
         cmd([[
-            aug BqfFilterFzf')
+            aug BqfFilterFzf
                 au BufWipeout <buffer> lua require('bqf.filter.fzf').postHandle()
             aug END
         ]])
