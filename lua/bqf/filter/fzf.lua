@@ -374,26 +374,26 @@ local function keyToLHS(key)
 end
 
 local function parseBind(options)
-    local bindStr
+    local binds = {}
     local defaultOptions = vim.env.FZF_DEFAULT_OPTS
     if type(defaultOptions) == 'string' then
         for _, sect in ipairs(vim.split(defaultOptions, '%s*%-%-')) do
-            if sect:match('bind=?%s*') then
-                local s, e = sect:find('bind=?%s*')
-                if s then
-                    bindStr = sect:sub(e + 1)
+            local res = sect:match('bind=?%s*(.*)%s*$')
+            if res then
+                local first, r, last = res:match('^(.)(.*)(.)$')
+                if first == last and (first == [[']] or first == [["]]) then
+                    res = r
                 end
+                table.insert(binds, res)
             end
         end
     end
-    bindStr = bindStr or ''
     for i, o in ipairs(options) do
         if type(o) == 'string' and o:match('%-%-bind') and i < #options then
-            bindStr = ('%s,%s'):format(bindStr, options[i + 1])
-            break
+            table.insert(binds, options[i + 1])
         end
     end
-    return (bindStr or ''):lower()
+    return table.concat(binds, ','):lower()
 end
 
 local function parseDelimiter(options)
