@@ -377,8 +377,8 @@ local function parseBind(options)
     local binds = {}
     local defaultOptions = vim.env.FZF_DEFAULT_OPTS
     if type(defaultOptions) == 'string' then
-        for _, sect in ipairs(vim.split(defaultOptions, '%s*%-%-')) do
-            local res = sect:match('bind=?%s*(.*)%s*$')
+        for _, sect in ipairs(vim.split(vim.trim(defaultOptions), '%s*%-%-')) do
+            local res = sect:match('bind=?%s*(.+)%s*$')
             if res then
                 local first, r, last = res:match('^(.)(.*)(.)$')
                 if first == last and (first == [[']] or first == [["]]) then
