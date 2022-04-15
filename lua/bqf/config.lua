@@ -8,7 +8,7 @@
 local config = {}
 
 ---@class BqfConfigPreview
----@field auto_enable boolean
+---@field auto_preview boolean
 ---@field border_chars string[]
 ---@field delay_syntax number
 ---@field win_height number

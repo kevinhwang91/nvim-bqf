@@ -34,6 +34,7 @@ function Sign:place(lnum, bufnr)
                 lnumOffsetIndex = lnumOffsetIndex + 1
             end
         end
+
         local count, cycle = 0, 100
         local placeList = {}
         for _, l in ipairs(lnum) do

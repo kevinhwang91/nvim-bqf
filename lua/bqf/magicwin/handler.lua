@@ -93,8 +93,7 @@ local function resetWinTop(qwinid, winid, qfPos, bwrow)
 
         mcore.resetView({topline = topline, topfill = topfill, lnum = lnum})
         local botline = fn.line('w$')
-        log.debug('after topline:', topline, 'topfill:', topfill, 'lnum:', lnum, 'tuneLnum:',
-            tuneLnum)
+        log.debug('after topline:', topline, 'topfill:', topfill, 'lnum:', lnum, 'tuneLnum:', tuneLnum)
         log.debug('botline:', botline)
 
         local awsWinView = aws.winView
@@ -225,9 +224,9 @@ local function revertOpeningWins(qwinid, pwinid, qfPos, layoutCallBack)
                 if scrollOff ~= 0 then
                     -- turn off scrolloff to prepare for guessing bwrow
                     vim.wo[winid].scrolloff = 0
-                    cmd(('au BqfMagicWin WinLeave * ++once %s'):format(
-                        ([[lua vim.schedule(function() vim.wo[%d].scrolloff = %d end)]]):format(
-                            winid, scrollOff)))
+                    cmd(('au BqfMagicWin WinLeave * ++once %s')
+                        :format(([[lua vim.schedule(function() vim.wo[%d].scrolloff = %d end)]])
+                            :format(winid, scrollOff)))
                 end
 
                 bwrows[winid] = guessBwrow(qwinid, winid)
@@ -261,7 +260,7 @@ local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallBack)
             local topline, topfill = winView.topline, winView.topfill
             if qfPos[1] == POS.ABOVE or qfPos[2] == POS.TOP then
                 topline, topfill = mcore.tuneTop(winid, topline,
-                    api.nvim_win_get_height(qwinid) + 1 + topfill)
+                                                 api.nvim_win_get_height(qwinid) + 1 + topfill)
             end
             aws.winView.topline, aws.winView.topfill = topline, topfill
         end

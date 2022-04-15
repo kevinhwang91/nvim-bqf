@@ -191,12 +191,11 @@ local function sourceCmd(qwinid, signs, delim)
     local fenc = vim.bo[bufnr].fenc
     table.insert(script, ('e %s'):format(fnameSign))
     table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', fnameData))
-    table.insert(script,
-        ('let w:quickfix_title=%q'):format(utils.getwinvar(qwinid, 'quickfix_title', '')))
+    table.insert(script, ('let w:quickfix_title=%q'):format(utils.getwinvar(qwinid, 'quickfix_title', '')))
 
     local bqfRtp
     local qfFiles = vim.list_extend(api.nvim_get_runtime_file('syntax/qf.vim', true),
-        api.nvim_get_runtime_file('syntax/qf.lua', true))
+                                    api.nvim_get_runtime_file('syntax/qf.lua', true))
     local rtps, sortedQfFiles = {}, {}
     for _, rtp in ipairs(api.nvim_list_runtime_paths()) do
         if not bqfRtp and rtp:find('nvim-bqf', 1, true) then
@@ -216,8 +215,8 @@ local function sourceCmd(qwinid, signs, delim)
     assert(bqfRtp, [[Can't find nvim-bqf's runtime path]])
     table.insert(rtps, bqfRtp)
 
-    table.insert(script, ('set rtp+=%s'):format(table.concat(
-        vim.tbl_map(function(p)
+    table.insert(script, ('set rtp+=%s')
+        :format(table.concat(vim.tbl_map(function(p)
             return fn.fnameescape(p)
         end, rtps), ',')))
 
@@ -333,6 +332,7 @@ local function watchFile(qwinid, tmpfile)
         end)
         os.remove(tmpfile)
     end
+
     watchEvent:start(tmpfile, {}, function(err, filename, events)
         assert(not err, err)
         local _ = filename
@@ -558,7 +558,7 @@ local function init()
         return
     end
     assert(vim.g.loaded_fzf or fn.exists('*fzf#run') == 1,
-        'fzf#run function not found. You also need Vim plugin from the main fzf repository')
+           'fzf#run function not found. You also need Vim plugin from the main fzf repository')
     version = getVersion()
 
     config = require('bqf.config')

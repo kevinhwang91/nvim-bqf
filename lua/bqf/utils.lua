@@ -105,7 +105,7 @@ function M.renderStr(str, groupName, defaultFg, defaultBg)
         bg = hl.background
     end
     local escapePrefix = ('\027[%s%s%s'):format(hl.bold and ';1' or '', hl.italic and ';3' or '',
-        hl.underline and ';4' or '')
+                                                hl.underline and ';4' or '')
 
     local colorToCSI = gui and colorToCSI24b or colorToCSI8b
     local escapeFg, escapeBg = '', ''
@@ -240,7 +240,7 @@ end
 function M.getWinInfo(winid)
     local winfos = fn.getwininfo(winid)
     assert(type(winfos) == 'table' and #winfos == 1,
-        '`getwininfo` expected 1 table with single element.')
+           '`getwininfo` expected 1 table with single element.')
     return winfos[1]
 end
 
@@ -452,6 +452,7 @@ function M.transferBuf(from, to)
         end)
         return ok, msg
     end
+
     local fromLoaded = api.nvim_buf_is_loaded(from)
     if fromLoaded then
         if vim.bo[from].modified then

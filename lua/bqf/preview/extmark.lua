@@ -22,7 +22,7 @@ function M.updateHighlight(bufnr, fbufnr, topline, botline)
     M.clearHighlight(fbufnr)
     for _, ns in pairs(api.nvim_get_namespaces()) do
         local extmarks = api.nvim_buf_get_extmarks(bufnr, ns, {topline - 1, 0}, {botline - 1, -1},
-            {details = true})
+                                                   {details = true})
         for _, m in ipairs(extmarks) do
             local _, row, col, details = unpack(m)
             local endRow, endCol = details.end_row, details.end_col

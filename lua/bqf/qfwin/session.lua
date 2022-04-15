@@ -48,6 +48,7 @@ local function getPwinid(winid, qlist)
         local function isValid(wid)
             return wid > 0 and isNormalWinType(wid)
         end
+
         pwinid = fn.win_getid(fn.winnr('#'))
         if not isValid(pwinid) then
             local tabpage = api.nvim_win_get_tabpage(winid)

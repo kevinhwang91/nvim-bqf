@@ -28,6 +28,7 @@ local utils = require('bqf.utils')
 ---@field title? number
 ---@field winid? number
 ---@field filewinid? number
+---@field quickfixtextfunc? string
 
 ---@class BqfQfList
 ---@field private itemsCache BqfQfItemCache
@@ -37,6 +38,7 @@ local utils = require('bqf.utils')
 ---@field type string
 ---@field getqflist fun(param:table): BqfQfDict
 ---@field setqflist fun(param:table): number
+---@field winView? table
 ---@field private _changedtick number
 ---@field private _sign QfWinSign
 ---@field private _context table
@@ -224,13 +226,13 @@ end
 ---
 ---@return table
 function QfList:getWinView()
-    return self.winview
+    return self.winView
 end
 
 ---
----@param winview table
-function QfList:setWinView(winview)
-    self.winview = winview
+---@param winView table
+function QfList:setWinView(winView)
+    self.winView = winView
 end
 
 local function verify(pool)

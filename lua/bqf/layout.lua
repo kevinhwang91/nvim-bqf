@@ -99,8 +99,8 @@ end
 ---@return boolean
 function M.validQfWin()
     local winH, winJ, winK, winL = fn.winnr('h'), fn.winnr('j'), fn.winnr('k'), fn.winnr('l')
-    return not (winH == winJ and winH == winK and winH == winL and winJ == winK and winJ == winL and
-               winK == winL)
+    return not (winH == winJ and winH == winK and winH == winL and
+        winJ == winK and winJ == winL and winK == winL)
 end
 
 local function init()
