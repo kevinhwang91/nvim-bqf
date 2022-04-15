@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3] - 2022-04-16
+
+### Bug Fixes
+
+#### MagicWin
+
+- Refresh winview if position changed
+
 ## [0.3.2] - 2022-04-15
 
 ### Bug Fixes
