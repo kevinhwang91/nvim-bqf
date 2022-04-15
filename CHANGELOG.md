@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.3.2] - 2022-04-15
+
+### Bug Fixes
+
+#### FZF
+
+- Restore local stl option for qf window
+
+#### MagicWin
+
+- Call layout_cb even if magic_window = false (#58)
+- Refresh winview if cache is invalid
+
+#### Miscellaneous
+
+- Correct sysname for Windows
+- Compatible with PUC Lua 5.1
+
+### Features
+
+#### FZF
+
+- Adapt fzf's actions for preview
+
+#### Preview
+
+- Support extmarks for all non-anonymous namespaces
+
 ## [0.3.1] - 2022-02-26
 
 ### Bug Fixes
@@ -29,7 +57,7 @@
 - WinClosed in main can't be fired
 - More intelligent
 
-#### Previewer
+#### Preview
 
 - Should reset scrolling horizontally
 - Switch tabpage can't fire cursor move
