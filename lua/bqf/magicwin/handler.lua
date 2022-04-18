@@ -254,8 +254,7 @@ local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallBack)
         local aws = mgws:adjacentWin(qbufnr, winid)
         if aws and aws.winView then
             local winView = utils.winExecute(winid, fn.winsaveview)
-            if aws.winView.topline ~= winView.topline or aws.winView.topfill ~= winView.topfill
-                or aws.winView.lnum ~= winView.lnum or aws.winView.col ~= winView.col then
+            if aws.tuneLnum == LNUM.KEEP then
                 aws.winView = {}
             end
             local topline, topfill = winView.topline, winView.topfill
