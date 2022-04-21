@@ -204,17 +204,17 @@ function M.open(qwinid, qidx, force)
     end
 
     local ctx = qlist:context().bqf or {}
-    local lspRangeHlList, patternl = ctx.lsp_ranges_hl, ctx.pattern_hl
+    local lspRangeHlList, patternHl = ctx.lsp_ranges_hl, ctx.pattern_hl
     local lspRangeHl
     if type(lspRangeHlList) == 'table' then
         lspRangeHl = lspRangeHlList[qidx]
     end
 
     pvs.floatWinExec(function()
-        execPreview(item, lspRangeHl, patternl)
+        execPreview(item, lspRangeHl, patternHl)
         if loaded then
             local topline, botline = pvs.visibleRegion()
-            extmark.updateHighlight(pbufnr, fbufnr, topline, botline)
+            extmark.mapBufHighlight(pbufnr, fbufnr, topline, botline)
         end
         cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
@@ -240,7 +240,7 @@ function M.scroll(direction, qwinid)
             local loaded = api.nvim_buf_is_loaded(ps.bufnr)
             if loaded then
                 local topline, botline = pvs.visibleRegion()
-                extmark.updateHighlight(ps.bufnr, ps.floatBufnr(), topline, botline)
+                extmark.mapBufHighlight(ps.bufnr, ps.floatBufnr(), topline, botline)
             end
             cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
         end)

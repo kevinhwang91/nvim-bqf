@@ -147,7 +147,7 @@ end
 ---@param name string
 ---@param off number
 ---@return boolean
-function M.isUnnameBuf(bufnr, name, off)
+function M.isUnNameBuf(bufnr, name, off)
     name = name or api.nvim_buf_get_name(bufnr)
     off = off or api.nvim_buf_get_offset(bufnr, 1)
     return name == '' and off <= 0

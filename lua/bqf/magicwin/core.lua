@@ -24,7 +24,7 @@ local function calculateWrow(fraction, height)
     return math.floor((fraction * height - 1) / 16384)
 end
 
---- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
+--- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in window.c for more details.
 ---@param fraction number
 ---@param ctx table
 ---@param lsizeObj BqfLFFI|BqfLNonFFI
@@ -102,7 +102,7 @@ end
 
 --- If the lnum hasn't been changed, even if the window is resized, the fraction is still a constant.
 --- And we can use this feature to find out the possible fraction with changing window height.
---- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in winodw.c for more details.
+--- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in window.c for more details.
 ---@param fractionList number[]
 ---@param lsizeObj BqfLFFI|BqfLNonFFI
 ---@param maxHeight number

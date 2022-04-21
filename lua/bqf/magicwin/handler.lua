@@ -35,7 +35,7 @@ local function guessBwrow(qwinid, winid)
         local lineCount = api.nvim_buf_line_count(0)
         local qbufnr = api.nvim_win_get_buf(qwinid)
 
-        -- qf winodw height might be changed by user adds new qf items or navigates history
+        -- qf window height might be changed by user adds new qf items or navigates history
         -- we need a cache to store previous state
         local aws = mgws:adjacentWin(qbufnr, winid)
         local bheight, aheight = aws.height or qfHeight + winHeight + 1, winHeight

@@ -189,7 +189,7 @@ local function doEdit(qwinid, idx, close, action)
     local lastBufnr = api.nvim_get_current_buf()
     local lastBufname = api.nvim_buf_get_name(lastBufnr)
     local lastBufoff = api.nvim_buf_get_offset(0, 1)
-    if action and not utils.isUnnameBuf(lastBufnr, lastBufname, lastBufoff) then
+    if action and not utils.isUnNameBuf(lastBufnr, lastBufname, lastBufoff) then
         action(bufnr)
     else
         api.nvim_set_current_buf(bufnr)
@@ -203,7 +203,7 @@ local function doEdit(qwinid, idx, close, action)
     end
     utils.zz()
 
-    if utils.isUnnameBuf(lastBufnr, lastBufname, lastBufoff) then
+    if utils.isUnNameBuf(lastBufnr, lastBufname, lastBufoff) then
         api.nvim_buf_delete(lastBufnr, {})
     end
     return true

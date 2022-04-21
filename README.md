@@ -276,7 +276,7 @@ about current configuration.
 | sclear      | clear the signs in current quickfix list                   | `z<Tab>`  |
 | pscrollup   | scroll up half-page in preview window                      | `<C-b>`   |
 | pscrolldown | scroll down half-page in preview window                    | `<C-f>`   |
-| pscrollorig | scroll back to original postion in preview window          | `zo`      |
+| pscrollorig | scroll back to original position in preview window         | `zo`      |
 | ptogglemode | toggle preview window between normal and max size          | `zp`      |
 | ptoggleitem | toggle preview for an item of quickfix list                | `p`       |
 | ptoggleauto | toggle auto preview when cursor moved                      | `P`       |
