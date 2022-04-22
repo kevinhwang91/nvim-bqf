@@ -55,13 +55,13 @@ function M.enable()
 end
 
 function M.disable()
-    if vim.bo.buftype ~= 'quickfix' then
+    if vim.bo.buftype ~= 'quickfix' or not vim.b.bqf_enabled then
         return
     end
+    vim.b.bqf_enabled = false
     local qwinid = api.nvim_get_current_win()
     preview.close(qwinid)
     keymap.dispose()
-    vim.b.bqf_enabled = false
     cmd('au! Bqf')
     cmd('sil! au! BqfPreview * <buffer>')
     cmd('sil! au! BqfFilterFzf * <buffer>')

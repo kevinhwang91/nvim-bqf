@@ -24,7 +24,9 @@ end
 function M.bootstrap()
     M.setup()
     if autoEnable then
-        require('bqf.main').enable()
+        M.enable()
+    else
+        M.disable()
     end
 end
 
