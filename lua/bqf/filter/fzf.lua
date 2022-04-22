@@ -132,7 +132,7 @@ local function sourceList(qwinid, signs, delim)
             local isKw = isKeyword(byte)
             -- TODO the filter is not good enough
             if lastIsKw and isKw and (byte >= 97 and byte <= 122 or byte >= 65 and byte <= 90) then
-                _ = _
+                local _ = nil
             elseif byte <= 32 then
                 lastIsKw = false
             else
