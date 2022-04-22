@@ -357,10 +357,10 @@ function M.close(winid, lastWinid, bufnr)
 end
 
 ---
----@param winid number
----@param lastWinid number
----@param bufnr number
----@param layoutCallBack fun()
+---@param winid? number
+---@param lastWinid? number
+---@param bufnr? number
+---@param layoutCallBack? fun()
 function M.attach(winid, lastWinid, bufnr, layoutCallBack)
     if not enable then
         if type(layoutCallBack) == 'function' then

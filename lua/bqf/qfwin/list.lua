@@ -36,8 +36,8 @@ local utils = require('bqf.utils')
 ---@field id number
 ---@field filewinid number
 ---@field type string
----@field getqflist fun(param:table): BqfQfDict
----@field setqflist fun(param:table): number
+---@field getqflist fun(what?: table): BqfQfDict
+---@field setqflist fun(list:BqfQfItem, action?: string, what?: table): number
 ---@field winView? table
 ---@field private _changedtick number
 ---@field private _sign QfWinSign
@@ -244,8 +244,8 @@ local function verify(pool)
 end
 
 ---
----@param qwinid number
----@param id number
+---@param qwinid? number
+---@param id? number
 ---@return BqfQfList
 function QfList:get(qwinid, id)
     local qid, filewinid

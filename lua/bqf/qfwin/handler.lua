@@ -17,8 +17,8 @@ end
 
 ---
 ---@param rel number
----@param lnum number
----@param bufnr number
+---@param lnum? number
+---@param bufnr? number
 function M.signToggle(rel, lnum, bufnr)
     lnum = lnum or api.nvim_win_get_cursor(0)[1]
     bufnr = bufnr or api.nvim_get_current_buf()
@@ -33,8 +33,8 @@ function M.signToggle(rel, lnum, bufnr)
 end
 
 ---
----@param lnum number
----@param bufnr number
+---@param lnum? number
+---@param bufnr? number
 function M.signToggleBuf(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     lnum = lnum or api.nvim_win_get_cursor(0)[1]
@@ -54,7 +54,7 @@ function M.signToggleBuf(lnum, bufnr)
 end
 
 --- only work under map with <Cmd>
----@param bufnr number
+---@param bufnr? number
 function M.signVMToggle(bufnr)
     local mode = api.nvim_get_mode().mode
     vim.validate({
@@ -234,7 +234,7 @@ end
 
 ---
 ---@param stay boolean
----@param qwinid number
+---@param qwinid? number
 ---@param idx number
 function M.tabedit(stay, qwinid, idx)
     local lastTabPage = api.nvim_get_current_tabpage()

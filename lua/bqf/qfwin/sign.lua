@@ -22,7 +22,7 @@ end
 
 ---
 ---@param lnum number|table<number, number>
----@param bufnr number
+---@param bufnr? number
 function Sign:place(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     if type(lnum) == 'table' then
@@ -64,7 +64,7 @@ end
 
 ---
 ---@param lnum number|table<number, number>
----@param bufnr number
+---@param bufnr? number
 function Sign:unplace(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     if type(lnum) == 'table' then
@@ -102,7 +102,7 @@ end
 
 ---
 ---@param lnum number|number[]
----@param bufnr number
+---@param bufnr? number
 function Sign:toggle(lnum, bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     if type(lnum) == 'table' then
@@ -125,6 +125,8 @@ function Sign:toggle(lnum, bufnr)
     end
 end
 
+---
+---@param bufnr? number
 function Sign:reset(bufnr)
     bufnr = bufnr or api.nvim_get_current_buf()
     local placeLnumList = {}
@@ -136,6 +138,8 @@ function Sign:reset(bufnr)
     self:place(placeLnumList, bufnr)
 end
 
+---
+---@param bufnr? number
 function Sign:clear(bufnr)
     self.items = {}
     bufnr = bufnr or api.nvim_get_current_buf()

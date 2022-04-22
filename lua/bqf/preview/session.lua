@@ -41,7 +41,7 @@ function PreviewSession:new(winid, o)
 end
 
 ---
----@param winid number
+---@param winid? number
 ---@return BqfPreviewSession
 function PreviewSession.get(winid)
     winid = winid or api.nvim_get_current_win()

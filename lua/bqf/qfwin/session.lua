@@ -5,7 +5,7 @@ local list = require('bqf.qfwin.list')
 local utils = require('bqf.utils')
 
 ---
----@return fun(winid: number): boolean
+---@return fun(winid?: number): boolean
 local validate = (function()
     if utils.has06() then
         return function(winid)
@@ -108,7 +108,7 @@ function QfSession:new(winid)
 end
 
 ---
----@param winid number
+---@param winid? number
 ---@return BqfQfSession
 function QfSession:get(winid)
     winid = winid or api.nvim_get_current_win()

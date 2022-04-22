@@ -4,7 +4,7 @@ local api = vim.api
 local initialized = false
 local autoEnable
 
----@param opts BqfConfig
+---@param opts? BqfConfig
 function M.setup(opts)
     if initialized then
         return

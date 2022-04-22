@@ -105,7 +105,7 @@ end
 --- Check out 'void scroll_to_fraction(win_T *wp, int prev_height)' in window.c for more details.
 ---@param fractionList number[]
 ---@param lsizeObj BqfLFFI|BqfLNonFFI
----@param maxHeight number
+---@param maxHeight? number
 ---@return number[]
 local function filterFraction(fractionList, lsizeObj, maxHeight)
     local asc

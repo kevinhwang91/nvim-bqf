@@ -64,6 +64,9 @@ local function execPreview(item, lspRangeHl, patternHl)
     end
 end
 
+---
+---@param qwinid? number
+---@return BqfPreviewSession|table
 local function previewSession(qwinid)
     qwinid = qwinid or api.nvim_get_current_win()
     return pvs.get(qwinid) or PLACEHOLDER_TBL
@@ -122,6 +125,8 @@ function M.toggleMode(qwinid)
     M.open(qwinid, nil, true)
 end
 
+---
+---@param qwinid? number
 function M.close(qwinid)
     if keepPreview then
         keepPreview = nil
@@ -140,6 +145,10 @@ function M.close(qwinid)
     end
 end
 
+---
+---@param qwinid number
+---@param qidx? number
+---@param force? boolean
 function M.open(qwinid, qidx, force)
     qwinid = qwinid or api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
@@ -223,6 +232,9 @@ function M.open(qwinid, qidx, force)
     pvs.updateBorder(pbufnr, qidx, size)
 end
 
+---
+---@param direction number
+---@param qwinid? number
 function M.scroll(direction, qwinid)
     if pvs.validate() and direction then
         qwinid = qwinid or api.nvim_get_current_win()
@@ -248,6 +260,8 @@ function M.scroll(direction, qwinid)
     end
 end
 
+---
+---@param qwinid? number
 function M.toggle(qwinid)
     qwinid = qwinid or api.nvim_get_current_win()
     local ps = previewSession(qwinid)

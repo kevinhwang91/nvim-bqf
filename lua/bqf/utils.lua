@@ -80,8 +80,8 @@ local ansi = {
 ---
 ---@param str string
 ---@param groupName string
----@param defaultFg string
----@param defaultBg string
+---@param defaultFg? string
+---@param defaultBg? string
 ---@return string
 function M.renderStr(str, groupName, defaultFg, defaultBg)
     vim.validate({
@@ -144,8 +144,8 @@ end
 
 ---
 ---@param bufnr number
----@param name string
----@param off number
+---@param name? string
+---@param off? number
 ---@return boolean
 function M.isUnNameBuf(bufnr, name, off)
     name = name or api.nvim_buf_get_name(bufnr)
@@ -213,7 +213,7 @@ end
 ---
 ---@param hl string
 ---@param plist table[]
----@param prior number
+---@param prior? number
 ---@return number[]
 function M.matchAddPos(hl, plist, prior)
     vim.validate({hl = {hl, 'string'}, plist = {plist, 'table'}, prior = {prior, 'number', true}})
@@ -334,6 +334,9 @@ function M.genIsKeyword(bufnr)
     local tbl = {}
     local exclusive = false
 
+    ---
+    ---@param bs number
+    ---@param be? number
     local function insertTbl(bs, be)
         if be then
             for i = bs, be do
@@ -482,7 +485,7 @@ end
 ---
 ---@param str string
 ---@param ts number
----@param start number
+---@param start? number
 ---@return string
 function M.expandtab(str, ts, start)
     start = start or 1

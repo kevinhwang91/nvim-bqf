@@ -16,6 +16,12 @@ local POS = {
 
 M.POS = POS
 
+---
+---@param winlayout table
+---@param parent table
+---@param winid number
+---@param level? number
+---@param index? number
 local function nodeInfo(winlayout, parent, winid, level, index)
     level = level or 0
     index = index or 1

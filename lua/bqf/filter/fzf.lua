@@ -67,6 +67,10 @@ end
 
 local function sourceList(qwinid, signs, delim)
     local ret = {}
+    ---
+    ---@param name string
+    ---@param str? string
+    ---@return string
     local function hlAnsi(name, str)
         if not name then
             return ''
