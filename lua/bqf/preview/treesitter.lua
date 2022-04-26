@@ -52,7 +52,7 @@ function M.tryAttach(srcBufnr, dstBufnr, loaded)
             parsersCache:set(srcBufnr, nil)
         end
     end
-    if parser and configs.is_enabled('highlight', parser:lang()) then
+    if parser and configs.is_enabled('highlight', parser:lang(), srcBufnr) then
         injectParserForHighlight(parser, srcBufnr, dstBufnr, loaded)
         ret = true
     end
@@ -70,7 +70,7 @@ function M.attach(srcBufnr, dstBufnr, fileType)
         return ret
     end
     local lang = parsers.ft_to_lang(fileType)
-    if not configs.is_enabled('highlight', lang) then
+    if not configs.is_enabled('highlight', lang, srcBufnr) then
         return ret
     end
 
