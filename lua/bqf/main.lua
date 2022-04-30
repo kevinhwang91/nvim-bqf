@@ -74,8 +74,20 @@ local function close(winid)
     if not ok then
         -- Vim:E444: Cannot close last window
         if msg:match('^Vim:E444') then
-            cmd('new')
-            api.nvim_win_close(winid, true)
+            local function closeLastWin()
+                cmd('new')
+                api.nvim_win_close(winid, true)
+            end
+            -- after nvim 0.7+ Vim:E242 Can't split a window while closing another
+            if not pcall(closeLastWin) then
+                -- less redraw
+                cmd('noa enew')
+                local bufnr = api.nvim_get_current_buf()
+                vim.schedule(function ()
+                    closeLastWin()
+                    cmd('noa bw ' .. bufnr)
+                end)
+            end
         end
     end
 end
