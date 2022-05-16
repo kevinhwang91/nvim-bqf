@@ -63,7 +63,7 @@ function FloatWin:calculateWinOpts()
             width = api.nvim_win_get_width(self.pwinid) - 2
         end
         height = math.min(self.winVHeight, qinfo.height - 2)
-        local winline = fn.winline()
+        local winline = utils.winExecute(self.qwinid, fn.winline)
         row = height >= winline and 1 or winline - height - 1
         if relPos == POS.LEFT or absPos == POS.LEFT_FAR then
             anchor = 'NW'
