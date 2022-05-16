@@ -78,12 +78,13 @@ local function close(winid)
                 cmd('new')
                 api.nvim_win_close(winid, true)
             end
+
             -- after nvim 0.7+ Vim:E242 Can't split a window while closing another
             if not pcall(closeLastWin) then
                 -- less redraw
                 cmd('noa enew')
                 local bufnr = api.nvim_get_current_buf()
-                vim.schedule(function ()
+                vim.schedule(function()
                     closeLastWin()
                     cmd('noa bw ' .. bufnr)
                 end)

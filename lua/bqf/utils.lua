@@ -286,11 +286,7 @@ end
 ---@return any
 function M.winExecute(winid, func, ...)
     vim.validate({
-        winid = {
-            winid, function(w)
-                return M.isWinValid(w)
-            end, 'a valid window'
-        },
+        winid = {winid, M.isWinValid, 'a valid window'},
         func = {func, 'function'}
     })
 
@@ -303,8 +299,7 @@ function M.winExecute(winid, func, ...)
     if curWinid ~= winid then
         cmd(noaSetWin:format(curWinid))
     end
-    table.remove(r, 1)
-    return unpack(r)
+    return unpack(r, 2)
 end
 
 local function synKeyword(bufnr)

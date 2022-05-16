@@ -11,43 +11,43 @@ uncomfortable? Are you constantly jumping between the edit window and the quickf
 use quickfix window to refactor because of lacking a sustainable preview window? Do you think
 quickfix window lacks a fuzzy search function? At present, nvim-bqf can solve the above problems.
 
-You really don't need any search replace plugins, because nvim-bqf with the built-in function of
-the quickfix window allows you to easily search and replace targets.
+You really don't need any search replace plugins, because nvim-bqf with the built-in function of the
+quickfix window allows you to easily search and replace targets.
 
 So why not nvim-bqf?
 
 ## Table of contents
 
-* [Table of contents](#table-of-contents)
-* [Features](#features)
-* [TODO](#todo)
-* [Quickstart](#quickstart)
-  * [Requirements](#requirements)
-  * [Installation](#installation)
-  * [Minimal configuration](#minimal-configuration)
-  * [Usage](#usage)
-    * [Filter with signs](#filter-with-signs)
-    * [Fzf mode](#fzf-mode)
-    * [Filter items with signs demo](#filter-items-with-signs-demo)
-    * [Search and replace demo](#search-and-replace-demo)
-* [Documentation](#documentation)
-  * [Setup and description](#setup-and-description)
-  * [Function table](#function-table)
-  * [Buffer Commands](#buffer-commands)
-  * [Commands](#commands)
-  * [Quickfix context](#quickfix-context)
-    * [Why use an additional context?](#why-use-an-additional-context?)
-    * [Supported keys](#supported-keys)
-    * [Simple lua tests for understanding](#simple-lua-tests-for-understanding)
-  * [Highlight groups](#highlight-groups)
-* [Advanced configuration](#advanced-configuration)
-  * [Customize configuration](#customize-configuration)
-  * [Integrate with other plugins](#integrate-with-other-plugins)
-* [Customize quickfix window (Easter egg)](#customize-quickfix-window-easter-egg)
-  * [Format new quickfix](#format-new-quickfix)
-  * [Rebuild syntax for quickfix](#rebuild-syntax-for-quickfix)
-* [Feedback](#feedback)
-* [License](#license)
+- [Table of contents](#table-of-contents)
+- [Features](#features)
+- [TODO](#todo)
+- [Quickstart](#quickstart)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Minimal configuration](#minimal-configuration)
+  - [Usage](#usage)
+    - [Filter with signs](#filter-with-signs)
+    - [Fzf mode](#fzf-mode)
+    - [Filter items with signs demo](#filter-items-with-signs-demo)
+    - [Search and replace demo](#search-and-replace-demo)
+- [Documentation](#documentation)
+  - [Setup and description](#setup-and-description)
+  - [Function table](#function-table)
+  - [Buffer Commands](#buffer-commands)
+  - [Commands](#commands)
+  - [Quickfix context](#quickfix-context)
+    - [Why use an additional context?](#why-use-an-additional-context?)
+    - [Supported keys](#supported-keys)
+    - [Simple lua tests for understanding](#simple-lua-tests-for-understanding)
+  - [Highlight groups](#highlight-groups)
+- [Advanced configuration](#advanced-configuration)
+  - [Customize configuration](#customize-configuration)
+  - [Integrate with other plugins](#integrate-with-other-plugins)
+- [Customize quickfix window (Easter egg)](#customize-quickfix-window-easter-egg)
+  - [Format new quickfix](#format-new-quickfix)
+  - [Rebuild syntax for quickfix](#rebuild-syntax-for-quickfix)
+- [Feedback](#feedback)
+- [License](#license)
 
 ## Features
 
@@ -106,8 +106,9 @@ because vim's syntax is very lagging and is extremely bad for the user experienc
 1. If you are familiar with quickfix, use quickfix as usual.
 2. If you don't know quickfix well, you can run `:vimgrep /\w\+/j % | copen` under a buffer inside
    nvim to get started quickly.
-3. If you want to taste quickfix like demo, check out [Integrate with other plugins](#integrate-with-other-plugins),
-   and pick up the configuration you like.
+3. If you want to taste quickfix like demo, check out
+   [Integrate with other plugins](#integrate-with-other-plugins), and pick up the configuration you
+   like.
 
 #### Filter with signs
 
@@ -118,20 +119,22 @@ because vim's syntax is very lagging and is extremely bad for the user experienc
 
 Press `zf` in quickfix window will enter fzf mode.
 
-fzf in nvim-bqf supports `ctrl-t`/`ctrl-x`/`ctrl-v` key bindings that allow you to
-open up an item in a new tab, a new horizontal split, or in a new vertical split.
+fzf in nvim-bqf supports `ctrl-t`/`ctrl-x`/`ctrl-v` key bindings that allow you to open up an item
+in a new tab, a new horizontal split, or in a new vertical split.
 
 fzf becomes a quickfix filter and create a new quickfix list when multiple items are selected and
 accepted.
 
-nvim-bqf also supports `ctrl-q` to toggle items' sign and adapts
-`preview-half-page-up`, `preview-half-page-down` and `toggle-preview` fzf's actions for preview.
+nvim-bqf also supports `ctrl-q` to toggle items' sign and adapts `preview-half-page-up`,
+`preview-half-page-down` and `toggle-preview` fzf's actions for preview.
 
 Please run `man fzf` and check out `KEY/EVENT BINDINGS` section for details.
 
-There're two ways to adapt fzf's actions for preview function, use `ctrl-f`and `ctrl-b` keys as example.
+There're two ways to adapt fzf's actions for preview function, use `ctrl-f`and `ctrl-b` keys as
+example.
 
-1. Make `$FZF_DEFAULT_OPTS` contains `--bind=ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up`;
+1. Make `$FZF_DEFAULT_OPTS` contains
+   `--bind=ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up`;
 2. Inject `extra_opts = {'--bind', 'ctrl-f:preview-half-page-down,ctrl-b:preview-half-page-up'}` to
    `setup` function;
 
@@ -143,8 +146,8 @@ There're two ways to adapt fzf's actions for preview function, use `ctrl-f`and `
 
 #### Search and replace demo
 
-Using external grep-like program to search `display` and replace it to `show`,
-but exclude `session.lua` file.
+Using external grep-like program to search `display` and replace it to `show`, but exclude
+`session.lua` file.
 
 <https://user-images.githubusercontent.com/17562139/137747257-ff8fb5cf-e437-42e3-b4e4-76c72a0273aa.mp4>
 
@@ -296,7 +299,8 @@ about current configuration.
 
 ### Quickfix context
 
-Vim grant users an ability to stuff a context to quickfix, please run `:help quickfix-context` for detail.
+Vim grant users an ability to stuff a context to quickfix, please run `:help quickfix-context` for
+detail.
 
 #### Why use an additional context?
 
@@ -314,8 +318,8 @@ The context's format that can be processed by nvim-bqf is:
 local context = {context = {bqf = {}}}
 ```
 
-nvim-bqf only occupies a key of `context`, which makes nvim-bqf get along well with other plugins
-in context of the quickfix window.
+nvim-bqf only occupies a key of `context`, which makes nvim-bqf get along well with other plugins in
+context of the quickfix window.
 
 #### Supported keys
 
@@ -409,8 +413,8 @@ hi default BqfSign ctermfg=14 guifg=Cyan
 - `BqfPreviewFloat`: highlight floating window
 - `BqfPreviewBorder`: highlight border of floating window
 - `BqfPreviewCursor`: highlight the cursor format `[lnum, col]` in preview window
-- `BqfPreviewRange`: highlight the range format `[lnum, col, range]`,
-   which is produced by `pattern_hl`, `lsp_ranges_hl` and quickfix range
+- `BqfPreviewRange`: highlight the range format `[lnum, col, range]`, which is produced by
+  `pattern_hl`, `lsp_ranges_hl` and quickfix range
 - `BqfSign`: highlight the sign in quickfix window
 
 ## Advanced configuration
@@ -556,8 +560,8 @@ end
 
 ## Customize quickfix window (Easter egg)
 
-Quickfix window default UI is extremely outdated and low level aesthetics. However, you can
-dress up your personal quickfix window:) Here is the configuration for demo:
+Quickfix window default UI is extremely outdated and low level aesthetics. However, you can dress up
+your personal quickfix window:) Here is the configuration for demo:
 
 > This section is not `nvim-bqf` exclusive, you can use the configuration without `nvim-bqf`
 
