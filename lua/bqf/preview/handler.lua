@@ -72,36 +72,42 @@ local function previewSession(qwinid)
     return pvs.get(qwinid) or PLACEHOLDER_TBL
 end
 
-local function doSyntax(qwinid, idx, pbufnr)
+local function doSyntax(qwinid, idx, pbufnr, loaded)
     local ps = previewSession(qwinid)
     if ps == PLACEHOLDER_TBL or idx ~= lastIdx or (pbufnr == ps.bufnr and ps.syntax) then
         return
     end
 
+    local ft = 'bqfpreview'
     local fbufnr = ps.floatBufnr()
-
-    -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
-    -- fuxx min.js!
-    local lcount = api.nvim_buf_line_count(fbufnr)
-    local bytes = api.nvim_buf_get_offset(fbufnr, lcount)
-    -- bytes / lcount < 500 LGTM :)
-    if bytes / lcount < 500 then
-        local eiBak = vim.o.ei
-        local ok, ft = pcall(api.nvim_buf_call, fbufnr, function()
-            vim.o.ei = 'FileType'
-            vim.bo.ft = 'bqfpreview'
-            cmd(('do filetypedetect BufRead %s'):format(
+    if loaded then
+        ft = vim.bo[pbufnr].ft
+    else
+        -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
+        -- fuxx min.js!
+        local lcount = api.nvim_buf_line_count(fbufnr)
+        local bytes = api.nvim_buf_get_offset(fbufnr, lcount)
+        -- bytes / lcount < 500 LGTM :)
+        if bytes / lcount < 500 then
+            local eiBak = vim.o.ei
+            local ok, res = pcall(api.nvim_buf_call, fbufnr, function()
+                vim.o.ei = 'FileType'
+                vim.bo.ft = ft
+                cmd(('do filetypedetect BufRead %s'):format(
                 fn.fnameescape(api.nvim_buf_get_name(ps.bufnr))))
-            return vim.bo.ft
-        end)
-        vim.o.ei = eiBak
-
-        if ok and ft ~= 'bqfpreview' then
-            ps.syntax = ts.attach(pbufnr, fbufnr, ft)
-            if not ps.syntax then
-                vim.bo[fbufnr].syntax = ft
-                ps.syntax = true
+                return vim.bo.ft
+            end)
+            vim.o.ei = eiBak
+            if ok then
+                ft = res
             end
+        end
+    end
+    if ft ~= 'bqfpreview' then
+        ps.syntax = ts.attach(pbufnr, fbufnr, ft)
+        if not ps.syntax then
+            vim.bo[fbufnr].syntax = ft
+            ps.syntax = true
         end
     end
 end
@@ -208,7 +214,7 @@ function M.open(qwinid, qidx, force)
 
     if not ps.syntax then
         vim.defer_fn(function()
-            doSyntax(qwinid, qidx, pbufnr)
+            doSyntax(qwinid, qidx, pbufnr, loaded)
         end, delaySyntax)
     end
 
