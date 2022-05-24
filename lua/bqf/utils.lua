@@ -307,7 +307,7 @@ local function synKeyword(bufnr)
         return api.nvim_exec('syn iskeyword', true)
     end)
     local isKeyword = synInfo:match('^syntax iskeyword (.+)')
-    if isKeyword == '' or isKeyword == 'not set' then
+    if not isKeyword or isKeyword == '' or isKeyword == 'not set' then
         isKeyword = vim.bo[bufnr].iskeyword
     end
     return isKeyword
