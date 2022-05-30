@@ -4,7 +4,7 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local autoPreview, delaySyntax
+local autoPreview
 local shouldPreviewCallback
 local keepPreview, origPos
 local winHeight, winVHeight
@@ -71,9 +71,9 @@ local function previewSession(qwinid)
     return pvs.get(qwinid) or PLACEHOLDER_TBL
 end
 
-local function doSyntax(qwinid, idx, pbufnr, loaded)
+local function doSyntax(qwinid, pbufnr, loaded)
     local ps = previewSession(qwinid)
-    if ps == PLACEHOLDER_TBL or idx ~= lastIdx or (pbufnr == ps.bufnr and ps.syntax) then
+    if ps == PLACEHOLDER_TBL or (pbufnr == ps.bufnr and ps.syntax) then
         return
     end
 
@@ -211,9 +211,7 @@ function M.open(qwinid, qidx, force)
     end
 
     if not ps.syntax then
-        vim.defer_fn(function()
-            doSyntax(qwinid, qidx, pbufnr, loaded)
-        end, delaySyntax)
+        M.doSyntax(qwinid, pbufnr, loaded)
     end
 
     local ctx = qlist:context().bqf or {}
@@ -347,8 +345,8 @@ end
 local function init()
     local pconf = config.preview
     vim.validate({preview = {pconf, 'table'}})
+    local delaySyntax = tonumber(pconf.delay_syntax)
     autoPreview = pconf.auto_preview
-    delaySyntax = tonumber(pconf.delay_syntax)
     wrap = pconf.wrap
     shouldPreviewCallback = pconf.should_preview_cb
     borderChars = pconf.border_chars
@@ -380,6 +378,7 @@ local function init()
     ]])
 
     PLACEHOLDER_TBL = {}
+    M.doSyntax = require('bqf.debounce')(doSyntax, delaySyntax)
 end
 
 init()
