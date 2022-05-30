@@ -117,15 +117,12 @@ function PreviewSession.visibleRegion()
 end
 
 function PreviewSession.scroll(srcBufnr, loaded)
+    border:updateScrollBar()
     if not srcBufnr then
         srcBufnr = (PreviewSession.get(PreviewSession.winid) or {}).bufnr
         if not srcBufnr then
             return
         end
-    end
-    border:updateScrollBar()
-    if not srcBufnr then
-        return
     end
     if loaded == nil then
         loaded = utils.isBufLoaded(srcBufnr)

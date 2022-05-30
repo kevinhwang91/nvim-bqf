@@ -14,13 +14,13 @@ end
 
 function Debounce:call(...)
     local timer = self.timer
+    self.args = {...}
     if not timer then
         timer = uv.new_timer()
         self.timer = timer
-        local args = {...}
         local wait = self.wait
         timer:start(wait, wait, function()
-            self:flush(unpack(args))
+            self:flush(unpack(self.args))
         end)
     else
         timer:again()
