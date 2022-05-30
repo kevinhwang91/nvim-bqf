@@ -3,6 +3,7 @@ local cmd = vim.cmd
 
 local floatwin = require('bqf.preview.floatwin')
 local border = require('bqf.preview.border')
+local extmark = require('bqf.preview.extmark')
 local utils = require('bqf.utils')
 
 ---
@@ -67,7 +68,7 @@ function PreviewSession.floatBufReset()
     cmd(('noa call nvim_win_set_buf(%d, %d)'):format(fwinid, bbufnr))
     cmd(('noa bun %d'):format(fbufnr))
     cmd(('noa call nvim_win_set_buf(%d, %d)'):format(fwinid, fbufnr))
-
+    extmark.clearHighlight(fbufnr)
 end
 
 function PreviewSession.floatWinExec(func)
@@ -113,16 +114,22 @@ function PreviewSession.visibleRegion()
     return floatwin:visibleRegion()
 end
 
+function PreviewSession.mapBufHighlight(srcBufnr)
+    local topline, botline = PreviewSession.visibleRegion()
+    extmark.mapBufHighlight(srcBufnr, PreviewSession.floatBufnr(), topline, botline)
+end
+
 function PreviewSession.display()
     floatwin:display()
     border:display()
 end
 
 function PreviewSession:validOrBuild(owinid)
-    if not floatwin:validate() then
+    local isValid = self.validate()
+    if not isValid then
         floatwin:build({qwinid = self.winid, pwinid = owinid, wrap = self.wrap})
     end
-    if not border:validate() then
+    if not isValid then
         border:build({chars = self.borderChars})
     end
     if self.full then
@@ -130,6 +137,7 @@ function PreviewSession:validOrBuild(owinid)
     else
         floatwin:setHeight(self.winHeight, self.winVHeight)
     end
+    return isValid
 end
 
 return PreviewSession

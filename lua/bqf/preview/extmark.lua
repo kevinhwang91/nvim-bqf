@@ -3,13 +3,13 @@ local M = {}
 
 local api = vim.api
 
-local bqfNameSpace
+local namespace
 
 ---
 ---@param bufnr number
 function M.clearHighlight(bufnr)
-    if bqfNameSpace then
-        api.nvim_buf_clear_namespace(bufnr, bqfNameSpace, 0, -1)
+    if namespace then
+        api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
     end
 end
 
@@ -28,7 +28,7 @@ function M.mapBufHighlight(srcBufnr, dstBufnr, topline, botline)
             local endRow, endCol = details.end_row, details.end_col
             local hlGroup = details.hl_group
             local priority = details.priority
-            api.nvim_buf_set_extmark(dstBufnr, bqfNameSpace, row, col, {
+            api.nvim_buf_set_extmark(dstBufnr, namespace, row, col, {
                 end_row = endRow,
                 end_col = endCol,
                 hl_group = hlGroup,
@@ -39,7 +39,7 @@ function M.mapBufHighlight(srcBufnr, dstBufnr, topline, botline)
 end
 
 local function init()
-    bqfNameSpace = api.nvim_create_namespace('bqf-preview-extmark')
+    namespace = api.nvim_create_namespace('bqf-preview')
 end
 
 init()

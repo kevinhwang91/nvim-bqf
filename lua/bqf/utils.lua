@@ -269,7 +269,11 @@ end
 ---@param winid number
 ---@return boolean
 function M.isWinValid(winid)
-    return winid and type(winid) == 'number' and winid > 0 and api.nvim_win_is_valid(winid)
+    if winid then
+        return type(winid) == 'number' and winid > 0 and api.nvim_win_is_valid(winid)
+    else
+        return false
+    end
 end
 
 ---

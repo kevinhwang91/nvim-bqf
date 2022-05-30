@@ -342,7 +342,6 @@ local function watchFile(qwinid, tmpfile)
         local _ = filename
         if events.change then
             uv.fs_read(fd, 4 * 1024, -1, function(err2, data)
-
                 if not phandler.autoEnabled() then
                     return
                 end
@@ -543,9 +542,9 @@ function M.run()
 
     local tmpfile = fn.tempname()
     vim.list_extend(opts.options, {'--preview-window', 0, '--preview', 'echo {1} >> ' .. tmpfile})
-    local releaseCallBack = watchFile(qwinid, tmpfile)
+    local releaseCallback = watchFile(qwinid, tmpfile)
     M.postHandle = function()
-        releaseCallBack()
+        releaseCallback()
         M.postHandle = nil
     end
     phandler.keepPreview()

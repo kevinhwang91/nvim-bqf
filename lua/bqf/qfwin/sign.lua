@@ -93,7 +93,6 @@ function Sign:unplace(lnum, bufnr)
             self.items[lnum] = nil
         end
     end
-
 end
 
 function Sign:list()

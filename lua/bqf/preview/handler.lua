@@ -5,7 +5,7 @@ local fn = vim.fn
 local cmd = vim.cmd
 
 local autoPreview, delaySyntax
-local shouldPreviewCallBack
+local shouldPreviewCallback
 local keepPreview, origPos
 local winHeight, winVHeight
 local wrap, borderChars
@@ -16,7 +16,6 @@ local config = require('bqf.config')
 local qfs = require('bqf.qfwin.session')
 local pvs = require('bqf.preview.session')
 local ts = require('bqf.preview.treesitter')
-local extmark = require('bqf.preview.extmark')
 local utils = require('bqf.utils')
 
 local function execPreview(item, lspRangeHl, patternHl)
@@ -186,8 +185,8 @@ function M.open(qwinid, qidx, force)
         return
     end
 
-    if ps.bufnr ~= pbufnr and not force and shouldPreviewCallBack and
-        not shouldPreviewCallBack(pbufnr, qwinid) then
+    if ps.bufnr ~= pbufnr and not force and shouldPreviewCallback and
+        not shouldPreviewCallback(pbufnr, qwinid) then
         M.close(qwinid)
         return
     end
@@ -206,7 +205,6 @@ function M.open(qwinid, qidx, force)
         pvs.floatBufReset()
         ts.disableActive(fbufnr)
 
-        extmark.clearHighlight(fbufnr)
         utils.transferBuf(pbufnr, fbufnr)
         ps.bufnr = pbufnr
         ps.syntax = ts.tryAttach(pbufnr, fbufnr, loaded)
@@ -228,8 +226,7 @@ function M.open(qwinid, qidx, force)
     pvs.floatWinExec(function()
         execPreview(item, lspRangeHl, patternHl)
         if loaded then
-            local topline, botline = pvs.visibleRegion()
-            extmark.mapBufHighlight(pbufnr, fbufnr, topline, botline)
+            pvs.mapBufHighlight(pbufnr)
         end
         cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
@@ -257,8 +254,7 @@ function M.scroll(direction, qwinid)
             local ps = previewSession(qwinid)
             local loaded = api.nvim_buf_is_loaded(ps.bufnr)
             if loaded then
-                local topline, botline = pvs.visibleRegion()
-                extmark.mapBufHighlight(ps.bufnr, ps.floatBufnr(), topline, botline)
+                pvs.mapBufHighlight(ps.bufnr)
             end
             cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
         end)
@@ -354,7 +350,7 @@ local function init()
     autoPreview = pconf.auto_preview
     delaySyntax = tonumber(pconf.delay_syntax)
     wrap = pconf.wrap
-    shouldPreviewCallBack = pconf.should_preview_cb
+    shouldPreviewCallback = pconf.should_preview_cb
     borderChars = pconf.border_chars
     winHeight = tonumber(pconf.win_height)
     winVHeight = tonumber(pconf.win_vheight or winHeight)
@@ -362,7 +358,7 @@ local function init()
         auto_preview = {autoPreview, 'boolean'},
         delay_syntax = {delaySyntax, 'number'},
         wrap = {wrap, 'boolean'},
-        should_preview_cb = {shouldPreviewCallBack, 'function', true},
+        should_preview_cb = {shouldPreviewCallback, 'function', true},
         border_chars = {
             borderChars, function(chars)
                 return type(chars) == 'table' and #chars == 9

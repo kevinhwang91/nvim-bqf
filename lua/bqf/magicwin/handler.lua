@@ -205,7 +205,7 @@ local function keepContext(func)
     end
 end
 
-local function revertOpeningWins(qwinid, pwinid, qfPos, layoutCallBack)
+local function revertOpeningWins(qwinid, pwinid, qfPos, layoutCallback)
     if not needRevert(qfPos) then
         return
     end
@@ -233,8 +233,8 @@ local function revertOpeningWins(qwinid, pwinid, qfPos, layoutCallBack)
             end
         end
     end)
-    if type(layoutCallBack) == 'function' then
-        layoutCallBack()
+    if type(layoutCallback) == 'function' then
+        layoutCallback()
     end
     for winid, bwrow in pairs(bwrows) do
         resetWinTop(qwinid, winid, qfPos, bwrow)
@@ -244,7 +244,7 @@ local function revertOpeningWins(qwinid, pwinid, qfPos, layoutCallBack)
     end
 end
 
-local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallBack)
+local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallback)
     if not needRevert(qfPos) then
         return
     end
@@ -266,8 +266,8 @@ local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallBack)
         end
     end
 
-    if type(layoutCallBack) == 'function' then
-        layoutCallBack()
+    if type(layoutCallback) == 'function' then
+        layoutCallback()
     end
     for winid, aws in pairs(mgws:get(qbufnr)) do
         if aws and aws.winView and aws.winView.topline and utils.isWinValid(winid) then
@@ -279,12 +279,12 @@ local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallBack)
     end
 end
 
-local function open(winid, lastWinid, layoutCallBack)
+local function open(winid, lastWinid, layoutCallback)
     if not enable then
         return
     end
     local pos = wpos.getPos(winid, lastWinid)
-    revertOpeningWins(winid, lastWinid, pos, layoutCallBack)
+    revertOpeningWins(winid, lastWinid, pos, layoutCallback)
 end
 
 function M.close(winid, lastWinid, bufnr)
@@ -360,18 +360,18 @@ end
 ---@param winid? number
 ---@param lastWinid? number
 ---@param bufnr? number
----@param layoutCallBack? fun()
-function M.attach(winid, lastWinid, bufnr, layoutCallBack)
+---@param layoutCallback? fun()
+function M.attach(winid, lastWinid, bufnr, layoutCallback)
     if not enable then
-        if type(layoutCallBack) == 'function' then
-            layoutCallBack()
+        if type(layoutCallback) == 'function' then
+            layoutCallback()
         end
         return
     end
     winid = winid or api.nvim_get_current_win()
     lastWinid = lastWinid or fn.win_getid(fn.winnr('#'))
     bufnr = bufnr or api.nvim_win_get_buf(winid)
-    open(winid, lastWinid, layoutCallBack)
+    open(winid, lastWinid, layoutCallback)
     cmd(([[
         aug BqfMagicWin
             au! * <buffer>
