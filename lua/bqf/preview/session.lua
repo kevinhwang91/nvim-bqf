@@ -112,15 +112,17 @@ function PreviewSession.updateBorder(pbufnr, qidx, size)
     border:update(pbufnr, qidx, size)
 end
 
-function PreviewSession.updateScrollBar()
-    border:updateScrollBar()
-end
-
 function PreviewSession.visibleRegion()
     return floatwin:visibleRegion()
 end
 
 function PreviewSession.scroll(srcBufnr, loaded)
+    if not srcBufnr then
+        srcBufnr = (PreviewSession.get(PreviewSession.winid) or {}).bufnr
+        if not srcBufnr then
+            return
+        end
+    end
     border:updateScrollBar()
     if not srcBufnr then
         return
@@ -173,7 +175,7 @@ function PreviewSession:validOrBuild(owinid)
                 end
                 if b1 == 0x80 and b2 == 0xfd then
                     if b3 == 0x4b or b3 == 0x4c then
-                        scrollDebounced((self.get(self.winid) or {}).bufnr)
+                        scrollDebounced()
                     end
                 else
                     ctrlW = b1 == 0x17
