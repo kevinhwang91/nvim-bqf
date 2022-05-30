@@ -163,13 +163,12 @@ function PreviewSession:validOrBuild(owinid)
                 end
                 local b1, b2, b3 = char:byte(1, -1)
                 -- 0x17 <C-w>
-                -- 0x70 p
                 -- 0x77 w
                 -- 0x80, 0xfd, 0x4b <ScrollWheelUp>
                 -- 0x80, 0xfd, 0x4c <ScrollWheelDown>
                 if ctrlW and b1 == 0x77 then
                     vim.schedule(function()
-                        cmd(('norm! %c%c'):format(0x17, 0x70))
+                        api.nvim_set_current_win(owinid)
                     end)
                 end
                 if b1 == 0x80 and b2 == 0xfd then
