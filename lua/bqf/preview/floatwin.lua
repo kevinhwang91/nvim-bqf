@@ -24,6 +24,7 @@ function FloatWin:build(o)
     self.winHeight = o.winHeight
     self.winVHeight = o.winHheight
     self.wrap = o.wrap
+    self.focusable = o.focusable or false
     self.winid = nil
     self.bufnr = nil
     return self
@@ -83,7 +84,7 @@ function FloatWin:calculateWinOpts()
     return {
         relative = 'win',
         win = self.qwinid,
-        focusable = false,
+        focusable = self.focusable,
         anchor = anchor,
         width = width,
         height = height,

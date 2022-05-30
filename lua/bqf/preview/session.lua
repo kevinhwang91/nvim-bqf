@@ -6,6 +6,10 @@ local border = require('bqf.preview.border')
 local extmark = require('bqf.preview.extmark')
 local utils = require('bqf.utils')
 
+local namespace
+local onKey
+local scrollDebounced
+
 ---
 ---@class BqfPreviewSession
 ---@field private pool table<number, BqfPreviewSession>
@@ -17,6 +21,7 @@ local utils = require('bqf.utils')
 ---@field bufnr number
 ---@field syntax boolean
 ---@field full boolean
+---@field focusable boolean
 local PreviewSession = {pool = {}}
 
 ---
@@ -36,6 +41,7 @@ function PreviewSession:new(winid, o)
     obj.bufnr = nil
     obj.syntax = nil
     obj.full = false
+    obj.focusable = o.focusable or false
     self:clean()
     self.pool[winid] = obj
     return obj
@@ -114,6 +120,20 @@ function PreviewSession.visibleRegion()
     return floatwin:visibleRegion()
 end
 
+function PreviewSession.scroll(srcBufnr, loaded)
+    border:updateScrollBar()
+    if not srcBufnr then
+        return
+    end
+    if loaded == nil then
+        loaded = utils.isBufLoaded(srcBufnr)
+    end
+    if loaded then
+        local topline, botline = PreviewSession.visibleRegion()
+        extmark.mapBufHighlight(srcBufnr, PreviewSession.floatBufnr(), topline, botline)
+    end
+end
+
 function PreviewSession.mapBufHighlight(srcBufnr)
     local topline, botline = PreviewSession.visibleRegion()
     extmark.mapBufHighlight(srcBufnr, PreviewSession.floatBufnr(), topline, botline)
@@ -127,7 +147,40 @@ end
 function PreviewSession:validOrBuild(owinid)
     local isValid = self.validate()
     if not isValid then
-        floatwin:build({qwinid = self.winid, pwinid = owinid, wrap = self.wrap})
+        floatwin:build({
+            qwinid = self.winid,
+            pwinid = owinid,
+            wrap = self.wrap,
+            focusable = self.focusable
+        })
+        if self.focusable then
+            local ctrlW = false
+            onKey(function(char)
+                local fwinid = self.floatWinid()
+                if not utils.isWinValid(fwinid) then
+                    onKey(nil, namespace)
+                    return
+                end
+                local b1, b2, b3 = char:byte(1, -1)
+                -- 0x17 <C-w>
+                -- 0x70 p
+                -- 0x77 w
+                -- 0x80, 0xfd, 0x4b <ScrollWheelUp>
+                -- 0x80, 0xfd, 0x4c <ScrollWheelDown>
+                if ctrlW and b1 == 0x77 then
+                    vim.schedule(function()
+                        cmd(('norm! %c%c'):format(0x17, 0x70))
+                    end)
+                end
+                if b1 == 0x80 and b2 == 0xfd then
+                    if b3 == 0x4b or b3 == 0x4c then
+                        scrollDebounced((self.get(self.winid) or {}).bufnr)
+                    end
+                else
+                    ctrlW = b1 == 0x17
+                end
+            end, namespace)
+        end
     end
     if not isValid then
         border:build({chars = self.borderChars})
@@ -139,5 +192,13 @@ function PreviewSession:validOrBuild(owinid)
     end
     return isValid
 end
+
+local function init()
+    namespace = api.nvim_create_namespace('bqf-preview')
+    onKey = vim.on_key and vim.on_key or vim.register_keystroke_callback
+    scrollDebounced = require('bqf.debounce')(PreviewSession.scroll, 20)
+end
+
+init()
 
 return PreviewSession

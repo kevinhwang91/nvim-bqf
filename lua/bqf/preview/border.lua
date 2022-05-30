@@ -110,6 +110,7 @@ function Border:calculateWinOpts()
         local anchor, zindex, width, height, col, row = wopts.anchor, wopts.zindex, wopts.width,
                                                         wopts.height, wopts.col, wopts.row
         return vim.tbl_extend('force', wopts, {
+            focusable = false,
             anchor = anchor,
             style = 'minimal',
             width = width + 2,

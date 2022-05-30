@@ -30,7 +30,6 @@ local function execPreview(item, lspRangeHl, patternHl)
         return
     end
 
-    utils.zz()
     origPos = api.nvim_win_get_cursor(0)
 
     -- scrolling horizontally reset
@@ -200,7 +199,7 @@ function M.open(qwinid, qidx, force)
         return
     end
 
-    local loaded = api.nvim_buf_is_loaded(pbufnr)
+    local loaded = utils.isBufLoaded(pbufnr)
     if force or ps.bufnr ~= pbufnr then
         pvs.floatBufReset()
         ts.disableActive(fbufnr)
@@ -221,16 +220,15 @@ function M.open(qwinid, qidx, force)
         lspRangeHl = lspRangeHlList[qidx]
     end
 
-    pvs.floatWinExec(function()
-        execPreview(item, lspRangeHl, patternHl)
-        if loaded then
-            pvs.mapBufHighlight(pbufnr)
-        end
-        cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
-    end)
-
     local size = qlist:getQfList({size = 0}).size
     pvs.updateBorder(pbufnr, qidx, size)
+
+    pvs.floatWinExec(function()
+        execPreview(item, lspRangeHl, patternHl)
+        utils.zz()
+        pvs.scroll(pbufnr, loaded)
+        cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
+    end)
 end
 
 ---
@@ -250,13 +248,9 @@ function M.scroll(direction, qwinid)
             end
             utils.zz()
             local ps = previewSession(qwinid)
-            local loaded = api.nvim_buf_is_loaded(ps.bufnr)
-            if loaded then
-                pvs.mapBufHighlight(ps.bufnr)
-            end
+            pvs.scroll(ps.bufnr)
             cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
         end)
-        pvs.updateScrollBar()
     end
 end
 
@@ -325,7 +319,8 @@ function M.initialize(qwinid)
         winHeight = winHeight,
         winVHeight = winVHeight,
         wrap = wrap,
-        borderChars = borderChars
+        borderChars = borderChars,
+        focusable = vim.o.mouse ~= ''
     })
 
     -- some plugins will change the quickfix window, preview window should init later
