@@ -70,16 +70,17 @@ local function previewSession(qwinid)
     return pvs.get(qwinid) or PLACEHOLDER_TBL
 end
 
-local function doSyntax(qwinid, pbufnr, loaded)
+local function doSyntax(qwinid)
     local ps = previewSession(qwinid)
-    if ps == PLACEHOLDER_TBL or (pbufnr == ps.bufnr and ps.syntax) then
+    if ps == PLACEHOLDER_TBL or ps.syntax then
         return
     end
 
     local ft = 'bqfpreview'
     local fbufnr = ps.floatBufnr()
+    local loaded = utils.isBufLoaded(ps.bufnr)
     if loaded then
-        ft = vim.bo[pbufnr].ft
+        ft = vim.bo[ps.bufnr].ft
     else
         -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
         -- fuxx min.js!
@@ -102,7 +103,7 @@ local function doSyntax(qwinid, pbufnr, loaded)
         end
     end
     if ft ~= 'bqfpreview' then
-        ps.syntax = ts.attach(pbufnr, fbufnr, ft)
+        ps.syntax = ts.attach(ps.bufnr, fbufnr, ft)
         if not ps.syntax then
             vim.bo[fbufnr].syntax = ft
             ps.syntax = true
@@ -210,7 +211,7 @@ function M.open(qwinid, qidx, force)
     end
 
     if not ps.syntax then
-        M.doSyntax(qwinid, pbufnr, loaded)
+        M.doSyntax(qwinid)
     end
 
     local ctx = qlist:context().bqf or {}
