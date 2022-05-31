@@ -8,7 +8,8 @@ local utils = require('bqf.utils')
 
 local namespace
 local onKey
-local scrollDebounced
+local highlightDebounced
+local scrollThrottled
 
 ---
 ---@class BqfPreviewSession
@@ -112,30 +113,22 @@ function PreviewSession.updateBorder(pbufnr, qidx, size)
     border:update(pbufnr, qidx, size)
 end
 
-function PreviewSession.visibleRegion()
-    return floatwin:visibleRegion()
-end
-
 function PreviewSession.scroll(srcBufnr, loaded)
     border:updateScrollBar()
+    PreviewSession.mapBufHighlight(srcBufnr, loaded)
+end
+
+function PreviewSession.mapBufHighlight(srcBufnr, loaded)
     if not srcBufnr then
-        srcBufnr = (PreviewSession.get(PreviewSession.winid) or {}).bufnr
-        if not srcBufnr then
-            return
-        end
+        return
     end
     if loaded == nil then
         loaded = utils.isBufLoaded(srcBufnr)
     end
     if loaded then
-        local topline, botline = PreviewSession.visibleRegion()
+        local topline, botline = floatwin:visibleRegion()
         extmark.mapBufHighlight(srcBufnr, PreviewSession.floatBufnr(), topline, botline)
     end
-end
-
-function PreviewSession.mapBufHighlight(srcBufnr)
-    local topline, botline = PreviewSession.visibleRegion()
-    extmark.mapBufHighlight(srcBufnr, PreviewSession.floatBufnr(), topline, botline)
 end
 
 function PreviewSession.display()
@@ -172,7 +165,8 @@ function PreviewSession:validOrBuild(owinid)
                 end
                 if b1 == 0x80 and b2 == 0xfd then
                     if b3 == 0x4b or b3 == 0x4c then
-                        scrollDebounced()
+                        highlightDebounced()
+                        scrollThrottled()
                     end
                 else
                     ctrlW = b1 == 0x17
@@ -194,7 +188,12 @@ end
 local function init()
     namespace = api.nvim_create_namespace('bqf-preview')
     onKey = vim.on_key and vim.on_key or vim.register_keystroke_callback
-    scrollDebounced = require('bqf.debounce')(PreviewSession.scroll, 20)
+    highlightDebounced = require('bqf.debounce')(function()
+        PreviewSession.mapBufHighlight((PreviewSession.get()).bufnr)
+    end, 50)
+    scrollThrottled = require('bqf.throttle')(function()
+        border:updateScrollBar()
+    end, 80)
 end
 
 init()
