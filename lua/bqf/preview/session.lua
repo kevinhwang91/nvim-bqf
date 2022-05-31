@@ -189,7 +189,7 @@ local function init()
     namespace = api.nvim_create_namespace('bqf-preview')
     onKey = vim.on_key and vim.on_key or vim.register_keystroke_callback
     highlightDebounced = require('bqf.debounce')(function()
-        PreviewSession.mapBufHighlight((PreviewSession.get()).bufnr)
+        PreviewSession.mapBufHighlight((PreviewSession.get() or {}).bufnr)
     end, 50)
     scrollThrottled = require('bqf.throttle')(function()
         border:updateScrollBar()
