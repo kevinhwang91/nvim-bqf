@@ -153,7 +153,7 @@ local function sourceList(qwinid, signs, delim)
                 end
                 if not concealed then
                     local hlId = fn.synID(i, j, true)
-                    if j > lastCol and lastHlId > 0 and hlId ~= lastHlId then
+                    if j > lastCol and hlId > 0 and hlId ~= lastHlId then
                         table.insert(lineSect, hlIdToAnsi[lastHlId]:format(line:sub(lastCol, j - 1)))
                         lastCol = j
                     end
