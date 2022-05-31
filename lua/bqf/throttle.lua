@@ -3,7 +3,6 @@ local uv = vim.loop
 ---@class BqfThrottle
 ---@field timer userdata
 ---@field fn function
----@field args table
 ---@field pendingArgs? table
 ---@field limit number
 ---@field leading? boolean
@@ -27,7 +26,6 @@ function Throttle:new(fn, limit, noLeading, noTrailing)
     setmetatable(obj, self)
     obj.timer = nil
     obj.fn = vim.schedule_wrap(fn)
-    obj.args = {}
     obj.pendingArgs = nil
     obj.limit = limit
     obj.leading = not noLeading
@@ -37,17 +35,15 @@ end
 
 function Throttle:call(...)
     local timer = self.timer
-    self.args = {...}
     if not timer then
         timer = uv.new_timer()
         self.timer = timer
         local limit = self.limit
-        timer:start(limit, limit, function()
-            self:cancel()
+        timer:start(limit, 0, function()
             if self.pendingArgs then
                 self.fn(unpack(self.pendingArgs))
-                self.pendingArgs = nil
             end
+            self:cancel()
         end)
         if self.leading then
             self.fn(...)
@@ -62,14 +58,12 @@ end
 function Throttle:cancel()
     local timer = self.timer
     if timer then
-        if timer:has_ref() then
-            timer:stop()
-            if not timer:is_closing() then
-                timer:close()
-            end
+        if timer:has_ref() and not timer:is_closing() then
+            timer:close()
         end
-        self.timer = nil
     end
+    self.timer = nil
+    self.pendingArgs = nil
 end
 
 Throttle.__index = Throttle
