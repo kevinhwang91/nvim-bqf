@@ -48,6 +48,7 @@ function M.initialize()
             api.nvim_buf_set_keymap(0, tblFunc.mode, keymap, funcrefStr(tblFunc), {nowait = true})
         end
     end
+    api.nvim_buf_set_keymap(0, 'n', '<2-LeftMouse>', '<CR>', {nowait = true, noremap = false})
 end
 
 ---
