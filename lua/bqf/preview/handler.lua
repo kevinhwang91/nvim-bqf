@@ -227,6 +227,7 @@ function M.open(qwinid, qidx, force)
     pvs.floatWinExec(function()
         execPreview(item, lspRangeHl, patternHl)
         pvs.scroll(pbufnr, loaded)
+        cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
 end
 
