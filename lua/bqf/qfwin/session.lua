@@ -82,7 +82,7 @@ function QfSession:previousWinid()
     if not utils.isWinValid(self._pwinid) or fn.win_gettype(self._pwinid) ~= '' then
         self._pwinid = getPwinid(self.winid, self._list)
     end
-    return self._pwinid
+    return utils.isWinValid(self._pwinid) and self._pwinid or -1
 end
 
 function QfSession:validate()
