@@ -47,6 +47,8 @@ function Throttle:call(...)
         end)
         if self.leading then
             self.fn(...)
+        else
+            self.pendingArgs = {...}
         end
     else
         if self.trailing then
