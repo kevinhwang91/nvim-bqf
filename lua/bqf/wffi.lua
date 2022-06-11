@@ -44,16 +44,25 @@ local function init()
     ffi = require('ffi')
     setmetatable(M, {__index = ffi})
     C = ffi.C
+
+    utils = require('bqf.utils')
+    if utils.has08() then
+        ffi.cdef([[
+            typedef int32_t linenr_T;
+        ]])
+    else
+        ffi.cdef([[
+            typedef long linenr_T;
+        ]])
+    end
     ffi.cdef([[
         typedef struct window_S win_T;
         win_T *curwin;
-        typedef long linenr_T;
         int plines_win(win_T *wp, linenr_T lnum, bool winheight);
         int plines_win_col(win_T *wp, linenr_T lnum, long column);
         int plines_win_nofill(win_T *wp, linenr_T lnum, bool winheight);
     ]])
 
-    utils = require('bqf.utils')
     if utils.isWindows() then
         ffi.cdef([[
             typedef struct {} Error;
