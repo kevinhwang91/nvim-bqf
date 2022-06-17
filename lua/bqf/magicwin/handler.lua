@@ -69,7 +69,9 @@ local function resetWinTop(qwinid, winid, qfPos, bwrow)
         local qfHeight, winHeight = api.nvim_win_get_height(qwinid), api.nvim_win_get_height(winid)
         local bheight, aheight = aws.height or qfHeight + winHeight + 1, winHeight
         if qfPos[1] == POS.ABOVE or qfPos[2] == POS.TOP then
-            deltaLineSize = deltaLineSize - bheight + aheight
+            -- botline may be greater than real because one line not always one size
+            local botline = fn.line('w$')
+            deltaLineSize = deltaLineSize - math.min(bheight - aheight, botline - 1)
         end
 
         log.debug('before topline:', topline, 'deltaLsize:', deltaLineSize)
