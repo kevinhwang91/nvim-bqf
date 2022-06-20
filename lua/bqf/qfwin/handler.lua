@@ -220,7 +220,7 @@ function M.open(close, jumpCmd, qwinid, idx)
             local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
             if jumpCmd == 'drop' then
                 local bufInfo = fn.getbufinfo(bufnr)
-                if #bufInfo == 1 and #bufInfo[1].windows == 0 then
+                if fname == '' or #bufInfo == 1 and #bufInfo[1].windows == 0 then
                     api.nvim_set_current_buf(bufnr)
                     return
                 end
