@@ -10,6 +10,7 @@ local keepPreview, origPos
 local winHeight, winVHeight
 local wrap, borderChars
 local lastIdx
+local didFileTypeLua
 local PLACEHOLDER_TBL
 
 local config = require('bqf.config')
@@ -76,7 +77,7 @@ local function doSyntax(qwinid)
         return
     end
 
-    local ft = 'bqfpreview'
+    local ft
     local fbufnr = ps.floatBufnr()
     local loaded = utils.isBufLoaded(ps.bufnr)
     if loaded then
@@ -88,17 +89,23 @@ local function doSyntax(qwinid)
         local bytes = api.nvim_buf_get_offset(fbufnr, lcount)
         -- bytes / lcount < 500 LGTM :)
         if bytes / lcount < 500 then
-            local eiBak = vim.o.ei
-            local ok, res = pcall(api.nvim_buf_call, fbufnr, function()
-                vim.o.ei = 'FileType'
-                vim.bo.ft = ft
-                cmd(('do filetypedetect BufRead %s'):format(
-                fn.fnameescape(api.nvim_buf_get_name(ps.bufnr))))
-                return vim.bo.ft
-            end)
-            vim.o.ei = eiBak
-            if ok then
-                ft = res
+            if didFileTypeLua then
+                ft = vim.filetype.match({buf = ps.bufnr})
+            end
+            if not ft then
+                ft = 'bqfpreview'
+                local eiBak = vim.o.ei
+                local ok, res = pcall(api.nvim_buf_call, fbufnr, function()
+                    vim.o.ei = 'FileType'
+                    vim.bo.ft = ft
+                    cmd(('do filetypedetect BufRead %s'):format(
+                    fn.fnameescape(api.nvim_buf_get_name(ps.bufnr))))
+                    return vim.bo.ft
+                end)
+                vim.o.ei = eiBak
+                if ok then
+                    ft = res
+                end
             end
         end
     end
@@ -374,6 +381,7 @@ local function init()
     ]])
 
     PLACEHOLDER_TBL = {}
+    didFileTypeLua = utils.didFileTypeLua()
     M.doSyntax = require('bqf.debounce')(doSyntax, delaySyntax)
 end
 

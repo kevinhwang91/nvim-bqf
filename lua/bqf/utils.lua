@@ -50,6 +50,22 @@ M.jitEnabled = (function()
     end
 end)()
 
+function M.didFileTypeLua()
+    local did = false
+    if M.has08() and vim.g.do_filetype_lua == 1 then
+        local autocmds = api.nvim_get_autocmds({
+            group = 'filetypedetect', event = 'BufReadPost', pattern = '*'
+        })
+        for _, au in ipairs(autocmds) do
+            if type(au.callback) == 'function' then
+                did = true
+                break
+            end
+        end
+    end
+    return did
+end
+
 local function colorToCSI24b(colorNum, fg)
     local r = math.floor(colorNum / 2 ^ 16)
     local g = math.floor(math.floor(colorNum / 2 ^ 8) % 2 ^ 8)
