@@ -185,7 +185,7 @@ local function sourceCmd(qwinid, signs, delim)
     -- look like widnows can't clear env in cmdline
     local noListenEnv = isWindows and '' or 'NVIM_LISTEN_ADDRESS='
     local cmds = {
-        noListenEnv, vim.v.progpath, '-u NONE --clean -n --headless', '-c', ('so %q'):format(sfname)
+        noListenEnv, vim.v.progpath, '-u NONE -n --headless', '-c', ('so %q'):format(sfname)
     }
     local script = {'pcall(vim.cmd, [['}
 
