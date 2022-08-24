@@ -5,6 +5,7 @@ local fn = vim.fn
 local cmd = vim.cmd
 
 local autoPreview
+local clicked
 local shouldPreviewCallback
 local keepPreview, origPos
 local winHeight, winVHeight
@@ -306,6 +307,48 @@ function M.redrawWin()
     end
 end
 
+local function checkClicked()
+    fn.getchar()
+    local winid = vim.v.mouse_winid
+    clicked = pvs.floatWinid() == winid
+    return winid
+end
+
+function M.clicked()
+    local res = clicked
+    clicked = false
+    return res
+end
+
+function M.mouseClick(mode)
+    local clickedWinid = checkClicked()
+    if not clicked then
+        api.nvim_set_current_win(clickedWinid)
+        cmd(('norm! %dgg%d|'):format(vim.v.mouse_lnum, vim.v.mouse_col))
+    else
+        if mode == 't' then
+            cmd('startinsert')
+        end
+    end
+end
+
+function M.mouseDoubleClick(mode)
+    local clickedWinid = checkClicked()
+    if api.nvim_get_current_win() == clickedWinid then
+        -- ^M = 0x0d
+        cmd(('norm! %c'):format(0x0d))
+    elseif clicked then
+        if mode == 't' then
+            cmd('startinsert')
+            api.nvim_feedkeys(('%c'):format(0x0d), 'it', false)
+        else
+            cmd(('norm %c'):format(0x0d))
+            cmd(('keepj norm! %dgg%d|'):format(vim.v.mouse_lnum, vim.v.mouse_col))
+            utils.zz()
+        end
+    end
+end
+
 function M.initialize(qwinid)
     cmd([[
         aug BqfPreview
@@ -316,20 +359,31 @@ function M.initialize(qwinid)
         aug END
     ]])
 
+    local mouseEnabled = vim.o.mouse:match('[na]') ~= nil
+
     pvs:new(qwinid, {
         winHeight = winHeight,
         winVHeight = winVHeight,
         wrap = wrap,
         borderChars = borderChars,
-        focusable = vim.o.mouse ~= ''
+        focusable = mouseEnabled
     })
-
     -- some plugins will change the quickfix window, preview window should init later
     vim.defer_fn(function()
         lastIdx = -1
         -- delayed called, qwinid maybe invalid
         if not utils.isWinValid(qwinid) then
             return
+        end
+
+        if mouseEnabled then
+            local qbufnr = api.nvim_win_get_buf(qwinid)
+            api.nvim_buf_set_keymap(qbufnr, '', '<LeftMouse>',
+                                    [[<Cmd>lua require('bqf.preview.handler').mouseClick()<CR>]],
+                                    {nowait = true, noremap = false})
+            api.nvim_buf_set_keymap(qbufnr, 'n', '<2-LeftMouse>',
+                                    [[<Cmd>lua require('bqf.preview.handler').mouseDoubleClick()<CR>]],
+                                    {nowait = true, noremap = false})
         end
 
         if autoPreview and api.nvim_get_current_win() == qwinid then
@@ -372,6 +426,7 @@ local function init()
             au!
         aug END
     ]])
+    clicked = false
 
     PLACEHOLDER_TBL = {}
     M.doSyntax = require('bqf.debounce')(doSyntax, delaySyntax)

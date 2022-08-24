@@ -51,7 +51,7 @@ local function compareVersion(a, b)
     return 0
 end
 
-local function export4headless(bufnr, signs, fname)
+local function exportForHeadless(bufnr, signs, fname)
     local fnameData = fname .. '_data'
     local fnameSign = fname .. '_sign'
     local fdData = assert(io.open(fnameData, 'w'))
@@ -180,9 +180,9 @@ local function sourceCmd(qwinid, signs, delim)
     local sfname = fn.fnameescape(tname .. '.lua')
 
     local bufnr = api.nvim_win_get_buf(qwinid)
-    local fnameData, fnameSign = export4headless(bufnr, signs, fname)
+    local fnameData, fnameSign = exportForHeadless(bufnr, signs, fname)
     -- keep spawn process away from inheriting $NVIM_LISTEN_ADDRESS to call server_init()
-    -- look like widnows can't clear env in cmdline
+    -- look like windows can't clear env in cmdline
     local noListenEnv = isWindows and '' or 'NVIM_LISTEN_ADDRESS='
     local cmds = {
         noListenEnv, vim.v.progpath, '-u NONE -n --headless', '-c', ('so %q'):format(sfname)
@@ -313,6 +313,10 @@ local function handler(qwinid, lines)
     elseif #selectedIndex == 1 then
         local idx = selectedIndex[1]
         qhandler.open(true, action, qwinid, idx)
+        if phandler.clicked() then
+            cmd(('keepj norm! %dgg%d|'):format(vim.v.mouse_lnum, vim.v.mouse_col))
+            utils.zz()
+        end
     end
 end
 
@@ -476,6 +480,15 @@ function M.preHandle(qwinid, size, bind)
             local rhs = fmt:format(qwinid)
             api.nvim_buf_set_keymap(bufnr, 't', lhs, rhs, {nowait = true})
         end
+    end
+
+    if vim.o.mouse:match('[na]') ~= nil then
+        api.nvim_buf_set_keymap(bufnr, 'n', '<LeftMouse>',
+                                [[<Cmd>lua require('bqf.preview.handler').mouseClick('t')<CR>]],
+                                {nowait = true, noremap = false})
+        api.nvim_buf_set_keymap(bufnr, 'n', '<2-LeftMouse>',
+                                [[<Cmd>lua require('bqf.preview.handler').mouseDoubleClick('t')<CR>]],
+                                {nowait = true, noremap = false})
     end
 
     if M.postHandle then
