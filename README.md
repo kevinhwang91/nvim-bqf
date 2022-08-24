@@ -36,7 +36,7 @@ So why not nvim-bqf?
   - [Buffer Commands](#buffer-commands)
   - [Commands](#commands)
   - [Quickfix context](#quickfix-context)
-    - [Why use an additional context?](#why-use-an-additional-context?)
+    - [Why use an additional context?](#why-use-an-additional-context)
     - [Supported keys](#supported-keys)
     - [Simple lua tests for understanding](#simple-lua-tests-for-understanding)
   - [Highlight groups](#highlight-groups)
@@ -57,6 +57,7 @@ So why not nvim-bqf?
 - Optimize the buffer preview under treesitter to get extreme performance
 - Using signs to filter the items of quickfix window
 - Integrate [fzf](https://github.com/junegunn/fzf) as a picker/filter in quickfix window
+- Mouse supported for preview window
 
 ## TODO
 
@@ -286,6 +287,13 @@ about current configuration.
 | filter      | create new list for signed items                           | `zn`      |
 | filterr     | create new list for non-signed items                       | `zN`      |
 | fzffilter   | enter fzf mode                                             | `zf`      |
+
+Additional mouse supported:
+
+1. `<ScrollWheelUp>` and `<ScrollWheelDown>`: Scroll preview window.
+2. `<2-LeftMouse>`:
+   - In quickfix window: Type `<CR>`;
+   - In preview window: Jump to the location even it has scrolled;
 
 ### Buffer Commands
 
@@ -648,10 +656,10 @@ hi def link qfFileName Directory
 hi def link qfSeparatorLeft Delimiter
 hi def link qfSeparatorRight Delimiter
 hi def link qfLineNr LineNr
-hi def link qfError CocErrorSign
-hi def link qfWarning CocWarningSign
-hi def link qfInfo CocInfoSign
-hi def link qfNote CocHintSign
+hi def link qfError DiagnosticError
+hi def link qfWarning DiagnosticWarn
+hi def link qfInfo DiagnosticInfo
+hi def link qfNote DiagnosticHint
 
 let b:current_syntax = 'qf'
 ```
