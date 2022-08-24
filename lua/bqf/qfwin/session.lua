@@ -91,7 +91,7 @@ end
 
 ---
 ---@param winid number
----@return BqfQfSession
+---@return BqfQfSession?
 function QfSession:new(winid)
     local obj = {}
     setmetatable(obj, self)

@@ -124,12 +124,12 @@ function M.renderStr(str, groupName, defaultFg, defaultBg)
     if fg and type(fg) == 'number' then
         escapeFg = ';' .. colorToCSI(fg, true)
     elseif defaultFg and ansi[defaultFg] then
-        escapeFg = ansi[defaultFg]
+        escapeFg = tostring(ansi[defaultFg])
     end
     if bg and type(bg) == 'number' then
         escapeFg = ';' .. colorToCSI(bg, false)
     elseif defaultBg and ansi[defaultBg] then
-        escapeFg = ansi[defaultBg]
+        escapeFg = tostring(ansi[defaultFg])
     end
 
     return ('%s%s%sm%s\027[m'):format(escapePrefix, escapeFg, escapeBg, str)
@@ -299,7 +299,7 @@ end
 ---@param winid number
 ---@param func fun(): any[]
 ---@vararg any
----@return any
+---@return ...
 function M.winExecute(winid, func, ...)
     vim.validate({
         winid = {winid, M.isWinValid, 'a valid window'},

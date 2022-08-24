@@ -6,22 +6,23 @@ local LSize
 
 ---
 ---@class BqfLBase
+---@field winid number
 ---@field foldenable boolean
 ---@field foldClosePairs table<number, number[]>
 ---@field sizes table<number, number>
 local LBase = {}
 
 ---
----@param sizes table<number, number>
+---@param winid number
 ---@return BqfLBase
-function LBase:new(sizes)
-    local obj = {}
-    setmetatable(obj, self)
+function LBase:new(winid)
+    local o = {}
+    setmetatable(o, self)
     self.__index = self
-    obj.foldenable = vim.wo.foldenable
-    obj.foldClosePairs = {}
-    obj.sizes = sizes
-    return obj
+    o.winid = winid
+    o.foldenable = vim.wo.foldenable
+    o.foldClosePairs = {}
+    return o
 end
 
 ---
@@ -79,18 +80,20 @@ end
 local LFFI = setmetatable({}, {__index = LBase})
 
 ---
+---@param winid number
 ---@return BqfLFFI
-function LFFI:new()
-    local obj = LBase:new(setmetatable({}, {
+function LFFI:new(winid)
+    local super = LBase:new(winid)
+    local o = setmetatable(super, self)
+    o.sizes = setmetatable({}, {
         __index = function(t, i)
-            local v = self._wffi.plinesWin(i)
+            local v = self._wffi.plinesWin(winid, i)
             rawset(t, i, v)
             return v
         end
-    }))
-    setmetatable(obj, self)
+    })
     self.__index = self
-    return obj
+    return o
 end
 
 ---
@@ -99,7 +102,7 @@ end
 ---@return number
 function LFFI:nofillSize(lnum, winheight)
     winheight = winheight or true
-    return self._wffi.plinesWinNofill(lnum, winheight)
+    return self._wffi.plinesWinNofill(self.winid, lnum, winheight)
 end
 
 ---
@@ -114,7 +117,7 @@ end
 ---@param col number
 ---@return number
 function LFFI:posSize(lnum, col)
-    return self._wffi.plinesWinCol(lnum, col)
+    return self._wffi.plinesWinCol(self.winid, lnum, col)
 end
 
 ---
@@ -123,12 +126,15 @@ end
 local LNonFFI = setmetatable({}, {__index = LBase})
 
 ---
+---@param winid number
 ---@return BqfLNonFFI
-function LNonFFI:new()
-    local winid = api.nvim_get_current_win()
+function LNonFFI:new(winid)
     local wrap = vim.wo[winid].wrap
+    local super = LBase:new(winid)
+    local o = setmetatable(super, self)
     local perLineWidth = api.nvim_win_get_width(winid) - utils.textoff(winid)
-    local obj = LBase:new(setmetatable({}, {
+    super.perLineWidth = perLineWidth
+    o.sizes = setmetatable({}, {
         __index = function(t, i)
             local v
             if wrap then
@@ -139,11 +145,9 @@ function LNonFFI:new()
             rawset(t, i, v)
             return v
         end
-    }))
-    obj.perLineWidth = perLineWidth
-    setmetatable(obj, self)
+    })
     self.__index = self
-    return obj
+    return o
 end
 
 LNonFFI.nofillSize = LNonFFI.size

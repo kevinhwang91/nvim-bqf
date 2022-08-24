@@ -25,7 +25,7 @@ local utils = require('bqf.utils')
 ---@field items? BqfQfItem[]
 ---@field nr? number
 ---@field size? number
----@field title? number
+---@field title? string
 ---@field winid? number
 ---@field filewinid? number
 ---@field quickfixtextfunc? string
@@ -207,6 +207,7 @@ function QfList:item(idx)
     if cd == self._changedtick and c.id == self.id then
         e = c.items[idx]
     else
+        ---@type BqfQfItem[]
         local items = self.getqflist({id = self.id, idx = idx, items = 0}).items
         if #items == 1 then
             e = items[1]
@@ -246,7 +247,7 @@ end
 ---
 ---@param qwinid? number
 ---@param id? number
----@return BqfQfList
+---@return BqfQfList?
 function QfList:get(qwinid, id)
     local qid, filewinid
     if not id then

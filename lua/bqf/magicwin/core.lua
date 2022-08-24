@@ -150,7 +150,7 @@ end
 ---@param awrow number
 ---@param aheight number
 ---@param bheight number
----@return number
+---@return number?
 function M.evaluate(awrow, aheight, bheight)
     -- loBWrow: the minimum bwrow value
     -- Below formula we can derive from the known conditions
@@ -169,7 +169,7 @@ function M.evaluate(awrow, aheight, bheight)
     local hiBWrow = math.max(loBWrow + 8, math.ceil(awrow * 1.2 * bheight / aheight - 0.25))
     log.debug('loBWrow:', loBWrow, 'hiBWrow:', hiBWrow)
 
-    local lsizeObj = LSize:new()
+    local lsizeObj = LSize:new(api.nvim_get_current_win())
 
     local fractionList = {}
     for bw = loBWrow, hiBWrow do
@@ -205,7 +205,7 @@ function M.tuneTop(winid, topline, lsizes)
         local iStart, iEnd, iInc, shouldContinue, len
         local foldedOtherLnum
 
-        local lsizeObj = LSize:new()
+        local lsizeObj = LSize:new(winid)
         if lsizes > 0 then
             iStart, iEnd, iInc = topline - 1, math.max(1, topline - lsizes), -1
             shouldContinue = function(iter)
