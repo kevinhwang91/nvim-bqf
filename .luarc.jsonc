@@ -1,13 +1,14 @@
 {
     "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
-    "IntelliSense.traceBeSetted": true,
-    "IntelliSense.traceFieldInject": true,
-    "IntelliSense.traceLocalSet": true,
-    "IntelliSense.traceReturn": true,
     "completion.callSnippet": "Replace",
     "completion.displayContext": 50,
     "completion.keywordSnippet": "Disable",
     "completion.postfix": ".",
+    "diagnostics.disable": [
+        "different-requires",
+        "param-type-mismatch",
+        "assign-type-mismatch"
+    ],
     "diagnostics.globals": [
         "vim",
         "jit",
@@ -18,5 +19,12 @@
         "setup",
         "teardown"
     ],
-    "runtime.version": "LuaJIT"
+    "diagnostics.workspaceDelay": 30000,
+    "diagnostics.libraryFiles": "Disable",
+    "runtime.version": "LuaJIT",
+    "type.castNumberToInteger": true,
+    "type.weakUnionCheck": true,
+    "workspace.library": [
+        "$VIM/site/pack/packer/start/emmylua-nvim"
+    ]
 }
