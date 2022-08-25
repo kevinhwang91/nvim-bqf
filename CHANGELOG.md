@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.9.9] - 2022-08-25
+
+### Bug Fixes
+
+#### MagicWin
+
+- Qf at top/above should check botline
+
+#### FZF
+
+- Render highlighting is wrong for source syntax
+- Handle empty str for capturing iskeyword (#64)
+
+#### Preview
+
+- Should pass srcBufnr to nvim-treesitter (#63)
+- Get winline() from quickfix win
+- Close preview window if qf buffer is hidden (#70)
+
+#### Qfwin
+
+- Qf window Can't drop empty buffer name
+- Can't close location if previous window is invalid
+
+#### Miscellaneous
+
+- Debounce args should be changed
+- Upstream changed the C type in nightly
+- Can't split a window while closing another in nightly
+
+### Features
+
+#### Preview
+
+- Support mouse scroll and double click for preview window
+
+### Performance
+
+#### Preview
+
+- Prefer to use loaded buffer filetype
+
 ## [0.3.3] - 2022-04-16
 
 ### Bug Fixes
@@ -78,7 +120,7 @@
 - No error for wiped buffer while jumping
 - Quickfixtextfunc field in list should be supported
 - Avoid extra error while switching list
-- Dispose throwed a error from nvim_buf_del_keymap()
+- Dispose threw a error from nvim_buf_del_keymap()
 
 ### Documentation
 
