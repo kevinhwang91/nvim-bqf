@@ -10,6 +10,7 @@ local shouldPreviewCallback
 local keepPreview, origPos
 local winHeight, winVHeight
 local wrap, borderChars
+local showTitle
 local lastIdx
 local PLACEHOLDER_TBL
 
@@ -366,6 +367,7 @@ function M.initialize(qwinid)
         winVHeight = winVHeight,
         wrap = wrap,
         borderChars = borderChars,
+        showTitle = showTitle,
         focusable = mouseEnabled
     })
     -- some plugins will change the quickfix window, preview window should init later
@@ -400,6 +402,7 @@ local function init()
     wrap = pconf.wrap
     shouldPreviewCallback = pconf.should_preview_cb
     borderChars = pconf.border_chars
+    showTitle = pconf.show_title
     winHeight = tonumber(pconf.win_height)
     winVHeight = tonumber(pconf.win_vheight or winHeight)
     vim.validate({
@@ -412,6 +415,7 @@ local function init()
                 return type(chars) == 'table' and #chars == 9
             end, 'a table with 9 chars'
         },
+        show_title = {showTitle, 'boolean'},
         win_height = {winHeight, 'number'},
         win_vheight = {winVHeight, 'number'}
     })
