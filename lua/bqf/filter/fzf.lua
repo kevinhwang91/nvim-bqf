@@ -133,6 +133,12 @@ local function sourceList(qwinid, signs, delim)
             -- TODO the filter is not good enough
             if lastIsKw and isKw and (byte >= 97 and byte <= 122 or byte >= 65 and byte <= 90) then
                 local _ = nil
+            elseif byte == 0 then
+                -- TODO
+                -- E974: Expected a Number or a String, Blob found
+                -- replace \0 with space
+                line = line:sub(1, j - 1) .. ' ' .. line:sub(j + 1)
+                lastIsKw = false
             elseif byte <= 32 then
                 lastIsKw = false
             else
@@ -153,7 +159,7 @@ local function sourceList(qwinid, signs, delim)
                 end
                 if not concealed then
                     local hlId = fn.synID(i, j, true)
-                    if j > lastCol and hlId > 0 and hlId ~= lastHlId then
+                    if j > lastCol and hlId ~= lastHlId then
                         table.insert(lineSect, hlIdToAnsi[lastHlId]:format(line:sub(lastCol, j - 1)))
                         lastCol = j
                     end
@@ -163,7 +169,7 @@ local function sourceList(qwinid, signs, delim)
             j = j + 1
         end
         local hlFmt = lastHlId > 0 and hlIdToAnsi[lastHlId] or '%s'
-        table.insert(lineSect, hlFmt:format(line:sub(lastCol, #line):gsub('%c*$', '')))
+        table.insert(lineSect, hlFmt:format(line:sub(lastCol, #line)))
         local processedLine = lineFmt:format(i, padding, signed, table.concat(lineSect, ''))
         if headless then
             io.write(processedLine)
