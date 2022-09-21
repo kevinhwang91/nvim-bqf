@@ -18,26 +18,14 @@ function Border:build(o)
     self.__index = self
     self.floatwin = FloatWin
     self.chars = o.chars
+    self.showTitle = o.showTitle
     self.winid = 0
     self.bufnr = 0
     return self
 end
 
 function Border:update(pbufnr, idx, size)
-    local posStr = ('[%d/%d]'):format(idx, size)
-    local bufStr = ('buf %d:'):format(pbufnr)
-    local modified = vim.bo[pbufnr].modified and '[+] ' or ''
-    local name = fn.bufname(pbufnr):gsub('^' .. vim.env.HOME, '~')
-    local width = api.nvim_win_get_width(self.winid)
-    local padFit = width - 10 - fn.strwidth(bufStr) - fn.strwidth(posStr)
-    if padFit - fn.strwidth(name) < 0 then
-        name = fn.pathshorten(name)
-        if padFit - fn.strwidth(name) < 0 then
-            name = ''
-        end
-    end
-    local title = (' %s %s %s %s'):format(posStr, bufStr, name, modified)
-    self:updateTitle(title)
+    self:updateTitle(pbufnr, idx, size)
     self:updateScrollBar()
 end
 
@@ -94,7 +82,24 @@ function Border:updateScrollBar()
     api.nvim_buf_set_lines(self.bufnr, 1, -2, false, lines)
 end
 
-function Border:updateTitle(title)
+function Border:updateTitle(pbufnr, idx, size)
+    if not self.showTitle then
+        return
+    end
+
+    local posStr = ('[%d/%d]'):format(idx, size)
+    local bufStr = ('buf %d:'):format(pbufnr)
+    local modified = vim.bo[pbufnr].modified and '[+] ' or ''
+    local name = fn.bufname(pbufnr):gsub('^' .. vim.env.HOME, '~')
+    local width = api.nvim_win_get_width(self.winid)
+    local padFit = width - 10 - fn.strwidth(bufStr) - fn.strwidth(posStr)
+    if padFit - fn.strwidth(name) < 0 then
+        name = fn.pathshorten(name)
+        if padFit - fn.strwidth(name) < 0 then
+            name = ''
+        end
+    end
+    local title = (' %s %s %s %s'):format(posStr, bufStr, name, modified)
     local top = api.nvim_buf_get_lines(self.bufnr, 0, 1, 0)[1]
     local prefix = fn.strcharpart(top, 0, 3)
     local suffix = fn.strcharpart(top, fn.strwidth(title) + 3, fn.strwidth(top))

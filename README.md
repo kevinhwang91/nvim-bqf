@@ -187,6 +187,10 @@ Using external grep-like program to search `display` and replace it to `show`, b
                 vline, vline, hline, hline, ulcorner, urcorner, blcorner, brcorner, sbar]],
             default = {'│', '│', '─', '─', '╭', '╮', '╰', '╯', '█'}
         },
+        show_title = {
+            description = [[show the window title]],
+            default = true
+        },
         delay_syntax = {
             description = [[delay time, to do syntax for previewed buffer, unit is millisecond]],
             default = 50
@@ -443,6 +447,7 @@ require('bqf').setup({
         win_vheight = 12,
         delay_syntax = 80,
         border_chars = {'┃', '┃', '━', '━', '┏', '┓', '┗', '┛', '█'},
+        show_title = false,
         should_preview_cb = function(bufnr, qwinid)
             local ret = true
             local bufname = vim.api.nvim_buf_get_name(bufnr)

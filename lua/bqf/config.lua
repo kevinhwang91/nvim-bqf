@@ -10,6 +10,7 @@ local config = {}
 ---@class BqfConfigPreview
 ---@field auto_preview boolean
 ---@field border_chars string[]
+---@field show_title boolean
 ---@field delay_syntax number
 ---@field win_height number
 ---@field win_vheight number
@@ -34,6 +35,7 @@ local function init()
         preview = {
             auto_preview = true,
             border_chars = {'│', '│', '─', '─', '╭', '╮', '╰', '╯', '█'},
+            show_title = true,
             delay_syntax = 50,
             win_height = 15,
             win_vheight = 15,

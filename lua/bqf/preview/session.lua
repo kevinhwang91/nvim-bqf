@@ -19,6 +19,7 @@ local scrollThrottled
 ---@field winVHeight number
 ---@field wrap boolean
 ---@field borderChars string[]
+---@field showTitle boolean
 ---@field bufnr number
 ---@field syntax boolean
 ---@field full boolean
@@ -39,6 +40,7 @@ function PreviewSession:new(winid, o)
     obj.winVHeight = o.winVHeight
     obj.wrap = o.wrap
     obj.borderChars = o.borderChars
+    obj.showTitle = o.showTitle
     obj.bufnr = nil
     obj.syntax = nil
     obj.full = false
@@ -175,7 +177,7 @@ function PreviewSession:validOrBuild(owinid)
         end
     end
     if not isValid then
-        border:build({chars = self.borderChars})
+        border:build({chars = self.borderChars, showTitle = self.showTitle})
     end
     if self.full then
         floatwin:setHeight(999, 999)
