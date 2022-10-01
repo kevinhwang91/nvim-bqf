@@ -8,7 +8,7 @@ local uv = vim.loop
 
 local phandler, qhandler, base, config, qfs
 local utils = require('bqf.utils')
-local log = require('bqf.log')
+local log = require('bqf.lib.log')
 
 local actionFor, extraOpts, isWindows
 local ctxActionFor
@@ -112,12 +112,12 @@ local function sourceList(qwinid, signs, delim)
             if signs:byte(i) == 0 then
                 signed = signAnsi
             end
-            line = utils.expandtab(line, ts, 3)
+            line = utils.expandTab(line, ts, 3)
         else
             if signs[i] then
                 signed = signAnsi
             end
-            line = utils.expandtab(line, ts)
+            line = utils.expandTab(line, ts)
         end
 
         local lineSect = {}
@@ -199,9 +199,10 @@ local function sourceCmd(qwinid, signs, delim)
 
     table.insert(script, 'set hidden')
     local fenc = vim.bo[bufnr].fenc
+    local title = fn.getwinvar(qwinid, 'quickfix_title', '')
     table.insert(script, ('e %s'):format(fnameSign))
     table.insert(script, ('e ++enc=%s %s'):format(fenc ~= '' and fenc or 'utf8', fnameData))
-    table.insert(script, ('let w:quickfix_title=%q'):format(utils.getwinvar(qwinid, 'quickfix_title', '')))
+    table.insert(script, ('let w:quickfix_title=%q'):format(title))
 
     local bqfRtp
     local qfFiles = vim.list_extend(api.nvim_get_runtime_file('syntax/qf.vim', true),
@@ -311,11 +312,11 @@ local function handler(qwinid, lines)
         api.nvim_win_close(qwinid, true)
     elseif #selectedIndex > 1 then
         local items = qs:list():items()
-        base.filterList(qwinid, coroutine.wrap(function()
-            for _, i in ipairs(selectedIndex) do
-                coroutine.yield(i, items[i])
-            end
-        end))
+        local newItems = {}
+        for _, i in ipairs(selectedIndex) do
+            table.insert(newItems, items[i])
+        end
+        base.filterList(qwinid, newItems)
     elseif #selectedIndex == 1 then
         local idx = selectedIndex[1]
         qhandler.open(true, action, qwinid, idx)
@@ -518,10 +519,6 @@ function M.run()
     local source = size > 1000 and sourceCmd or sourceList
 
     local baseOpt = {}
-    if compareVersion(version, '0.25.0') >= 0 then
-        table.insert(baseOpt, '--color')
-        table.insert(baseOpt, 'gutter:-1')
-    end
     if compareVersion(version, '0.27.4') >= 0 then
         table.insert(baseOpt, '--scroll-off')
         table.insert(baseOpt, utils.scrolloff(qwinid))

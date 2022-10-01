@@ -5,7 +5,7 @@ local fn = vim.fn
 
 local LSize = require('bqf.magicwin.lsize')
 local utils = require('bqf.utils')
-local log = require('bqf.log')
+local log = require('bqf.lib.log')
 
 -- Code in this file relates to source code
 -- https://github.com/neovim/neovim/blob/master/src/nvim/window.c
@@ -201,7 +201,7 @@ end
 ---@param lsizes BqfLFFI|BqfLNonFFI
 ---@return number, number
 function M.tuneTop(winid, topline, lsizes)
-    return utils.winExecute(winid, function()
+    return utils.winCall(winid, function()
         local iStart, iEnd, iInc, shouldContinue, len
         local foldedOtherLnum
 

@@ -44,7 +44,7 @@ local function execPreview(item, lspRangeHl, patternHl)
         posList = utils.lspRangeToPosList(lspRangeHl)
     elseif patternHl and patternHl ~= '' then
         posList = utils.patternToPosList(patternHl)
-    elseif utils.has06() then
+    else
         local endLnum, endCol = item.end_lnum, item.end_col
         posList = utils.qfRangeToPosList(lnum, col, endLnum, endCol)
     end
@@ -433,7 +433,7 @@ local function init()
     clicked = false
 
     PLACEHOLDER_TBL = {}
-    M.doSyntax = require('bqf.debounce')(doSyntax, delaySyntax)
+    M.doSyntax = require('bqf.lib.debounce')(doSyntax, delaySyntax)
 end
 
 init()

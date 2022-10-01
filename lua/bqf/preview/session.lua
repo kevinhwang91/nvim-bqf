@@ -82,7 +82,7 @@ end
 
 function PreviewSession.floatWinExec(func)
     if PreviewSession.validate() then
-        utils.winExecute(floatwin.winid, func)
+        utils.winCall(floatwin.winid, func)
     end
 end
 
@@ -190,10 +190,10 @@ end
 local function init()
     namespace = api.nvim_create_namespace('bqf-preview')
     onKey = vim.on_key and vim.on_key or vim.register_keystroke_callback
-    highlightDebounced = require('bqf.debounce')(function()
+    highlightDebounced = require('bqf.lib.debounce')(function()
         PreviewSession.mapBufHighlight((PreviewSession.get() or {}).bufnr)
     end, 50)
-    scrollThrottled = require('bqf.throttle')(function()
+    scrollThrottled = require('bqf.lib.throttle')(function()
         border:updateScrollBar()
     end, 80)
 end

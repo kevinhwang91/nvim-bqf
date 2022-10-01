@@ -7,9 +7,9 @@ local qfs = require('bqf.qfwin.session')
 
 ---
 ---@param qwinid number
----@param coWrap fun(number, BqfQfItem)
-function M.filterList(qwinid, coWrap)
-    if not coWrap then
+---@param items BqfQfItem[]
+function M.filterList(qwinid, items)
+    if not items then
         return
     end
 
@@ -23,7 +23,7 @@ function M.filterList(qwinid, coWrap)
     local context = qlist:context()
     local title, qftf = qinfo.title, qinfo.quickfixtextfunc
     local lspRanges, newItems = {}, {}
-    for i, item in coWrap do
+    for i, item in ipairs(items) do
         table.insert(newItems, item)
         if type(context.lsp_ranges_hl) == 'table' then
             table.insert(lspRanges, context.lsp_ranges_hl[i])
@@ -57,22 +57,22 @@ function M.run(reverse)
     if reverse and vim.tbl_isempty(signs) then
         return
     end
-    M.filterList(qwinid, coroutine.wrap(function()
-        local items = qlist:items()
-        if reverse then
-            for i in ipairs(items) do
-                if not signs[i] then
-                    coroutine.yield(i, items[i])
-                end
-            end
-        else
-            local kSigns = vim.tbl_keys(signs)
-            table.sort(kSigns)
-            for _, i in ipairs(kSigns) do
-                coroutine.yield(i, items[i])
+    local items = qlist:items()
+    local newItems = {}
+    if reverse then
+        for i in ipairs(items) do
+            if not signs[i] then
+                table.insert(newItems, items[i])
             end
         end
-    end))
+    else
+        local kSigns = vim.tbl_keys(signs)
+        table.sort(kSigns)
+        for _, i in ipairs(kSigns) do
+            table.insert(newItems, items[i])
+        end
+    end
+    M.filterList(qwinid, newItems)
 end
 
 return M

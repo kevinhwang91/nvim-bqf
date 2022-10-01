@@ -5,7 +5,8 @@
 ---@field info fun(...)
 ---@field warn fun(...)
 ---@field error fun(...)
-local M = {}
+---@field path string
+local Log = {}
 local fn = vim.fn
 local uv = vim.loop
 
@@ -27,15 +28,20 @@ end
 
 ---
 ---@param l number|string
-function M.setLevel(l)
+function Log.setLevel(l)
     levelNr = getLevelNr(l)
 end
 
-function M.isEnabled(l)
+---
+---@param l number|string
+---@return boolean
+function Log.isEnabled(l)
     return getLevelNr(l) >= levelNr
 end
 
-function M.level()
+---
+---@return string|'trace'|'debug'|'info'|'warn'|'error'
+function Log.level()
     for l, nr in pairs(levelMap) do
         if nr == levelNr then
             return l
@@ -50,7 +56,7 @@ local function inspect(v)
     if t == 'nil' then
         s = 'nil'
     elseif t ~= 'string' then
-        s = vim.inspect(v, {indent = '', newline = ' '})
+        s = vim.inspect(v)
     else
         s = tostring(v)
     end
@@ -63,16 +69,16 @@ end
 
 local function init()
     local logDir = fn.stdpath('cache')
-    local logFile = table.concat({logDir, 'bqf.log'}, pathSep())
+    Log.path = table.concat({logDir, 'bqf.log'}, pathSep())
     local logDateFmt = '%y-%m-%d %T'
 
     fn.mkdir(logDir, 'p')
     levelMap = {TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4}
     defaultLevel = 3
-    M.setLevel(vim.env.BQF_LOG)
+    Log.setLevel(vim.env.BQF_LOG)
 
     for l in pairs(levelMap) do
-        M[l:lower()] = function(...)
+        Log[l:lower()] = function(...)
             local argc = select('#', ...)
             if argc == 0 or levelMap[l] < levelNr then
                 return
@@ -86,7 +92,7 @@ local function init()
             local info = debug.getinfo(2, 'Sl')
             local linfo = info.short_src:match('[^/]*$') .. ':' .. info.currentline
 
-            local fp = assert(io.open(logFile, 'a+'))
+            local fp = assert(io.open(Log.path, 'a+'))
             local str = string.format('[%s] [%s] %s : %s\n', os.date(logDateFmt), l, linfo, msg)
             fp:write(str)
             fp:close()
@@ -96,4 +102,4 @@ end
 
 init()
 
-return M
+return Log

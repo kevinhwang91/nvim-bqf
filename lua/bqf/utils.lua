@@ -5,17 +5,6 @@ local fn = vim.fn
 local cmd = vim.cmd
 local uv = vim.loop
 
----@return fun(): boolean
-M.has06 = (function()
-    local has06
-    return function()
-        if has06 == nil then
-            has06 = fn.has('nvim-0.6') == 1
-        end
-        return has06
-    end
-end)()
-
 ---
 ---@return fun(): boolean
 M.has08 = (function()
@@ -36,17 +25,6 @@ M.isWindows = (function()
             isWin = uv.os_uname().sysname == 'Windows_NT'
         end
         return isWin
-    end
-end)()
-
----@return fun(): boolean
-M.jitEnabled = (function()
-    local enabled
-    return function()
-        if enabled == nil then
-            enabled = jit ~= nil and (not M.isWindows() or M.has06())
-        end
-        return enabled
     end
 end)()
 
@@ -260,32 +238,14 @@ end
 ---@param winid number
 ---@return number
 function M.textoff(winid)
-    vim.validate({winid = {winid, 'number'}})
-    local textoff
-    if M.has06() then
-        textoff = M.getWinInfo(winid).textoff
-    end
-
-    if not textoff then
-        M.winExecute(winid, function()
-            local wv = fn.winsaveview()
-            api.nvim_win_set_cursor(winid, {wv.lnum, 0})
-            textoff = fn.wincol() - 1
-            fn.winrestview(wv)
-        end)
-    end
-    return textoff
+    return M.getWinInfo(winid).textoff
 end
 
 ---
 ---@param winid number
 ---@return boolean
 function M.isWinValid(winid)
-    if winid then
-        return type(winid) == 'number' and winid > 0 and api.nvim_win_is_valid(winid)
-    else
-        return false
-    end
+    return type(winid) == 'number' and winid > 0 and api.nvim_win_is_valid(winid)
 end
 
 ---
@@ -297,25 +257,20 @@ end
 
 ---
 ---@param winid number
----@param func fun(): any[]
----@vararg any
----@return ...
-function M.winExecute(winid, func, ...)
-    vim.validate({
-        winid = {winid, M.isWinValid, 'a valid window'},
-        func = {func, 'function'}
-    })
-
-    local curWinid = api.nvim_get_current_win()
-    local noaSetWin = 'noa call nvim_set_current_win(%d)'
-    if curWinid ~= winid then
+---@param f fun(): any
+---@return any
+function M.winCall(winid, f)
+    if winid == 0 or winid == api.nvim_get_current_win() then
+        return f()
+    else
+        local curWinid = api.nvim_get_current_win()
+        local noaSetWin = 'noa call nvim_set_current_win(%d)'
         cmd(noaSetWin:format(winid))
-    end
-    local r = {pcall(func, ...)}
-    if curWinid ~= winid then
+        local r = {pcall(f)}
         cmd(noaSetWin:format(curWinid))
+        assert(r[1], r[2])
+        return unpack(r, 2)
     end
-    return unpack(r, 2)
 end
 
 local function synKeyword(bufnr)
@@ -434,21 +389,6 @@ function M.scrolloff(winid)
     return fn.getwinvar(winid, '&scrolloff')
 end
 
----@param winid number
----@param name string
----@param def any
-function M.getwinvar(winid, name, def)
-    if M.has06() then
-        if name:match('^&') then
-            return vim.wo[winid][name:sub(2)]
-        else
-            return vim.w[winid][name] or def
-        end
-    else
-        return fn.getwinvar(winid, name, def)
-    end
-end
-
 --- 1. use uv read file will cause much cpu usage and memory usage
 --- 2. type of result returned by read is string, it must convert to table first
 --- 3. nvim_buf_set_lines is expensive for flushing all buffers
@@ -498,11 +438,9 @@ end
 ---@param ts number
 ---@param start? number
 ---@return string
-function M.expandtab(str, ts, start)
+function M.expandTab(str, ts, start)
     start = start or 1
     local new = str:sub(1, start - 1)
-    -- without check type to improve performance
-    -- if str and type(str) == 'string' then
     local pad = ' '
     local ti = start - 1
     local i = start
@@ -525,7 +463,6 @@ function M.expandtab(str, ts, start)
         ti = i
         i = i + 1
     end
-    -- end
     return new
 end
 

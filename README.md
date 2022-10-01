@@ -69,8 +69,8 @@ So why not nvim-bqf?
 
 ### Requirements
 
-- [Neovim](https://github.com/neovim/neovim) 0.5 or later
-- [fzf](https://github.com/junegunn/fzf) (optional, 0.24.0 later)
+- [Neovim](https://github.com/neovim/neovim) 0.6.1 or later
+- [fzf](https://github.com/junegunn/fzf) (optional, 0.25.0 later)
 - [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (optional)
 
 ### Installation

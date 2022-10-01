@@ -168,7 +168,7 @@ function LNonFFI:posSize(lnum, col)
 end
 
 local function init()
-    if utils.jitEnabled() then
+    if jit ~= nil then
         LFFI._wffi = require('bqf.wffi')
         LSize = LFFI
     else

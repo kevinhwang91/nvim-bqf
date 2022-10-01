@@ -8,7 +8,7 @@ local uv = vim.loop
 local mgws = require('bqf.magicwin.session')
 local wpos = require('bqf.wpos')
 local utils = require('bqf.utils')
-local log = require('bqf.log')
+local log = require('bqf.lib.log')
 local mcore = require('bqf.magicwin.core')
 local config = require('bqf.config')
 
@@ -30,7 +30,7 @@ end
 
 local function guessBwrow(qwinid, winid)
     log.debug('guessBwrow start')
-    local bwrow = utils.winExecute(winid, function()
+    local bwrow = utils.winCall(winid, function()
         local qfHeight, winHeight = api.nvim_win_get_height(qwinid), api.nvim_win_get_height(winid)
         local lineCount = api.nvim_buf_line_count(0)
         local qbufnr = api.nvim_win_get_buf(qwinid)
@@ -58,7 +58,7 @@ local function guessBwrow(qwinid, winid)
 end
 
 local function resetWinTop(qwinid, winid, qfPos, bwrow)
-    utils.winExecute(winid, function()
+    utils.winCall(winid, function()
         local qbufnr = api.nvim_win_get_buf(qwinid)
         local aws = mgws:adjacentWin(qbufnr, winid)
         local winView = fn.winsaveview()
@@ -158,7 +158,7 @@ function M.resetWinView(qbufnr)
         for _, winid in ipairs(api.nvim_tabpage_list_wins(0)) do
             local aws = mgws:adjacentWin(qbufnr, winid)
             if aws and aws.winView then
-                utils.winExecute(winid, function()
+                utils.winCall(winid, function()
                     local hrtime = aws.hrtime or 0
                     local winView = aws.winView
                     local lnum, col = winView.lnum, winView.col + 1
@@ -255,7 +255,7 @@ local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallback)
     for _, winid in ipairs(wpos.findAdjacentWins(qwinid, pwinid)) do
         local aws = mgws:adjacentWin(qbufnr, winid)
         if aws and aws.winView then
-            local winView = utils.winExecute(winid, fn.winsaveview)
+            local winView = utils.winCall(winid, fn.winsaveview)
             if aws.tuneLnum == LNUM.KEEP then
                 aws.winView = {}
             end
@@ -274,7 +274,7 @@ local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallback)
     for winid, aws in pairs(mgws:get(qbufnr)) do
         if aws and aws.winView and aws.winView.topline and utils.isWinValid(winid) then
             log.debug('revertClosingWins:', aws.winView, '\n')
-            utils.winExecute(winid, function()
+            utils.winCall(winid, function()
                 mcore.resetView(aws.winView)
             end)
         end
@@ -297,7 +297,7 @@ function M.close(winid, lastWinid, bufnr)
     local pos = wpos.getPos(winid, lastWinid)
     local winnr = fn.win_id2win(winid)
     local winJ, winL
-    utils.winExecute(winid, function()
+    utils.winCall(winid, function()
         winJ, winL = fn.winnr('j'), fn.winnr('l')
     end)
 

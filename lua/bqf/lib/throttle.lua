@@ -22,20 +22,20 @@ function Throttle:new(fn, limit, noLeading, noTrailing)
                   noTrailing = {noTrailing, 'boolean', true}})
     assert(not (noLeading and noTrailing),
            [[The values of noLeading and noTrailing can't be all true]])
-    local obj = {}
-    setmetatable(obj, self)
-    obj.timer = nil
-    obj.fn = vim.schedule_wrap(fn)
-    obj.pendingArgs = nil
-    obj.limit = limit
-    obj.leading = not noLeading
-    obj.trailing = not noTrailing
-    return obj
+    local o = setmetatable({}, self)
+    o.timer = nil
+    o.fn = vim.schedule_wrap(fn)
+    o.pendingArgs = nil
+    o.limit = limit
+    o.leading = not noLeading
+    o.trailing = not noTrailing
+    return o
 end
 
 function Throttle:call(...)
     local timer = self.timer
     if not timer then
+        ---@type userdata
         timer = uv.new_timer()
         self.timer = timer
         local limit = self.limit
