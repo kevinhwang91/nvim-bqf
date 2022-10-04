@@ -316,12 +316,9 @@ detail.
 
 #### Why use an additional context?
 
-**Neovim 0.6 has supported position range, skip this section if your Neovim is 0.6 later.**
-
-nvim-bqf will use the context to implement missing features of quickfix. If you are familiar with
-quickfix, you know quickfix only contains `lnum` and `col` to locate a position in an item, but
-lacks of range. To get better highlighting experience, nvim-bqf processeds the vim regrex pattern
-and [lsp range](https://microsoft.github.io/language-server-protocol/specification#range) from the
+nvim-bqf will use the context to implement missing features of quickfix. To get better highlighting
+experience, nvim-bqf processeds the vim regrex pattern and
+[lsp range](https://microsoft.github.io/language-server-protocol/specification#range) from the
 context additionally.
 
 The context's format that can be processed by nvim-bqf is:
@@ -392,18 +389,14 @@ function _G.bqfLspRanges()
 end
 
 function _G.qfRanges()
-    if fn.has('nvim-0.6') == 1 then
-        createQf()
-        local items = fn.getqflist()
-        local it1, it2, it3 = items[1], items[2], items[3]
-        it1.end_lnum, it1.end_col = it1.lnum, it1.col + 4
-        it2.end_lnum, it2.end_col = it2.lnum, it2.col + 2
-        it3.end_lnum, it3.end_col = it3.lnum, it3.col + 2
-        fn.setqflist({}, 'r', {items = items, title = 'qfRangesHl'})
-        cmd('cw')
-    else
-        error([[couldn't support quickfix ranges highlight before Neovim 0.6]])
-    end
+    createQf()
+    local items = fn.getqflist()
+    local it1, it2, it3 = items[1], items[2], items[3]
+    it1.end_lnum, it1.end_col = it1.lnum, it1.col + 4
+    it2.end_lnum, it2.end_col = it2.lnum, it2.col + 2
+    it3.end_lnum, it3.end_col = it3.lnum, it3.col + 2
+    fn.setqflist({}, 'r', {items = items, title = 'qfRangesHl'})
+    cmd('cw')
 end
 
 -- Save and source me(`so %`). Run `:lua bqfPattern()`, `:lua bqfLspRanges()` and `:lua qfRanges()`
@@ -568,7 +561,7 @@ function _G.diagnostic()
     end)
 end
 -- you can also subscribe User `CocDiagnosticChange` event to reload your diagnostic in quickfix
--- dynamically, enjoy yourself or find my configuration :)
+-- dynamically, enjoy yourself :)
 ```
 
 ## Customize quickfix window (Easter egg)
@@ -588,6 +581,13 @@ local fn = vim.fn
 function _G.qftf(info)
     local items
     local ret = {}
+    -- The name of item in list is based on the directory of quickfix window.
+    -- Change the directory for quickfix window make the name of item shorter.
+    -- It's a good opportunity to change current directory in quickfixtextfunc :)
+    --
+    -- local root = getRootByYourself()
+    -- vim.cmd(('noa lcd %s'):format(fn.fnameescape(root)))
+    --
     if info.quickfix == 1 then
         items = fn.getqflist({id = info.id, items = 0}).items
     else
