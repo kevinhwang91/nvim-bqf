@@ -268,7 +268,9 @@ function M.winCall(winid, f)
         cmd(noaSetWin:format(winid))
         local r = {pcall(f)}
         cmd(noaSetWin:format(curWinid))
-        assert(r[1], r[2])
+        -- TODO
+        -- first time encounter the error, comment the assert for users.
+        -- assert(r[1], r[2])
         return unpack(r, 2)
     end
 end
