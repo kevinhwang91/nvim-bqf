@@ -258,7 +258,7 @@ end
 ---
 ---@param winid number
 ---@param f fun(): any
----@return any
+---@return ...
 function M.winCall(winid, f)
     if winid == 0 or winid == api.nvim_get_current_win() then
         return f()

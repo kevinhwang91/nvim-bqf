@@ -236,16 +236,16 @@ function M.tuneTop(winid, topline, lsizes)
         while lsizeSum < len and shouldContinue(i) do
             log.debug('=====================================================')
             log.debug('i:', i, 'iEnd:', iEnd)
-            local foLnum = foldedOtherLnum(i)
-            if foLnum == -1 then
+            local foldLnum = foldedOtherLnum(i)
+            if foldLnum == -1 then
                 local lsize = lsizeObj:size(i)
                 log.debug('lsizeSum:', lsizeSum, 'lsize:', lsize, 'lnum:', i)
                 lsizeSum = lsizeSum + lsize
             else
-                log.debug('foLnum:', foLnum)
+                log.debug('foldLnum:', foldLnum)
                 lsizeSum = lsizeSum + 1
-                iEnd = iEnd + foLnum - i
-                i = foLnum
+                iEnd = iEnd + foldLnum - i
+                i = foldLnum
             end
             log.debug('=====================================================')
             topline = i

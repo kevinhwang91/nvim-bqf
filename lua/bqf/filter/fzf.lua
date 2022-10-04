@@ -518,7 +518,7 @@ function M.run()
     -- greater than 1000 items is worth using headless as stream to improve user experience
     local source = size > 1000 and sourceCmd or sourceList
 
-    local baseOpt = {}
+    local baseOpt = {'--color', 'gutter:-1'}
     if compareVersion(version, '0.27.4') >= 0 then
         table.insert(baseOpt, '--scroll-off')
         table.insert(baseOpt, utils.scrolloff(qwinid))
