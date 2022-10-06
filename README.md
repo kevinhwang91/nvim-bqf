@@ -585,7 +585,8 @@ function _G.qftf(info)
     -- Change the directory for quickfix window make the name of item shorter.
     -- It's a good opportunity to change current directory in quickfixtextfunc :)
     --
-    -- local root = getRootByYourself()
+    -- local alterBufnr = fn.bufname('#') -- alternative buffer is the buffer before enter qf window
+    -- local root = getRootByAlterBufnr(alterBufnr)
     -- vim.cmd(('noa lcd %s'):format(fn.fnameescape(root)))
     --
     if info.quickfix == 1 then
