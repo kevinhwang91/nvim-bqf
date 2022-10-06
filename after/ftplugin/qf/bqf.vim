@@ -1,5 +1,5 @@
-if !has('nvim-0.5')
-    call nvim_echo([['nvim-bqf failed to initialize, RTFM.', 'ErrorMsg']], v:true, {})
+if !has('nvim-0.6.1')
+    call v:lua.vim.notify('nvim-bqf failed to initialize, RTFM.')
     finish
 endif
 

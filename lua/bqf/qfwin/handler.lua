@@ -125,10 +125,12 @@ function M.navHistory(next)
     local qinfo = qlist:getQfList({nr = 0, size = 0, title = 0})
     local nr, size, title = qinfo.nr, qinfo.size, qinfo.title
 
-    api.nvim_echo({
-        {'('}, {tostring(nr), 'Identifier'}, {' of '}, {tostring(lastNr), 'Identifier'}, {') ['},
-        {tostring(size), 'Type'}, {'] '}, {' >> ' .. title, 'Title'}
-    }, false, {})
+    if vim.o.cmdheight > 0 then
+        api.nvim_echo({
+            {'('}, {tostring(nr), 'Identifier'}, {' of '}, {tostring(lastNr), 'Identifier'}, {') ['},
+            {tostring(size), 'Type'}, {'] '}, {' >> ' .. title, 'Title'}
+        }, false, {})
+    end
 end
 
 ---
@@ -149,7 +151,9 @@ function M.navFile(next)
             return
         end
     end
-    api.nvim_echo({{'No more items', 'WarningMsg'}}, true, {})
+    if vim.o.cmdheight > 0 then
+        api.nvim_echo({{'No more items', 'WarningMsg'}}, true, {})
+    end
 end
 
 local function validateSize(qlist)

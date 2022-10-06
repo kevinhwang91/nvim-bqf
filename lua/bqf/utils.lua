@@ -468,4 +468,12 @@ function M.expandTab(str, ts, start)
     return new
 end
 
+function M.warn(msg)
+    if vim.o.cmdheight > 0 then
+        api.nvim_echo({{msg, 'WarningMsg'}}, true, {})
+    else
+        vim.notify(msg, vim.log.levels.WARN)
+    end
+end
+
 return M

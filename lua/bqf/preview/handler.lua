@@ -267,10 +267,10 @@ function M.toggle(qwinid)
     end
     autoPreview = autoPreview ~= true
     if autoPreview then
-        api.nvim_echo({{'Enable preview automatically', 'WarningMsg'}}, true, {})
+        utils.warn('Enable preview automatically')
         M.open(qwinid)
     else
-        api.nvim_echo({{'Disable preview automatically', 'WarningMsg'}}, true, {})
+        utils.warn('Disable preview automatically')
         M.close(qwinid)
     end
 end
