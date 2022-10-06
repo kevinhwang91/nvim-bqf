@@ -12,7 +12,7 @@ local log = require('bqf.lib.log')
 local mcore = require('bqf.magicwin.core')
 local config = require('bqf.config')
 
-local enable
+local mayEnable
 
 local POS = wpos.POS
 local LNUM = {KEEP = 0, UP = 1, DOWN = 2}
@@ -282,7 +282,7 @@ local function revertClosingWins(qwinid, pwinid, qfPos, layoutCallback)
 end
 
 local function open(winid, lastWinid, layoutCallback)
-    if not enable then
+    if not mayEnable() then
         return
     end
     local pos = wpos.getPos(winid, lastWinid)
@@ -290,7 +290,7 @@ local function open(winid, lastWinid, layoutCallback)
 end
 
 function M.close(winid, lastWinid, bufnr)
-    if not utils.isWinValid(winid) or not enable then
+    if not utils.isWinValid(winid) or not mayEnable() then
         return
     end
 
@@ -364,7 +364,7 @@ end
 ---@param bufnr? number
 ---@param layoutCallback? fun()
 function M.attach(winid, lastWinid, bufnr, layoutCallback)
-    if not enable then
+    if not mayEnable() then
         if type(layoutCallback) == 'function' then
             layoutCallback()
         end
@@ -395,7 +395,14 @@ local function init()
             au!
         aug END
     ]])
-    enable = config.magic_window
+
+    local enable = config.magic_window
+    local hasSplitkeep = pcall(function()
+        return vim.o.splitkeep
+    end)
+    mayEnable = function()
+        return enable and (not hasSplitkeep or vim.o.splitkeep == 'cursor')
+    end
 end
 
 init()
