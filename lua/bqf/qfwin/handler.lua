@@ -20,15 +20,29 @@ end
 ---@param lnum? number
 ---@param bufnr? number
 function M.signToggle(rel, lnum, bufnr)
-    lnum = lnum or api.nvim_win_get_cursor(0)[1]
+    local lnums = {}
+    local count = vim.v.count1
+    if not lnum then
+        local cursor = api.nvim_win_get_cursor(0)
+        local step = rel > 0 and 1 or -1
+        local endI
+        if step == 1 then
+            endI = math.min(cursor[1] + count - 1, api.nvim_buf_line_count(0))
+        else
+            endI = math.max(cursor[1] - count + 1, 1)
+        end
+        for i = cursor[1], endI, step do
+            table.insert(lnums, i)
+        end
+    end
     bufnr = bufnr or api.nvim_get_current_buf()
     local qwinid = api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local qlist = qs:list()
     local sign = qlist:sign()
-    sign:toggle(lnum, bufnr)
+    sign:toggle(lnums, bufnr)
     if rel ~= 0 then
-        cmd(('norm! %s'):format(rel > 0 and 'j' or 'k'))
+        cmd(('norm! %d%s'):format(count, rel > 0 and 'j' or 'k'))
     end
 end
 
