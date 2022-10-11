@@ -47,7 +47,7 @@ function FloatWin:calculateWinOpts()
         col = 1
         if relPos == POS.ABOVE or absPos == POS.TOP then
             anchor = 'NW'
-            height = math.min(self.winHeight, vim.o.lines - 4 - rowPos - qinfo.height)
+            height = math.min(self.winHeight, vim.o.lines - 2 - vim.o.cmdheight - rowPos - qinfo.height)
             row = qinfo.height + 2
         else
             anchor = 'SW'
