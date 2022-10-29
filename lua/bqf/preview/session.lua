@@ -200,7 +200,9 @@ local function init()
         self.mapBufHighlight((self.get() or {}).bufnr)
     end, 50)
     self.scrollThrottled = throttle(function()
-        border:updateScrollBar()
+        if self.validate() then
+            border:updateScrollBar()
+        end
     end, 80)
 end
 
