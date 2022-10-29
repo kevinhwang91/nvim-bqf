@@ -55,9 +55,6 @@ function Border:updateBuf(opts)
 end
 
 function Border:updateScrollBar()
-    if not api.nvim_win_is_valid(self.floatwin.winid) then
-        return
-    end
     local buf = api.nvim_win_get_buf(self.floatwin.winid)
     local lineCount = api.nvim_buf_line_count(buf)
 
