@@ -412,6 +412,7 @@ hi default link BqfPreviewFloat Normal
 hi default link BqfPreviewBorder Normal
 hi default link BqfPreviewCursor Cursor
 hi default link BqfPreviewRange IncSearch
+hi default link BqfPreviewCountLabel BqfPreviewRange
 hi default BqfSign ctermfg=14 guifg=Cyan
 ```
 
@@ -420,6 +421,7 @@ hi default BqfSign ctermfg=14 guifg=Cyan
 - `BqfPreviewCursor`: highlight the cursor format `[lnum, col]` in preview window
 - `BqfPreviewRange`: highlight the range format `[lnum, col, range]`, which is produced by
   `pattern_hl`, `lsp_ranges_hl` and quickfix range
+- `BqfPreviewBufLabel`: highlight the index and count of the buffer under the cursor
 - `BqfSign`: highlight the sign in quickfix window
 
 ## Advanced configuration

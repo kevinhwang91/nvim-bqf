@@ -5,15 +5,13 @@ local floatwin = require('bqf.preview.floatwin')
 local border = require('bqf.preview.border')
 local extmark = require('bqf.preview.extmark')
 local utils = require('bqf.utils')
-
-local namespace
-local onKey
-local highlightDebounced
-local scrollThrottled
+local debounce = require('bqf.lib.debounce')
+local throttle = require('bqf.lib.throttle')
 
 ---
 ---@class BqfPreviewSession
 ---@field private pool table<number, BqfPreviewSession>
+---@field ns number
 ---@field winid number
 ---@field winHeight number
 ---@field winVHeight number
@@ -24,6 +22,9 @@ local scrollThrottled
 ---@field syntax boolean
 ---@field full boolean
 ---@field focusable boolean
+---@field labelId? number
+---@field highlightDebounced BqfDebounce
+---@field scrollThrottled BqfThrottle
 local PreviewSession = {pool = {}}
 
 ---
@@ -120,6 +121,11 @@ function PreviewSession.scroll(srcBufnr, loaded)
     PreviewSession.mapBufHighlight(srcBufnr, loaded)
 end
 
+function PreviewSession:showCountLabel(text, hlGroup)
+    local lnum = api.nvim_win_get_cursor(self.floatWinid())[1]
+    self.labelId = extmark.setVirtEol(self.floatBufnr(), lnum - 1, {{text, hlGroup}}, {id = self.labelId})
+end
+
 function PreviewSession.mapBufHighlight(srcBufnr, loaded)
     if not srcBufnr then
         return
@@ -149,10 +155,10 @@ function PreviewSession:validOrBuild(owinid)
         })
         if self.focusable then
             local ctrlW = false
-            onKey(function(char)
+            vim.on_key(function(char)
                 local fwinid = self.floatWinid()
                 if not utils.isWinValid(fwinid) then
-                    onKey(nil, namespace)
+                    vim.on_key(nil, self.ns)
                     return
                 end
                 local b1, b2, b3 = char:byte(1, -1)
@@ -167,13 +173,13 @@ function PreviewSession:validOrBuild(owinid)
                 end
                 if b1 == 0x80 and b2 == 0xfd then
                     if b3 == 0x4b or b3 == 0x4c then
-                        highlightDebounced()
-                        scrollThrottled()
+                        self.highlightDebounced()
+                        self.scrollThrottled()
                     end
                 else
                     ctrlW = b1 == 0x17
                 end
-            end, namespace)
+            end, self.ns)
         end
     end
     if not isValid then
@@ -188,12 +194,12 @@ function PreviewSession:validOrBuild(owinid)
 end
 
 local function init()
-    namespace = api.nvim_create_namespace('bqf-preview')
-    onKey = vim.on_key and vim.on_key or vim.register_keystroke_callback
-    highlightDebounced = require('bqf.lib.debounce')(function()
-        PreviewSession.mapBufHighlight((PreviewSession.get() or {}).bufnr)
+    local self = PreviewSession
+    self.ns = api.nvim_create_namespace('')
+    self.highlightDebounced = debounce(function()
+        self.mapBufHighlight((self.get() or {}).bufnr)
     end, 50)
-    scrollThrottled = require('bqf.lib.throttle')(function()
+    self.scrollThrottled = throttle(function()
         border:updateScrollBar()
     end, 80)
 end

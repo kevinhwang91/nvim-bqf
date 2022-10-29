@@ -3,13 +3,14 @@ local M = {}
 
 local api = vim.api
 
-local namespace
+local hlNs
+local virtNs
 
 ---
 ---@param bufnr number
 function M.clearHighlight(bufnr)
-    if namespace then
-        api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
+    if hlNs then
+        api.nvim_buf_clear_namespace(bufnr, hlNs, 0, -1)
     end
 end
 
@@ -28,7 +29,7 @@ function M.mapBufHighlight(srcBufnr, dstBufnr, topline, botline)
             local endRow, endCol = details.end_row, details.end_col
             local hlGroup = details.hl_group
             local priority = details.priority
-            pcall(api.nvim_buf_set_extmark, dstBufnr, namespace, row, col, {
+            pcall(api.nvim_buf_set_extmark, dstBufnr, hlNs, row, col, {
                 end_row = endRow,
                 end_col = endCol,
                 hl_group = hlGroup,
@@ -38,8 +39,25 @@ function M.mapBufHighlight(srcBufnr, dstBufnr, topline, botline)
     end
 end
 
+---
+---@param bufnr number
+---@param lnum number
+---@param chunks table
+---@param opts? table
+---@return number
+function M.setVirtEol(bufnr, lnum, chunks, opts)
+    opts = opts or {}
+    return api.nvim_buf_set_extmark(bufnr, virtNs, lnum, -1, {
+        id = opts.id,
+        virt_text = chunks,
+        hl_mode = 'combine',
+        priority = opts.priority
+    })
+end
+
 local function init()
-    namespace = api.nvim_create_namespace('bqf-preview')
+    hlNs = api.nvim_create_namespace('')
+    virtNs = api.nvim_create_namespace('')
 end
 
 init()

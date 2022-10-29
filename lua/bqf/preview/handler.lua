@@ -19,6 +19,7 @@ local qfs = require('bqf.qfwin.session')
 local pvs = require('bqf.preview.session')
 local ts = require('bqf.preview.treesitter')
 local utils = require('bqf.utils')
+local debounce = require('bqf.lib.debounce')
 
 local function execPreview(item, lspRangeHl, patternHl)
     local lnum, col, pattern = item.lnum, item.col, item.pattern
@@ -111,6 +112,29 @@ local function doSyntax(qwinid)
             ps.syntax = true
         end
     end
+end
+
+local function showCountLabel(qlist, idx)
+    local items = qlist:items()
+    local curBufnr = items[idx].bufnr
+    local lo, hi = idx, idx
+    for i = idx - 1, 1, -1 do
+        if items[i].bufnr == curBufnr then
+            lo = i
+        else
+            break
+        end
+    end
+    for i = idx + 1, #items do
+        if items[i].bufnr == curBufnr then
+            hi = i
+        else
+            break
+        end
+    end
+    local cur = idx - lo + 1
+    local cnt = hi - lo + 1
+    pvs:showCountLabel(('[%d/%d]'):format(cur, cnt), 'BqfPreviewBufLabel')
 end
 
 function M.autoEnabled()
@@ -232,6 +256,17 @@ function M.open(qwinid, qidx, force)
         pvs.scroll(pbufnr, loaded)
         cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
+    if size < 1000 or qlist:itemsCached() then
+        showCountLabel(qlist, qidx)
+    else
+        vim.defer_fn(function()
+            local winid = api.nvim_get_current_win()
+            if qlist.id == qfs:get(winid):list().id and
+                qidx == api.nvim_win_get_cursor(winid)[1] then
+                showCountLabel(qlist, qidx)
+            end
+        end, 50)
+    end
 end
 
 ---
@@ -425,6 +460,7 @@ local function init()
         hi default link BqfPreviewBorder Normal
         hi default link BqfPreviewCursor Cursor
         hi default link BqfPreviewRange IncSearch
+        hi default link BqfPreviewBufLabel BqfPreviewRange
 
         aug BqfPreview
             au!
@@ -433,7 +469,7 @@ local function init()
     clicked = false
 
     PLACEHOLDER_TBL = {}
-    M.doSyntax = require('bqf.lib.debounce')(doSyntax, delaySyntax)
+    M.doSyntax = debounce(doSyntax, delaySyntax)
 end
 
 init()
