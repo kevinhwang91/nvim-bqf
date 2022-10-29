@@ -15,6 +15,8 @@ local throttle = require('bqf.lib.throttle')
 ---@field winid number
 ---@field winHeight number
 ---@field winVHeight number
+---@field winWidth number
+---@field winVWidth number
 ---@field wrap boolean
 ---@field borderChars string[]
 ---@field showTitle boolean
@@ -39,6 +41,8 @@ function PreviewSession:new(winid, o)
     obj.winid = winid
     obj.winHeight = o.winHeight
     obj.winVHeight = o.winVHeight
+    obj.winWidth = o.winWidth
+    obj.winVWidth = o.winVWidth
     obj.wrap = o.wrap
     obj.borderChars = o.borderChars
     obj.showTitle = o.showTitle
@@ -189,6 +193,7 @@ function PreviewSession:validOrBuild(owinid)
         floatwin:setHeight(999, 999)
     else
         floatwin:setHeight(self.winHeight, self.winVHeight)
+        floatwin:setWidth(self.winWidth, self.winVWidth)
     end
     return isValid
 end

@@ -204,6 +204,18 @@ Using external grep-like program to search `display` and replace it to `show`, b
             description = [[the height of preview window for vertical layout]],
             default = 15
         },
+        win_width = {
+            description = [[the width of preview window for horizontal layout,
+                denotes the width in characters if a positive integer is given,
+                or the ratio (between 0 and 1) to the quickfix window's width if a real number is given.]]
+            default = 1.0,
+        }
+        win_vwidth = {
+            description = [[the width of preview window for vertical layout,
+                denotes the width in characters if a positive integer is given,
+                or the ratio (between 0 and 1) to the quickfix window's width if a real number is given.]]
+            default = 1.0,
+        }
         wrap = {
             description = [[wrap the line, `:h wrap` for detail]],
             default = false

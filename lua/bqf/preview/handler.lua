@@ -8,7 +8,7 @@ local autoPreview
 local clicked
 local shouldPreviewCallback
 local keepPreview, origPos
-local winHeight, winVHeight
+local winHeight, winVHeight, winWidth, winVWidth
 local wrap, borderChars
 local showTitle
 local lastIdx
@@ -400,6 +400,8 @@ function M.initialize(qwinid)
     pvs:new(qwinid, {
         winHeight = winHeight,
         winVHeight = winVHeight,
+        winWidth = winWidth,
+        winVWidth = winVWidth,
         wrap = wrap,
         borderChars = borderChars,
         showTitle = showTitle,
@@ -440,6 +442,8 @@ local function init()
     showTitle = pconf.show_title
     winHeight = tonumber(pconf.win_height)
     winVHeight = tonumber(pconf.win_vheight or winHeight)
+    winWidth = tonumber(pconf.win_width)
+    winVWidth = tonumber(pconf.win_vwidth or winWidth)
     vim.validate({
         auto_preview = {autoPreview, 'boolean'},
         delay_syntax = {delaySyntax, 'number'},
@@ -452,7 +456,17 @@ local function init()
         },
         show_title = {showTitle, 'boolean'},
         win_height = {winHeight, 'number'},
-        win_vheight = {winVHeight, 'number'}
+        win_vheight = {winVHeight, 'number'},
+        win_width = {
+            winWidth, function(w)
+                return type(w) == 'number' and w > 0
+            end, 'a positive integer, or real number in range [0, 1]'
+        },
+        win_vwidth = {
+            winVWidth, function(w)
+                return type(w) == 'number' and w > 0
+            end, 'a positive integer, or real number in range [0, 1]'
+        },
     })
 
     cmd([[

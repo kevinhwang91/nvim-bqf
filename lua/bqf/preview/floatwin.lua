@@ -10,6 +10,8 @@ local utils = require('bqf.utils')
 ---@field pwinid number
 ---@field winHeight number
 ---@field winVHeight number
+---@field winWidth number
+---@field winVWidth number
 ---@field wrap boolean
 ---@field winid number
 ---@field bufnr number
@@ -23,6 +25,8 @@ function FloatWin:build(o)
     self.pwinid = o.pwinid
     self.winHeight = o.winHeight
     self.winVHeight = o.winHheight
+    self.winWidth = o.winWidth
+    self.winVWidth = o.winVWidth
     self.wrap = o.wrap
     self.focusable = o.focusable or false
     self.winid = nil
@@ -35,15 +39,30 @@ function FloatWin:setHeight(winHeight, winVHeight)
     self.winVHeight = winVHeight
 end
 
+function FloatWin:setWidth(winWidth, winVWidth)
+    self.winWidth = winWidth
+    self.winVWidth = winVWidth
+end
+
 function FloatWin:calculateWinOpts()
     local POS = self.wpos.POS
     local relPos, absPos = unpack(self.wpos.getPos(self.qwinid, self.pwinid))
 
     local qinfo = utils.getWinInfo(self.qwinid)
     local width, height, col, row, anchor
+
+    local function apply_width_ratio_or_size(width, winWidth)
+        if winWidth <= 1 then  -- ratio
+            return math.ceil(width * winWidth)
+        else  -- in characters
+            return math.min(width, winWidth)
+        end
+    end
+
     if relPos == POS.ABOVE or relPos == POS.BELOW or absPos == POS.TOP or absPos == POS.BOTTOM then
         local rowPos = qinfo.winrow
-        width = qinfo.width - 2
+        width = qinfo.width - 2      -- full width in characters
+        width = apply_width_ratio_or_size(width, self.winWidth)
         col = 1
         if relPos == POS.ABOVE or absPos == POS.TOP then
             anchor = 'NW'
@@ -63,6 +82,7 @@ function FloatWin:calculateWinOpts()
         else
             width = api.nvim_win_get_width(self.pwinid) - 2
         end
+        width = apply_width_ratio_or_size(width, self.winVWidth)
         height = math.min(self.winVHeight, qinfo.height - 2)
         local winline = utils.winCall(self.qwinid, fn.winline)
         row = height >= winline and 1 or winline - height - 1

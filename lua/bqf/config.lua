@@ -17,6 +17,8 @@ local def = {
         delay_syntax = 50,
         win_height = 15,
         win_vheight = 15,
+        win_width = 1.0,
+        win_vwidth = 1.0,
         wrap = false,
         should_preview_cb = nil
     },
@@ -70,6 +72,8 @@ local def = {
 ---@field delay_syntax number
 ---@field win_height number
 ---@field win_vheight number
+---@field win_width number
+---@field win_vwidth number
 ---@field wrap boolean
 ---@field should_preview_cb fun(bufnr: number, qwinid: number): boolean
 
