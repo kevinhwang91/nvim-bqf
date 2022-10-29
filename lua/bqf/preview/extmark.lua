@@ -28,7 +28,7 @@ function M.mapBufHighlight(srcBufnr, dstBufnr, topline, botline)
             local endRow, endCol = details.end_row, details.end_col
             local hlGroup = details.hl_group
             local priority = details.priority
-            api.nvim_buf_set_extmark(dstBufnr, namespace, row, col, {
+            pcall(api.nvim_buf_set_extmark, dstBufnr, namespace, row, col, {
                 end_row = endRow,
                 end_col = endCol,
                 hl_group = hlGroup,
