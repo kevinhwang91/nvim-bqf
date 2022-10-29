@@ -157,7 +157,7 @@ function M.resetWinView(qbufnr)
         end
         for _, winid in ipairs(api.nvim_tabpage_list_wins(0)) do
             local aws = mgws:adjacentWin(qbufnr, winid)
-            if aws and aws.winView then
+            if type(aws.winView) == 'table' and not vim.tbl_isempty(aws.winView) then
                 utils.winCall(winid, function()
                     local hrtime = aws.hrtime or 0
                     local winView = aws.winView
