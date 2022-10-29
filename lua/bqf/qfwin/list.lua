@@ -145,7 +145,7 @@ function QfList:changedtick()
     if cd ~= self._changedtick then
         self._context = nil
         self._sign = nil
-        QfList.itemsCache = {id = 0, items = {}}
+        self.itemsCache = {id = 0, items = {}}
     end
     return cd
 end
@@ -182,7 +182,7 @@ end
 ---@return BqfQfItem[]
 function QfList:items()
     local items
-    local c = QfList.itemsCache
+    local c = self.itemsCache
     local cId, cItems = c.id, c.items
     local cd = self:changedtick()
     if cd == self._changedtick and cId == self.id then
@@ -191,7 +191,7 @@ function QfList:items()
     if not items then
         local qdict = self.getqflist({id = self.id, items = 0})
         items = qdict.items
-        QfList.itemsCache = {id = self.id, items = items}
+        self.itemsCache = {id = self.id, items = items}
     end
     return items
 end
@@ -203,7 +203,7 @@ function QfList:item(idx)
     local cd = self:changedtick()
 
     local e
-    local c = QfList.itemsCache
+    local c = self.itemsCache
     if cd == self._changedtick and c.id == self.id then
         e = c.items[idx]
     else
