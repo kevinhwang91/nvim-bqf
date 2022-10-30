@@ -195,7 +195,7 @@ end
 
 local function init()
     local self = PreviewSession
-    self.ns = api.nvim_create_namespace('')
+    self.ns = api.nvim_create_namespace('bqf-preview')
     self.highlightDebounced = debounce(function()
         self.mapBufHighlight((self.get() or {}).bufnr)
     end, 50)
