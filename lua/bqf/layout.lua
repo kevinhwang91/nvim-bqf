@@ -63,7 +63,7 @@ local function adjustHeight(qwinid, pwinid, qfPos)
     end
 
     if size < qfHeight then
-        incHeight = incHeight + size - qfHeight
+        incHeight = incHeight + size - qfHeight + (vim.wo[qwinid].winbar ~= '' and 1 or 0)
     end
 
     if incHeight == 0 then
