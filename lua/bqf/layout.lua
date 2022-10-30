@@ -4,9 +4,10 @@ local api = vim.api
 local fn = vim.fn
 local cmd = vim.cmd
 
-local qfs = require('bqf.qfwin.session')
-local wpos = require('bqf.wpos')
+local qfs    = require('bqf.qfwin.session')
+local wpos   = require('bqf.wpos')
 local config = require('bqf.config')
+local utils  = require('bqf.utils')
 
 local autoResizeHeight
 local POS
@@ -63,7 +64,7 @@ local function adjustHeight(qwinid, pwinid, qfPos)
     end
 
     if size < qfHeight then
-        incHeight = incHeight + size - qfHeight + (vim.wo[qwinid].winbar ~= '' and 1 or 0)
+        incHeight = incHeight + size - qfHeight + (utils.hasWinBar(qwinid) and 1 or 0)
     end
 
     if incHeight == 0 then

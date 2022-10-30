@@ -52,7 +52,7 @@ function FloatWin:calculateWinOpts()
         else
             anchor = 'SW'
             height = math.min(self.winHeight, rowPos - 4)
-            row = -2 - (vim.wo[self.qwinid].winbar ~= '' and 1 or 0)
+            row = -2 - (utils.hasWinBar(self.qwinid) and 1 or 0)
         end
     elseif relPos == POS.LEFT or relPos == POS.RIGHT or absPos == POS.LEFT_FAR or absPos ==
         POS.RIGHT_FAR then

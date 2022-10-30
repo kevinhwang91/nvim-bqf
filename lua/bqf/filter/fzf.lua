@@ -445,7 +445,7 @@ end
 
 function M.preHandle(qwinid, size, bind)
     local lineCount = api.nvim_buf_line_count(0)
-    local height = api.nvim_win_get_height(qwinid) + 1 - (vim.wo[qwinid].winbar ~= '' and 1 or 0)
+    local height = api.nvim_win_get_height(qwinid) + 1 - (utils.hasWinBar(qwinid) and 1 or 0)
     api.nvim_win_set_config(0, {
         relative = 'win',
         win = qwinid,

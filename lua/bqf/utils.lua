@@ -28,6 +28,15 @@ M.isWindows = (function()
     end
 end)()
 
+---@param winid? number
+---@return boolean
+function M.hasWinBar(winid)
+    local ok, res = pcall(function()
+        return vim.wo[winid].winbar ~= ''
+    end)
+    return ok and res
+end
+
 local function colorToCSI24b(colorNum, fg)
     local r = math.floor(colorNum / 2 ^ 16)
     local g = math.floor(math.floor(colorNum / 2 ^ 8) % 2 ^ 8)
