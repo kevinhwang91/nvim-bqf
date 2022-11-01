@@ -1,6 +1,5 @@
 ---@class Bqf
 local M = {}
-local api = vim.api
 local initialized = false
 local autoEnable
 

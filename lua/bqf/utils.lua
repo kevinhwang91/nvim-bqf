@@ -153,7 +153,7 @@ function M.isUnNameBuf(bufnr, name, off)
 end
 
 local function rangeToPosList(lnum, col, endLnum, endCol)
-    if lnum > endLnum or (lnum == endCol and col >= endCol) then
+    if lnum > endLnum or (lnum == endLnum and col >= endCol) then
         return {}
     end
     if lnum == endLnum then

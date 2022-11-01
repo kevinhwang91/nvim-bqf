@@ -25,10 +25,12 @@ function M.enable()
     end
 
     local qwinid = api.nvim_get_current_win()
-
     local qs = qfs:new(qwinid)
     assert(qs, 'It is not a quickfix window')
-
+    local qlist = qs:list()
+    if qlist:changedtick() == 0 then
+        return
+    end
     vim.wo.nu, vim.wo.rnu = true, false
     vim.wo.wrap = false
     vim.wo.foldenable, vim.wo.foldcolumn = false, '0'
