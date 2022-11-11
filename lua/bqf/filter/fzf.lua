@@ -524,6 +524,9 @@ function M.run()
         table.insert(baseOpt, '--scroll-off')
         table.insert(baseOpt, utils.scrolloff(qwinid))
     end
+    if compareVersion(version, '0.35.0') >= 0 then
+        table.insert(baseOpt, '--no-separator')
+    end
 
     -- TODO
     -- ctx.fzf_extra_opts and ctx.fzf_action_for are used by myself, I'm not sure who wants them.
