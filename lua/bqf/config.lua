@@ -18,6 +18,7 @@ local def = {
         win_height = 15,
         win_vheight = 15,
         wrap = false,
+        buf_label = true,
         should_preview_cb = nil
     },
     func_map = {
@@ -71,6 +72,7 @@ local def = {
 ---@field win_height number
 ---@field win_vheight number
 ---@field wrap boolean
+---@field buf_label boolean
 ---@field should_preview_cb fun(bufnr: number, qwinid: number): boolean
 
 ---@class BqfConfigFilter

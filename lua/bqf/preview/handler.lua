@@ -11,6 +11,7 @@ local keepPreview, origPos
 local winHeight, winVHeight
 local wrap, borderChars
 local showTitle
+local bufLabel
 local lastIdx
 local PLACEHOLDER_TBL
 
@@ -256,16 +257,18 @@ function M.open(qwinid, qidx, force)
         pvs.scroll(pbufnr, loaded)
         cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
-    if size < 1000 or qlist:itemsCached() then
-        showCountLabel(qlist, qidx)
-    else
-        vim.defer_fn(function()
-            local winid = api.nvim_get_current_win()
-            if qlist.id == qfs:get(winid):list().id and
-                qidx == api.nvim_win_get_cursor(winid)[1] then
-                showCountLabel(qlist, qidx)
-            end
-        end, 50)
+    if bufLabel then
+        if size < 1000 or qlist:itemsCached() then
+            showCountLabel(qlist, qidx)
+        else
+            vim.defer_fn(function()
+                local winid = api.nvim_get_current_win()
+                if qlist.id == qfs:get(winid):list().id and
+                    qidx == api.nvim_win_get_cursor(winid)[1] then
+                    showCountLabel(qlist, qidx)
+                end
+            end, 50)
+        end
     end
 end
 
@@ -440,6 +443,7 @@ local function init()
     showTitle = pconf.show_title
     winHeight = tonumber(pconf.win_height)
     winVHeight = tonumber(pconf.win_vheight or winHeight)
+    bufLabel = pconf.buf_label
     vim.validate({
         auto_preview = {autoPreview, 'boolean'},
         delay_syntax = {delaySyntax, 'number'},
@@ -452,7 +456,8 @@ local function init()
         },
         show_title = {showTitle, 'boolean'},
         win_height = {winHeight, 'number'},
-        win_vheight = {winVHeight, 'number'}
+        win_vheight = {winVHeight, 'number'},
+        buf_label = {bufLabel, 'boolean'}
     })
 
     cmd([[
