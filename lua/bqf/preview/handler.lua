@@ -474,7 +474,9 @@ local function init()
     clicked = false
 
     PLACEHOLDER_TBL = {}
-    M.doSyntax = debounce(doSyntax, delaySyntax)
+    -- Damn it! someone wants to disable syntax :(
+    -- https://github.com/kevinhwang91/nvim-bqf/issues/89
+    M.doSyntax = delaySyntax >= 0 and debounce(doSyntax, delaySyntax) or function() end
 end
 
 init()
