@@ -272,12 +272,18 @@ function M.winCall(winid, f)
     if winid == 0 or winid == api.nvim_get_current_win() then
         return f()
     else
-        local lastWinid = fn.win_getid(fn.winnr('#'))
+        local nr = fn.winnr('#')
+        local lastWinid
+        if nr > 0 then
+            lastWinid = fn.win_getid(nr)
+        end
         local curWinid = api.nvim_get_current_win()
         local noaSetWin = 'noa call nvim_set_current_win(%d)'
         cmd(noaSetWin:format(winid))
         local r = {pcall(f)}
-        cmd(noaSetWin:format(lastWinid))
+        if lastWinid then
+            cmd(noaSetWin:format(lastWinid))
+        end
         cmd(noaSetWin:format(curWinid))
         assert(r[1], r[2])
         return unpack(r, 2)
