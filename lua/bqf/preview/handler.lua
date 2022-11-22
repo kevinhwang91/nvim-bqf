@@ -255,7 +255,6 @@ function M.open(qwinid, qidx, force)
         execPreview(item, lspRangeHl, patternHl)
         utils.zz()
         pvs.scroll(pbufnr, loaded)
-        cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
     end)
     if bufLabel then
         if size < 1000 or qlist:itemsCached() then
@@ -278,8 +277,6 @@ end
 function M.scroll(direction, qwinid)
     if pvs.validate() and direction then
         qwinid = qwinid or api.nvim_get_current_win()
-        local qs = qfs:get(qwinid)
-        local pwinid = qs:previousWinid()
         pvs.floatWinExec(function()
             if direction == 0 then
                 api.nvim_win_set_cursor(0, origPos)
@@ -290,7 +287,6 @@ function M.scroll(direction, qwinid)
             utils.zz()
             local ps = previewSession(qwinid)
             pvs.scroll(ps.bufnr)
-            cmd(('noa call nvim_set_current_win(%d)'):format(pwinid))
         end)
     end
 end
