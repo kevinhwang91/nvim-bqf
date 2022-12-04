@@ -467,6 +467,7 @@ require('bqf').setup({
         openc = 'O',
         split = '<C-s>',
         tabdrop = '<C-t>',
+        -- set to empty string to disable
         tabc = '',
         ptogglemode = 'z,',
     },
