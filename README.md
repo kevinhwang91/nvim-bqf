@@ -255,7 +255,7 @@ Using external grep-like program to search `display` and replace it to `show`, b
 }
 ```
 
-Before loading any modules, `lua print(vim.inspect(require('bqf.config')))` will show you everything
+Before loading any modules, `:lua =require('bqf.config')` will show you everything
 about current configuration.
 
 ### Function table
