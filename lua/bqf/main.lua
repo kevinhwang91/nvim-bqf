@@ -11,7 +11,7 @@ local magicwin = require('bqf.magicwin.handler')
 local keymap = require('bqf.keymap')
 
 function M.toggle()
-    if vim.b.bqf_enabled then
+    if vim.w.bqf_enabled then
         M.disable()
     else
         M.enable()
@@ -53,14 +53,14 @@ function M.enable()
     -- After WinClosed callback in magic window, WinClosed in main can't be fired.
     -- WinClosed event in magic window must after in main
     magicwin.attach(qwinid, pwinid, nil, adjustHeightCallback)
-    vim.b.bqf_enabled = true
+    vim.w.bqf_enabled = true
 end
 
 function M.disable()
-    if vim.bo.buftype ~= 'quickfix' or not vim.b.bqf_enabled then
+    if vim.bo.buftype ~= 'quickfix' or not vim.w.bqf_enabled then
         return
     end
-    vim.b.bqf_enabled = false
+    vim.w.bqf_enabled = false
     local qwinid = api.nvim_get_current_win()
     preview.close(qwinid)
     keymap.dispose()
