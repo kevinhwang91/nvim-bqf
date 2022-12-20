@@ -261,9 +261,8 @@ function M.open(qwinid, qidx, force)
             showCountLabel(qlist, qidx)
         else
             vim.defer_fn(function()
-                local winid = api.nvim_get_current_win()
-                if qlist.id == qfs:get(winid):list().id and
-                    qidx == api.nvim_win_get_cursor(winid)[1] then
+                if utils.isWinValid(qwinid) and qlist.id == qfs:get(qwinid):list().id and
+                    qidx == api.nvim_win_get_cursor(qwinid)[1] then
                     showCountLabel(qlist, qidx)
                 end
             end, 50)
@@ -472,7 +471,8 @@ local function init()
     PLACEHOLDER_TBL = {}
     -- Damn it! someone wants to disable syntax :(
     -- https://github.com/kevinhwang91/nvim-bqf/issues/89
-    M.doSyntax = delaySyntax >= 0 and debounce(doSyntax, delaySyntax) or function() end
+    ---@diagnostic disable-next-line: unused-local
+    M.doSyntax = delaySyntax >= 0 and debounce(doSyntax, delaySyntax) or function(qwinid) end
 end
 
 init()
