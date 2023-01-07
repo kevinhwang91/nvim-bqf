@@ -93,7 +93,12 @@ local function sourceList(qwinid, signs, delim)
     local lineFmt = headless and '%d' .. delim .. '%s%s %s\n' or '%d' .. delim .. '%s%s %s'
     if not signs then
         local headlessSignBufnr = fn.bufnr('#')
-        signs = api.nvim_buf_get_lines(headlessSignBufnr, 0, 1, false)[1]
+        local signBytes = api.nvim_buf_get_lines(headlessSignBufnr, 0, 1, false)[1]
+        signs = setmetatable({}, {
+            __index = function(_, i)
+                return signBytes:byte(i) == 0
+            end
+        })
     end
 
     local isKeyword = utils.genIsKeyword(bufnr)
@@ -107,18 +112,8 @@ local function sourceList(qwinid, signs, delim)
     end
 
     for i, line in ipairs(api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
-        local signed = ' '
-        if headless then
-            if signs:byte(i) == 0 then
-                signed = signAnsi
-            end
-            line = utils.expandTab(line, ts, 3)
-        else
-            if signs[i] then
-                signed = signAnsi
-            end
-            line = utils.expandTab(line, ts)
-        end
+        local signed = signs[i] and signAnsi or ' '
+        line = utils.expandTab(line, ts)
 
         local lineSect = {}
         local lastHlId = 0
@@ -256,7 +251,7 @@ local function sourceCmd(qwinid, signs, delim)
         table.insert(script, ']])')
     else
         table.insert(script, ']])')
-        table.insert(script, [[require('bqf.log').setLevel('debug')]])
+        table.insert(script, [[require('bqf.lib.log').setLevel('debug')]])
     end
 
     table.insert(script, ([[require('bqf.filter.fzf').headlessRun(%s, %d, %q)]]):format(
