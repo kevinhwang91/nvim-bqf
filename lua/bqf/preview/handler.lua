@@ -376,8 +376,17 @@ function M.mouseDoubleClick(mode)
             cmd('startinsert')
             api.nvim_feedkeys(('%c'):format(0x0d), 'it', false)
         else
+            local lnum, vcol = vim.v.mouse_lnum, vim.v.mouse_col
+            local col
+            if utils.has08() then
+                col = math.max(0, fn.virtcol2col(clickedWinid, lnum, vcol) - 1)
+            end
             cmd(('norm %c'):format(0x0d))
-            cmd(('keepj norm! %dgg%d|'):format(vim.v.mouse_lnum, vim.v.mouse_col))
+            if col then
+                api.nvim_win_set_cursor(0, {lnum, col})
+            else
+                cmd(('keepj norm! %dgg%d|'):format(lnum, vcol))
+            end
             utils.zz()
         end
     end
