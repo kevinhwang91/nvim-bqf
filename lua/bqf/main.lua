@@ -57,7 +57,7 @@ function M.enable()
 end
 
 function M.disable()
-    if vim.bo.buftype ~= 'quickfix' or not vim.w.bqf_enabled then
+    if vim.bo.buftype ~= 'quickfix' then
         return
     end
     vim.w.bqf_enabled = false
@@ -75,6 +75,7 @@ local function close(winid)
     local ok, msg = pcall(api.nvim_win_close, winid, false)
     if not ok then
         -- Vim:E444: Cannot close last window
+        ---@diagnostic disable-next-line: need-check-nil
         if msg:match('^Vim:E444') then
             local function closeLastWin()
                 cmd('new')
