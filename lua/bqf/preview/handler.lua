@@ -468,6 +468,7 @@ local function init()
         hi default link BqfPreviewFloat Normal
         hi default link BqfPreviewBorder Normal
         hi default link BqfPreviewCursor Cursor
+        hi default link BqfPreviewCursorLine CursorLine
         hi default link BqfPreviewRange IncSearch
         hi default link BqfPreviewBufLabel BqfPreviewRange
 
