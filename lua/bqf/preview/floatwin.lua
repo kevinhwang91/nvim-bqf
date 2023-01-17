@@ -143,7 +143,7 @@ function FloatWin:display()
         lwo.fen, lwo.fdm, lwo.fdc = false, 'manual', '0'
         lwo.cursorline = true
         lwo.signcolumn, lwo.colorcolumn = 'no', ''
-        lwo.winhl = 'Normal:BqfPreviewFloat'
+        lwo.winhl = 'Normal:BqfPreviewFloat,CursorLine:BqfPreviewCursorLine'
     end
 end
 
