@@ -30,15 +30,23 @@ function M.bootstrap()
 end
 
 function M.enable()
-    require('bqf.main').enable()
+    return require('bqf.main').enable()
 end
 
 function M.disable()
-    require('bqf.main').disable()
+    return require('bqf.main').disable()
 end
 
 function M.toggle()
     require('bqf.main').toggle()
+end
+
+function M.showPreviewWindow()
+    return require('bqf.preview.handler').showWindow()
+end
+
+function M.hidePreviewWindow()
+    return require('bqf.preview.handler').hideWindow()
 end
 
 function M.toggleAuto()

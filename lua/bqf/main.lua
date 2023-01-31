@@ -21,7 +21,7 @@ end
 function M.enable()
     -- need after vim-patch:8.1.0877
     if not layout.validQfWin() then
-        return
+        return false
     end
 
     local qwinid = api.nvim_get_current_win()
@@ -54,11 +54,12 @@ function M.enable()
     -- WinClosed event in magic window must after in main
     magicwin.attach(qwinid, pwinid, nil, adjustHeightCallback)
     vim.w.bqf_enabled = true
+    return true
 end
 
 function M.disable()
     if vim.bo.buftype ~= 'quickfix' then
-        return
+        return false
     end
     vim.w.bqf_enabled = false
     local qwinid = api.nvim_get_current_win()
@@ -69,6 +70,7 @@ function M.disable()
     cmd('sil! au! BqfFilterFzf * <buffer>')
     cmd('sil! au! BqfMagicWin')
     qfs:dispose()
+    return true
 end
 
 local function close(winid)

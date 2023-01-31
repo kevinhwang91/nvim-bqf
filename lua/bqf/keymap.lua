@@ -8,7 +8,7 @@ local funcMap
 
 local actionFuncref = {
     ptogglemode = {mode = 'n', module = 'preview.handler', funcref = 'toggleMode()'},
-    ptoggleitem = {mode = 'n', module = 'preview.handler', funcref = 'toggleItem()'},
+    ptoggleitem = {mode = 'n', module = 'preview.handler', funcref = 'toggleWindow()'},
     ptoggleauto = {mode = 'n', module = 'preview.handler', funcref = 'toggle()'},
     pscrollup = {mode = 'n', module = 'preview.handler', funcref = 'scroll(-1)'},
     pscrolldown = {mode = 'n', module = 'preview.handler', funcref = 'scroll(1)'},

@@ -308,7 +308,31 @@ function M.toggle(qwinid)
     end
 end
 
-function M.toggleItem(qwinid)
+---
+---@param qwinid? number
+---@return boolean
+function M.showWindow(qwinid)
+    local res = false
+    if not pvs.validate() then
+        M.open(qwinid, nil, true)
+        res = true
+    end
+    return res
+end
+
+---
+---@param qwinid? number
+---@return boolean
+function M.hideWindow(qwinid)
+    local res = false
+    if pvs.validate() then
+        M.close(qwinid)
+        res = true
+    end
+    return res
+end
+
+function M.toggleWindow(qwinid)
     if pvs.validate() then
         M.close(qwinid)
     else
