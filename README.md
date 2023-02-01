@@ -35,6 +35,7 @@ So why not nvim-bqf?
   - [Function table](#function-table)
   - [Buffer Commands](#buffer-commands)
   - [Commands](#commands)
+  - [API](#api)
   - [Quickfix context](#quickfix-context)
     - [Why use an additional context?](#why-use-an-additional-context)
     - [Supported keys](#supported-keys)
@@ -312,6 +313,10 @@ Additional mouse supported:
 ### Commands
 
 - `BqfAutoToggle`: Toggle nvim-bqf enable automatically
+
+### API
+
+[bqf.lua](./lua/bqf.lua)
 
 ### Quickfix context
 
