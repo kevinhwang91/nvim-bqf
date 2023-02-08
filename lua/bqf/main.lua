@@ -28,7 +28,7 @@ function M.enable()
     local qs = qfs:new(qwinid)
     assert(qs, 'It is not a quickfix window')
     local qlist = qs:list()
-    if qlist:changedtick() == 0 then
+    if qlist:changedtick() == 0 and vim.w.bqf_enabled then
         return
     end
     vim.wo.nu, vim.wo.rnu = true, false
