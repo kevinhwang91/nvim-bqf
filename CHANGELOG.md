@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.1.0] - 2023-02-20
+
+### Features
+
+#### Preview
+
+- Add `BqfPreviewCursorLine` to make CursorLine configurable (#97)
+- Add `hidePreviewWindow` and `showPreviewWindow` API (#100)
+
+### Bug Fixes
+
+#### Preview
+
+- Convert vcol to byte col
+
+#### FZF
+
+- Correct to expand tab for line in headless mode
+
+#### Miscellaneous
+
+- Disable bqf correctly
+- `nvim -q` make changedtick of qf euqal to 0 (#104)
+
 ## [1.0.0] - 2023-01-05
 
 ### Features
