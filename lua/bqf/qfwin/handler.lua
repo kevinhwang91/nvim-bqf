@@ -170,22 +170,20 @@ function M.navFile(next)
     end
 end
 
-local function validateSize(qlist)
-    local valid = qlist:getQfList({size = 0}).size > 0
-    if not valid then
-        api.nvim_err_writeln('E42: No Errors')
-    end
-    return valid
-end
-
 local function doEdit(qwinid, idx, close, action)
     qwinid = qwinid or api.nvim_get_current_win()
     local qs = qfs:get(qwinid)
     local pwinid = qs:previousWinid()
-    assert(utils.isWinValid(pwinid), 'file window is invalid')
-
     local qlist = qs:list()
-    if not validateSize(qlist) then
+    local size = qlist:getQfList({size = 0}).size
+    if size <= 0 then
+        api.nvim_err_writeln('E42: No Errors')
+        return false
+    end
+    if not utils.isWinValid(pwinid) then
+        vim.notify('file window is invalid', vim.log.levels.WARN)
+        cmd([[exe "norm! \<CR>"]])
+        api.nvim_win_set_height(qwinid, math.min(10, size))
         return false
     end
 
