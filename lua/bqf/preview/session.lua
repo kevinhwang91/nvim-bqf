@@ -20,6 +20,8 @@ local throttle = require('bqf.lib.throttle')
 ---@field full boolean
 ---@field focusable boolean
 ---@field labelId? number
+---@field enableTitle boolean
+---@field enableScrollBar boolean
 ---@field highlightDebounced BqfDebounce
 ---@field scrollThrottled BqfThrottle
 local PreviewSession = {pool = {}}
@@ -87,15 +89,15 @@ end
 
 function PreviewSession.close()
     floatwin:close()
-    if title then
+    if title and PreviewSession.enableTitle then
         title:close()
     end
-        scrollbar:close()
+    scrollbar:close()
 end
 
 function PreviewSession.validate()
     local res = floatwin:validate()
-    if floatwin.showScrollBar then
+    if res and PreviewSession.enableScrollBar and floatwin.showScrollBar then
         res = res and scrollbar:validate()
     end
     return res
@@ -103,7 +105,9 @@ end
 
 function PreviewSession.scroll(srcBufnr, loaded)
     floatwin:refreshTopline()
-    scrollbar:update()
+    if PreviewSession.enableScrollBar then
+        scrollbar:update()
+    end
     PreviewSession.mapBufHighlight(srcBufnr, loaded)
 end
 
@@ -160,16 +164,20 @@ function PreviewSession:display(pwinid, pbufnr, idx, size, handler)
             end, self.ns)
         end
     end
-    local res = floatwin:display(self.winid, pwinid, self.focusable, self.full, handler, {
-        bufnr = pbufnr,
-        idx = idx,
-        size = size
-    })
-    if self.missingTitle() then
+    local titleOpts
+    if self.enableTitle then
+        titleOpts = {
+            bufnr = pbufnr,
+            idx = idx,
+            size = size
+        }
+    end
+    local res = floatwin:display(self.winid, pwinid, self.focusable, self.full, handler, titleOpts)
+    if self.enableTitle and self.missingTitle() then
         local text = floatwin:generateTitle(pbufnr, idx, size)
         title:display(text)
     end
-    if res then
+    if res and self.enableScrollBar then
         scrollbar:display()
     end
 end
@@ -181,17 +189,18 @@ end
 function PreviewSession:initialize(o)
     self.ns = api.nvim_create_namespace('bqf-preview')
     floatwin:initialize(self.ns, o.border, o.wrap, o.winHeight, o.winVHeight, o.winblend)
-    if o.showTitle then
+    self.enableTitle = o.showTitle
+    self.enableScrollBar = o.showScrollBar
+    if self.enableScrollBar then
         title = require('bqf.preview.title')
         title:initialize()
     end
     scrollbar:initialize()
-    if o.showScrollBar then
-        self.scrollThrottled = throttle(function()
-            if self.validate() then
-                scrollbar:update()
-            end
-        end, 80)
+    self.scrollThrottled = self.enableScrollBar and throttle(function()
+        if self.validate() then
+            scrollbar:update()
+        end
+    end, 80) or function()
     end
     self.highlightDebounced = debounce(function()
         self.mapBufHighlight((self.get() or {}).bufnr)

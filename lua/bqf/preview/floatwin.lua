@@ -206,7 +206,7 @@ function FloatWin:display(qwinid, pwinid, focusable, full, postHandle, titleOpts
     end
 
     local title
-    if self.hasTitle then
+    if self.hasTitle and titleOpts then
         title = self:generateTitle(titleOpts.bufnr, titleOpts.idx, titleOpts.size)
         wopts.title = {{self.border[2], 'BqfPreviewBorder'}, {title, 'BqfPreviewTitle'}}
     end
