@@ -198,6 +198,7 @@ function PreviewSession:initialize(o)
     scrollbar:initialize()
     self.scrollThrottled = self.enableScrollBar and throttle(function()
         if self.validate() then
+            floatwin:refreshTopline()
             scrollbar:update()
         end
     end, 80) or function()
