@@ -12,9 +12,11 @@ local def = {
     previous_winid_ft_skip = {},
     preview = {
         auto_preview = true,
-        border_chars = {'│', '│', '─', '─', '╭', '╮', '╰', '╯', '█'},
+        border = 'rounded',
         show_title = true,
+        show_scroll_bar = true,
         delay_syntax = 50,
+        winblend = 0,
         win_height = 15,
         win_vheight = 15,
         wrap = false,
@@ -66,11 +68,13 @@ local def = {
 }
 ---@class BqfConfigPreview
 ---@field auto_preview boolean
----@field border_chars string[]
+---@field border string|string[]
 ---@field show_title boolean
+---@field show_scroll_bar boolean
 ---@field delay_syntax number
 ---@field win_height number
 ---@field win_vheight number
+---@field winblend number
 ---@field wrap boolean
 ---@field buf_label boolean
 ---@field should_preview_cb fun(bufnr: number, qwinid: number): boolean

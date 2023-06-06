@@ -8,9 +8,6 @@ local autoPreview
 local clicked
 local shouldPreviewCallback
 local keepPreview, origPos
-local winHeight, winVHeight
-local wrap, borderChars
-local showTitle
 local bufLabel
 local lastIdx
 local PLACEHOLDER_TBL
@@ -97,7 +94,7 @@ local function doSyntax(qwinid)
                 vim.o.ei = 'FileType'
                 vim.bo.ft = ft
                 cmd(('do filetypedetect BufRead %s'):format(
-                fn.fnameescape(api.nvim_buf_get_name(ps.bufnr))))
+                    fn.fnameescape(api.nvim_buf_get_name(ps.bufnr))))
                 return vim.bo.ft
             end)
             vim.o.ei = eiBak
@@ -218,23 +215,22 @@ function M.open(qwinid, qidx, force)
         return
     end
 
-    ps:validOrBuild(pwinid)
+    local loaded = utils.isBufLoaded(pbufnr)
+    local size = qlist:getQfList({size = 0}).size
+    local fbufnr
+    ps:display(pwinid, pbufnr, qidx, size, function()
+        fbufnr = pvs.floatBufnr()
+        if force or ps.bufnr ~= pbufnr then
+            pvs.floatBufReset()
+            ts.disableActive(fbufnr)
+            ps:transferBuf(pbufnr)
+            ps.bufnr = pbufnr
+            ps.syntax = ts.tryAttach(pbufnr, fbufnr, loaded)
+        end
+    end)
 
-    pvs.display()
-
-    local fbufnr = pvs.floatBufnr()
     if not fbufnr then
         return
-    end
-
-    local loaded = utils.isBufLoaded(pbufnr)
-    if force or ps.bufnr ~= pbufnr then
-        pvs.floatBufReset()
-        ts.disableActive(fbufnr)
-
-        utils.transferBuf(pbufnr, fbufnr)
-        ps.bufnr = pbufnr
-        ps.syntax = ts.tryAttach(pbufnr, fbufnr, loaded)
     end
 
     if not ps.syntax then
@@ -247,9 +243,6 @@ function M.open(qwinid, qidx, force)
     if type(lspRangeHlList) == 'table' then
         lspRangeHl = lspRangeHlList[qidx]
     end
-
-    local size = qlist:getQfList({size = 0}).size
-    pvs.updateBorder(pbufnr, qidx, size)
 
     pvs.floatWinExec(function()
         execPreview(item, lspRangeHl, patternHl)
@@ -428,14 +421,7 @@ function M.initialize(qwinid)
 
     local mouseEnabled = vim.o.mouse:match('[na]') ~= nil
 
-    pvs:new(qwinid, {
-        winHeight = winHeight,
-        winVHeight = winVHeight,
-        wrap = wrap,
-        borderChars = borderChars,
-        showTitle = showTitle,
-        focusable = mouseEnabled
-    })
+    pvs:new(qwinid, mouseEnabled)
     -- some plugins will change the quickfix window, preview window should init later
     vim.defer_fn(function()
         lastIdx = -1
@@ -447,11 +433,11 @@ function M.initialize(qwinid)
         if mouseEnabled then
             local qbufnr = api.nvim_win_get_buf(qwinid)
             api.nvim_buf_set_keymap(qbufnr, '', '<LeftMouse>',
-                                    [[<Cmd>lua require('bqf.preview.handler').mouseClick()<CR>]],
-                                    {nowait = true, noremap = false})
+                [[<Cmd>lua require('bqf.preview.handler').mouseClick()<CR>]],
+                {nowait = true, noremap = false})
             api.nvim_buf_set_keymap(qbufnr, 'n', '<2-LeftMouse>',
-                                    [[<Cmd>lua require('bqf.preview.handler').mouseDoubleClick()<CR>]],
-                                    {nowait = true, noremap = false})
+                [[<Cmd>lua require('bqf.preview.handler').mouseDoubleClick()<CR>]],
+                {nowait = true, noremap = false})
         end
 
         if autoPreview and api.nvim_get_current_win() == qwinid then
@@ -465,32 +451,39 @@ local function init()
     vim.validate({preview = {pconf, 'table'}})
     local delaySyntax = tonumber(pconf.delay_syntax)
     autoPreview = pconf.auto_preview
-    wrap = pconf.wrap
     shouldPreviewCallback = pconf.should_preview_cb
-    borderChars = pconf.border_chars
-    showTitle = pconf.show_title
-    winHeight = tonumber(pconf.win_height)
-    winVHeight = tonumber(pconf.win_vheight or winHeight)
+    local wrap, winblend = pconf.wrap, pconf.winblend
+    local showTitle, showScrollBar = pconf.show_title, pconf.show_scroll_bar
+    local winHeight = tonumber(pconf.win_height)
+    local winVHeight = tonumber(pconf.win_vheight or winHeight)
     bufLabel = pconf.buf_label
     vim.validate({
         auto_preview = {autoPreview, 'boolean'},
         delay_syntax = {delaySyntax, 'number'},
-        wrap = {wrap, 'boolean'},
         should_preview_cb = {shouldPreviewCallback, 'function', true},
-        border_chars = {
-            borderChars, function(chars)
-                return type(chars) == 'table' and #chars == 9
-            end, 'a table with 9 chars'
-        },
+        wrap = {wrap, 'boolean'},
         show_title = {showTitle, 'boolean'},
+        show_scroll_bar = {showScrollBar, 'boolean'},
         win_height = {winHeight, 'number'},
         win_vheight = {winVHeight, 'number'},
+        winblend = {winblend, 'number'},
         buf_label = {bufLabel, 'boolean'}
     })
-
+    pvs:initialize({
+        border = pconf.border,
+        wrap = wrap,
+        showTitle = showTitle,
+        showScrollBar = showScrollBar,
+        winHeight = winHeight,
+        winVHeight = winVHeight,
+        winblend = winblend
+    })
     cmd([[
         hi default link BqfPreviewFloat Normal
-        hi default link BqfPreviewBorder Normal
+        hi default link BqfPreviewBorder FloatBorder
+        hi default link BqfPreviewTitle Title
+        hi default link BqfPreviewThumb PmenuThumb
+        hi default link BqfPreviewSbar PmenuSbar
         hi default link BqfPreviewCursor Cursor
         hi default link BqfPreviewCursorLine CursorLine
         hi default link BqfPreviewRange IncSearch
@@ -506,7 +499,8 @@ local function init()
     -- Damn it! someone wants to disable syntax :(
     -- https://github.com/kevinhwang91/nvim-bqf/issues/89
     ---@diagnostic disable-next-line: unused-local
-    M.doSyntax = delaySyntax >= 0 and debounce(doSyntax, delaySyntax) or function(qwinid) end
+    M.doSyntax = delaySyntax >= 0 and debounce(doSyntax, delaySyntax) or function(qwinid)
+    end
 end
 
 init()

@@ -23,7 +23,7 @@ function M.mapBufHighlight(srcBufnr, dstBufnr, topline, botline)
     M.clearHighlight(dstBufnr)
     for _, ns in pairs(api.nvim_get_namespaces()) do
         local extmarks = api.nvim_buf_get_extmarks(srcBufnr, ns, {topline - 1, 0}, {botline - 1, -1},
-                                                   {details = true})
+            {details = true})
         for _, m in ipairs(extmarks) do
             local _, row, col, details = unpack(m)
             local endRow, endCol = details.end_row, details.end_col
@@ -39,27 +39,24 @@ function M.mapBufHighlight(srcBufnr, dstBufnr, topline, botline)
     end
 end
 
----
----@param bufnr number
----@param lnum number
----@param chunks table
----@param opts? table
----@return number
-function M.setVirtEol(bufnr, lnum, chunks, opts)
-    opts = opts or {}
-    return api.nvim_buf_set_extmark(bufnr, virtNs, lnum, -1, {
-        id = opts.id,
-        virt_text = chunks,
-        hl_mode = 'combine',
-        priority = opts.priority
+function M.setHighlight(bufnr, ns, row, col, endRow, endCol, hlGroup, priority)
+    return api.nvim_buf_set_extmark(bufnr, ns, row, col, {
+        end_row = endRow,
+        end_col = endCol,
+        hl_group = hlGroup,
+        priority = priority
     })
 end
 
-local function init()
-    hlNs = api.nvim_create_namespace('')
-    virtNs = api.nvim_create_namespace('')
+function M.setVirtText(bufnr, ns, row, col, virtText, opts)
+    opts = opts or {}
+    return api.nvim_buf_set_extmark(bufnr, ns, row, col, {
+        id = opts.id,
+        virt_text = virtText,
+        virt_text_win_col = opts.virt_text_win_col,
+        priority = opts.priority or 10,
+        hl_mode = opts.hl_mode or 'combine'
+    })
 end
-
-init()
 
 return M

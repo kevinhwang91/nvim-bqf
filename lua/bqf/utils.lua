@@ -17,6 +17,18 @@ M.has08 = (function()
     end
 end)()
 
+---
+---@return fun(): boolean
+M.has09 = (function()
+    local has09
+    return function()
+        if has09 == nil then
+            has09 = fn.has('nvim-0.9') == 1
+        end
+        return has09
+    end
+end)()
+
 ---@return fun(): boolean
 M.isWindows = (function()
     local isWin
