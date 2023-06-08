@@ -453,7 +453,7 @@ local function init()
     autoPreview = pconf.auto_preview
     shouldPreviewCallback = pconf.should_preview_cb
     local wrap, winblend = pconf.wrap, pconf.winblend
-    local showTitle, showScrollBar = pconf.show_title, pconf.show_scroll_bar
+    local showTitle, formatTitle, showScrollBar = pconf.show_title, pconf.format_title, pconf.show_scroll_bar
     local winHeight = tonumber(pconf.win_height)
     local winVHeight = tonumber(pconf.win_vheight or winHeight)
     bufLabel = pconf.buf_label
@@ -463,6 +463,7 @@ local function init()
         should_preview_cb = {shouldPreviewCallback, 'function', true},
         wrap = {wrap, 'boolean'},
         show_title = {showTitle, 'boolean'},
+        format_title = {formatTitle, 'function', true},
         show_scroll_bar = {showScrollBar, 'boolean'},
         win_height = {winHeight, 'number'},
         win_vheight = {winVHeight, 'number'},
@@ -473,6 +474,7 @@ local function init()
         border = pconf.border,
         wrap = wrap,
         showTitle = showTitle,
+        formatTitle = formatTitle,
         showScrollBar = showScrollBar,
         winHeight = winHeight,
         winVHeight = winVHeight,

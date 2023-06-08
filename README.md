@@ -192,6 +192,10 @@ Using external grep-like program to search `display` and replace it to `show`, b
             description = [[Show the window title]],
             default = true
         },
+        format_title = {
+            description = [[Format the window title]],
+            default = nil
+        },
         show_scroll_bar = {
             description = [[Show the scroll bar]],
             default = true

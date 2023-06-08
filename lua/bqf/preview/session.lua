@@ -188,7 +188,7 @@ end
 
 function PreviewSession:initialize(o)
     self.ns = api.nvim_create_namespace('bqf-preview')
-    floatwin:initialize(self.ns, o.border, o.wrap, o.winHeight, o.winVHeight, o.winblend)
+    floatwin:initialize(self.ns, o.border, o.wrap, o.winHeight, o.winVHeight, o.winblend, o.formatTitle)
     self.enableTitle = o.showTitle
     self.enableScrollBar = o.showScrollBar
     if self.enableScrollBar then

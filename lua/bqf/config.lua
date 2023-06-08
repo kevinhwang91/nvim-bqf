@@ -14,6 +14,7 @@ local def = {
         auto_preview = true,
         border = 'rounded',
         show_title = true,
+        format_title = nil,
         show_scroll_bar = true,
         delay_syntax = 50,
         winblend = 12,
@@ -70,6 +71,7 @@ local def = {
 ---@field auto_preview boolean
 ---@field border string|string[]
 ---@field show_title boolean
+---@field format_title fun(info: { bufnr: integer, idx: integer, size: integer, max_width: integer }): string
 ---@field show_scroll_bar boolean
 ---@field delay_syntax number
 ---@field win_height number

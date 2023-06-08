@@ -181,19 +181,12 @@ function FloatWin:transferBuf(srcBufnr)
 end
 
 function FloatWin:generateTitle(srcBufnr, idx, size)
-    local posStr = ('[%d/%d]'):format(idx, size)
-    local bufStr = ('buf %d:'):format(srcBufnr)
-    local modified = vim.bo[srcBufnr].modified and '[+] ' or ''
-    local name = fn.bufname(srcBufnr):gsub('^' .. vim.env.HOME, '~')
-    local width = self.width
-    local limit = width - fn.strwidth(bufStr) - fn.strwidth(posStr)
-    if limit - fn.strwidth(name) < 15 then
-        name = fn.pathshorten(name)
-        if limit - fn.strwidth(name) < 15 then
-            name = ''
-        end
-    end
-    return (' %s %s %s %s'):format(posStr, bufStr, name, modified)
+    return self.formatTitle({
+        bufnr = srcBufnr,
+        idx = idx,
+        size = size,
+        max_width = self.width - 4,
+    })
 end
 
 function FloatWin:display(qwinid, pwinid, focusable, full, postHandle, titleOpts)
@@ -238,7 +231,23 @@ function FloatWin:refreshTopline()
     self.topline = fn.line('w0', self.winid)
 end
 
-function FloatWin:initialize(ns, border, wrap, winHeight, winVHeight, winblend)
+local function defaultFormatTitle(info)
+    local bufnr = info.bufnr
+    local posStr = ('[%d/%d]'):format(info.idx, info.size)
+    local bufStr = ('buf %d:'):format(bufnr)
+    local modified = vim.bo[bufnr].modified and '[+] ' or ''
+    local name = fn.bufname(bufnr):gsub('^' .. vim.env.HOME, '~')
+    local limit = info.max_width - fn.strwidth(bufStr) - fn.strwidth(posStr)
+    if limit - fn.strwidth(name) < 15 then
+        name = fn.pathshorten(name)
+        if limit - fn.strwidth(name) < 15 then
+            name = ''
+        end
+    end
+    return (' %s %s %s %s'):format(posStr, bufStr, name, modified)
+end
+
+function FloatWin:initialize(ns, border, wrap, winHeight, winVHeight, winblend, formatTitle)
     self.ns = ns
     local tBorder = type(border)
     if tBorder == 'string' then
@@ -257,6 +266,7 @@ function FloatWin:initialize(ns, border, wrap, winHeight, winVHeight, winblend)
     self.winblend = winblend
     self.defaultHeight = winHeight
     self.defaultWinVHeight = winVHeight
+    self.formatTitle = formatTitle or defaultFormatTitle
     self.hasTitle = utils.has09()
 end
 
