@@ -254,7 +254,7 @@ function FloatWin:initialize(ns, border, wrap, winHeight, winVHeight, winblend)
     self.bufferName = 'BqfPreviewFloatWin'
     self.rawBorder = type(border) == 'string' and defaultBorder[border] or border
     self.wrap = wrap
-    self.winblend = winblend
+    self.winblend = vim.o.termguicolors and 0 or winblend
     self.defaultHeight = winHeight
     self.defaultWinVHeight = winVHeight
     self.hasTitle = utils.has09()
