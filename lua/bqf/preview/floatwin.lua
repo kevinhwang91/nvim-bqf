@@ -16,8 +16,8 @@ local utils = require('bqf.utils')
 ---@field width number
 ---@field height number
 ---@field vHeight number
----@field defualtWinHeight number
----@field defualtVHeight number
+---@field defaultHeight number
+---@field defaultVHeight number
 ---@field wrap boolean
 ---@field showTitle boolean
 ---@field showScrollBar boolean
@@ -200,7 +200,7 @@ function FloatWin:display(qwinid, pwinid, focusable, full, postHandle, titleOpts
     self.qwinid = qwinid
     self.pwinid = pwinid
     self.focusable = focusable or false
-    local wopts = self:build(full and 999 or self.defaultHeight, full and 999 or self.defualtVHeight)
+    local wopts = self:build(full and 999 or self.defaultHeight, full and 999 or self.defaultVHeight)
     if vim.tbl_isempty(wopts) then
         return
     end
@@ -256,7 +256,7 @@ function FloatWin:initialize(ns, border, wrap, winHeight, winVHeight, winblend)
     self.wrap = wrap
     self.winblend = vim.o.termguicolors and winblend or 0
     self.defaultHeight = winHeight
-    self.defaultWinVHeight = winVHeight
+    self.defaultVHeight = winVHeight
     self.hasTitle = utils.has09()
 end
 
