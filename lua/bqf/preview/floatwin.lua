@@ -101,7 +101,7 @@ function FloatWin:build(hHeight, vHeight)
         end
         height = math.min(vHeight, qinfo.height - 2)
         local winline = utils.winCall(self.qwinid, fn.winline)
-        row = height >= winline and 1 or winline - height - 1
+        row = height >= winline and 0 or winline - height - 1
         if relPos == POS.LEFT or absPos == POS.LEFT_FAR then
             anchor = 'NW'
             col = qinfo.width + 2
