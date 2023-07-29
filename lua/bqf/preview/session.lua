@@ -173,12 +173,14 @@ function PreviewSession:display(pwinid, pbufnr, idx, size, handler)
         }
     end
     local res = floatwin:display(self.winid, pwinid, self.focusable, self.full, handler, titleOpts)
-    if self.enableTitle and self.missingTitle() then
-        local text = floatwin:generateTitle(pbufnr, idx, size)
-        title:display(text)
-    end
-    if res and self.enableScrollBar then
-        scrollbar:display()
+    if res then
+        if self.enableTitle and self.missingTitle() then
+            local text = floatwin:generateTitle(pbufnr, idx, size)
+            title:display(text)
+        end
+        if self.enableScrollBar then
+            scrollbar:display()
+        end
     end
 end
 

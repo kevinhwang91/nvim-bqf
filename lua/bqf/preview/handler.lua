@@ -350,9 +350,9 @@ function M.moveCursor()
 end
 
 function M.redrawWin()
-    if pvs.validate() then
-        local bufnr = tonumber(fn.expand('<abuf>')) or api.nvim_get_current_buf()
-        local qwinid = fn.bufwinid(bufnr)
+    local bufnr = tonumber(fn.expand('<abuf>')) or api.nvim_get_current_buf()
+    local qwinid = fn.bufwinid(bufnr)
+    if utils.isWinValid(qwinid) then
         M.close(qwinid)
         M.open(qwinid)
     end
