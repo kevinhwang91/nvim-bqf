@@ -353,8 +353,11 @@ function M.redrawWin()
     local bufnr = tonumber(fn.expand('<abuf>')) or api.nvim_get_current_buf()
     local qwinid = fn.bufwinid(bufnr)
     if utils.isWinValid(qwinid) then
+        local preview = pvs.validate()
         M.close(qwinid)
-        M.open(qwinid)
+        if preview then
+            M.open(qwinid)
+        end
     end
 end
 
