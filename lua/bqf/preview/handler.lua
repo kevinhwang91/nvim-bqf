@@ -135,6 +135,49 @@ local function showCountLabel(qlist, idx)
     pvs:showCountLabel(('[%d/%d]'):format(cur, cnt), 'BqfPreviewBufLabel')
 end
 
+local function createWinResizeEvent()
+    if fn.exists('##WinResized') == 1 and fn.exists('#BqfPreview#WinResized') == 0 then
+        cmd([[au BqfPreview WinResized * lua require('bqf.preview.handler').qfResized()]])
+    else
+        cmd([[au BqfPreview VimResized <buffer> lua require('bqf.preview.handler').redrawWin()]])
+    end
+end
+
+local function destroyWinResizeEvent()
+    if fn.exists('##WinResized') == 1 then
+        cmd('au! BqfPreview WinResized *')
+    else
+        cmd('au! BqfPreview VimResized *')
+    end
+end
+
+function M.qfResized()
+    local wins = vim.v.event.windows
+    local curWinid = api.nvim_get_current_win()
+    for _, winid in ipairs(wins) do
+        if curWinid == winid then
+            local qs = qfs:get(winid)
+            if qs then
+                M.redrawWin(winid)
+            end
+        end
+    end
+end
+
+function M.redrawWin(qwinid)
+    if not qwinid then
+        local bufnr = tonumber(fn.expand('<abuf>')) or api.nvim_get_current_buf()
+        qwinid = fn.bufwinid(bufnr)
+    end
+    if utils.isWinValid(qwinid) then
+        local preview = pvs.validate()
+        M.close(qwinid)
+        if preview then
+            M.open(qwinid)
+        end
+    end
+end
+
 function M.autoEnabled()
     return autoPreview
 end
@@ -172,6 +215,7 @@ function M.close(qwinid)
     if ps then
         ps.bufnr = nil
     end
+    destroyWinResizeEvent()
 end
 
 ---
@@ -261,6 +305,8 @@ function M.open(qwinid, qidx, force)
             end, 50)
         end
     end
+
+    createWinResizeEvent()
 end
 
 ---
@@ -349,18 +395,6 @@ function M.moveCursor()
     end
 end
 
-function M.redrawWin()
-    local bufnr = tonumber(fn.expand('<abuf>')) or api.nvim_get_current_buf()
-    local qwinid = fn.bufwinid(bufnr)
-    if utils.isWinValid(qwinid) then
-        local preview = pvs.validate()
-        M.close(qwinid)
-        if preview then
-            M.open(qwinid)
-        end
-    end
-end
-
 local function checkClicked()
     fn.getchar()
     local winid = vim.v.mouse_winid
@@ -416,7 +450,6 @@ function M.initialize(qwinid)
     cmd([[
         aug BqfPreview
             au! * <buffer>
-            au VimResized <buffer> lua require('bqf.preview.handler').redrawWin()
             au CursorMoved,WinEnter <buffer> lua require('bqf.preview.handler').moveCursor()
             au WinLeave,BufWipeout,BufHidden <buffer> lua require('bqf.preview.handler').close()
         aug END
