@@ -1,11 +1,11 @@
 local api = vim.api
 local fn = vim.fn
 
-local list = require("bqf.qfwin.list")
-local utils = require("bqf.utils")
+local list = require('bqf.qfwin.list')
+local utils = require('bqf.utils')
 
 local function isNormalWinType(winid)
-    return fn.win_gettype(winid) == ""
+    return fn.win_gettype(winid) == ''
 end
 
 ---
@@ -14,14 +14,14 @@ end
 ---@return number
 local function getPwinid(winid, qlist)
     local pwinid
-    if qlist.type == "loc" then
+    if qlist.type == 'loc' then
         pwinid = qlist.filewinid > 0 and qlist.filewinid or -1
     else
         local function isValid(wid)
             return wid > 0 and isNormalWinType(wid)
         end
 
-        pwinid = fn.win_getid(fn.winnr("#"))
+        pwinid = fn.win_getid(fn.winnr('#'))
         if not isValid(pwinid) then
             local tabpage = api.nvim_win_get_tabpage(winid)
             for _, owinid in ipairs(api.nvim_tabpage_list_wins(tabpage)) do
@@ -44,14 +44,14 @@ end
 ---@field private _list BqfQfList
 ---@field private _pwinid number
 ---@field winid number
-local QfSession = { pool = {} }
+local QfSession = {pool = {}}
 
 function QfSession:list()
     return self._list
 end
 
 function QfSession:previousWinid()
-    if not utils.isWinValid(self._pwinid) or fn.win_gettype(self._pwinid) ~= "" then
+    if not utils.isWinValid(self._pwinid) or fn.win_gettype(self._pwinid) ~= '' then
         self._pwinid = getPwinid(self.winid, self._list)
     end
     return utils.isWinValid(self._pwinid) and self._pwinid or -1
@@ -59,7 +59,7 @@ end
 
 function QfSession:validate()
     local winType = fn.win_gettype(self.winid)
-    return winType == "quickfix" or winType == "loclist"
+    return winType == 'quickfix' or winType == 'loclist'
 end
 
 ---
