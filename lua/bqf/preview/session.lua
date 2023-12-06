@@ -172,6 +172,7 @@ function PreviewSession:display(pwinid, pbufnr, idx, size, handler)
             size = size
         }
     end
+    local hasShowedScrollBar = floatwin.showScrollBar
     local res = floatwin:display(self.winid, pwinid, self.focusable, self.full, handler, titleOpts)
     if res then
         if self.enableTitle and self.missingTitle() then
@@ -180,6 +181,14 @@ function PreviewSession:display(pwinid, pbufnr, idx, size, handler)
         end
         if self.enableScrollBar then
             scrollbar:display()
+            -- TODO
+            -- upstream bug, can't render terminal correctly if create preview component
+            -- like scrollbar, clear screen manually.
+            if hasShowedScrollBar == false and floatwin.showScrollBar == true and utils.has10() and
+                api.nvim_get_mode().mode == 't' then
+                -- ^L = 0x0c
+                api.nvim_feedkeys(('%c'):format(0x0c), 'it', false)
+            end
         end
     end
 end
