@@ -44,7 +44,7 @@ function M.enable()
     cmd([[
         aug Bqf
             au! * <buffer>
-            au WinEnter <buffer> ++nested lua require('bqf.main').killAloneQf()
+            au WinEnter <buffer> ++nested lua if require('bqf.config').auto_close then require('bqf.main').killAloneQf() end
             au WinClosed <buffer> ++nested lua require('bqf.main').closeQf()
             au WinLeave <buffer> lua require('bqf.main').saveWinView()
         aug END

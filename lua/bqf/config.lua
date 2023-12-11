@@ -7,6 +7,7 @@
 ---@field filter BqfConfigFilter
 local def = {
     auto_enable = true,
+    auto_close = true,
     magic_window = true,
     auto_resize_height = false,
     previous_winid_ft_skip = {},

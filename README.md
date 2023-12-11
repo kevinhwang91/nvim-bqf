@@ -165,6 +165,10 @@ Using external grep-like program to search `display` and replace it to `show`, b
         description = [[Enable nvim-bqf in quickfix window automatically]],
         default = true
     },
+    auto_close = {
+        description = [[Automatically close nvim-bqf if it is the only window, replacing it with an empty buffer]]
+        default = true
+    }
     magic_window = {
         description = [[Give the window magic, when the window is splited horizontally, keep
             the distance between the current line and the top/bottom border of neovim unchanged.
