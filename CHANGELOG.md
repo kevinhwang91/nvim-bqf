@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.1.1] - 2024-02-20
+
+### Features
+
+#### Miscellaneous
+
+- Add mapping descriptions (#124)
+
+#### Preview
+
+- **Breaking:** Rework preview module (#98)
+    1. Add `show_scroll_bar` option;
+    2. Add `border` option;
+    3. Add `winblend` option;
+    4. Delete `border_chars` option;
+    5. Change `BqfPreviewBorder` link to `FloatBorder`;
+    6. Add `BqfPreviewTitle` highlight;
+    7. Add `BqfPreviewThumb` highlight;
+    8. Add `BqfPreviewSbar` highlight;
+
+### Bug Fixes
+
+#### Miscellaneous
+
+- Reload qf if enter qf window (#134)
+
 ## [1.1.0] - 2023-02-20
 
 ### Features
