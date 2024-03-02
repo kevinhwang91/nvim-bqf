@@ -46,9 +46,9 @@ end
 ---
 ---@param winid? number
 ---@return BqfPreviewSession
-function PreviewSession.get(winid)
+function PreviewSession:get(winid)
     winid = winid or api.nvim_get_current_win()
-    return PreviewSession.pool[winid]
+    return self.pool[winid]
 end
 
 function PreviewSession.clean()
@@ -59,7 +59,7 @@ function PreviewSession.clean()
     end
 end
 
-function PreviewSession.floatBufReset()
+function PreviewSession:floatBufReset()
     local fwinid = floatwin.winid
     local fbufnr = floatwin.bufnr
     local tbufnr = scrollbar.bufnr
@@ -70,75 +70,76 @@ function PreviewSession.floatBufReset()
     cmd(('noa call nvim_win_set_buf(%d, %d)'):format(fwinid, tbufnr))
     cmd(('noa bun %d'):format(fbufnr))
     cmd(('noa call nvim_win_set_buf(%d, %d)'):format(fwinid, fbufnr))
-    extmark.clearHighlight(fbufnr)
+    extmark.clearHighlight(fbufnr, self.ns)
 end
 
-function PreviewSession.floatWinExec(func)
-    if PreviewSession.validate() then
+function PreviewSession:floatWinExec(func)
+    if self:validate() then
         utils.winCall(floatwin.winid, func)
     end
 end
 
-function PreviewSession.floatBufnr()
+function PreviewSession:floatBufnr()
     return floatwin.bufnr
 end
 
-function PreviewSession.floatWinid()
+function PreviewSession:floatWinid()
     return floatwin.winid
 end
 
-function PreviewSession.close()
+function PreviewSession:close()
     floatwin:close()
-    if title and PreviewSession.enableTitle then
+    if title and self.enableTitle then
         title:close()
     end
     scrollbar:close()
 end
 
-function PreviewSession.validate()
+function PreviewSession:validate()
     local res = floatwin:validate()
-    if res and PreviewSession.enableScrollBar and floatwin.showScrollBar then
+    if res and self.enableScrollBar and floatwin.showScrollBar then
         res = res and scrollbar:validate()
     end
     return res
 end
 
-function PreviewSession.scroll(srcBufnr, loaded)
+function PreviewSession:scroll(loaded)
     floatwin:refreshTopline()
-    if PreviewSession.enableScrollBar then
+    if self.enableScrollBar then
         scrollbar:update()
     end
-    PreviewSession.mapBufHighlight(srcBufnr, loaded)
+    self:mapBufHighlight(loaded)
 end
 
 function PreviewSession:showCountLabel(text, hlGroup)
-    local lnum = api.nvim_win_get_cursor(self.floatWinid())[1]
-    self.labelId = extmark.setVirtText(self.floatBufnr(), self.ns, lnum - 1, -1, {{text, hlGroup}}, {id = self.labelId})
+    local lnum = api.nvim_win_get_cursor(self:floatWinid())[1]
+    self.labelId = extmark.setVirtText(self:floatBufnr(), self.ns, lnum - 1, -1, {{text, hlGroup}}, {id = self.labelId})
 end
 
-function PreviewSession.mapBufHighlight(srcBufnr, loaded)
-    if not srcBufnr then
+function PreviewSession:mapBufHighlight(loaded)
+    if not self.bufnr then
         return
     end
     if loaded == nil then
-        loaded = utils.isBufLoaded(srcBufnr)
+        loaded = utils.isBufLoaded(self.bufnr)
     end
     if loaded then
         local topline, botline = floatwin:visibleRegion()
-        extmark.mapBufHighlight(srcBufnr, PreviewSession.floatBufnr(), topline, botline)
+        extmark.mapBufHighlight(self.bufnr, self:floatBufnr(), self.ns, topline, botline)
     end
 end
 
 function PreviewSession:transferBuf(srcBufnr)
     floatwin:transferBuf(srcBufnr)
+    self.bufnr = srcBufnr
 end
 
 function PreviewSession:display(pwinid, pbufnr, idx, size, handler)
-    if not self.validate() then
+    if not self:validate() then
         if self.focusable then
             local ctrlW = false
             vim.on_key(function(char)
-                local fwinid = self.floatWinid()
+                local fwinid = self:floatWinid()
                 if not utils.isWinValid(fwinid) then
                     vim.on_key(nil, self.ns)
                     return
@@ -175,7 +176,7 @@ function PreviewSession:display(pwinid, pbufnr, idx, size, handler)
     local hasShowedScrollBar = floatwin.showScrollBar
     local res = floatwin:display(self.winid, pwinid, self.focusable, self.full, handler, titleOpts)
     if res then
-        if self.enableTitle and self.missingTitle() then
+        if self.enableTitle and self:missingTitle() then
             local text = floatwin:generateTitle(pbufnr, idx, size)
             title:display(text)
         end
@@ -193,7 +194,7 @@ function PreviewSession:display(pwinid, pbufnr, idx, size, handler)
     end
 end
 
-function PreviewSession.missingTitle()
+function PreviewSession:missingTitle()
     return title and not floatwin.getConfig().title
 end
 
@@ -208,14 +209,14 @@ function PreviewSession:initialize(o)
     end
     scrollbar:initialize()
     self.scrollThrottled = self.enableScrollBar and throttle(function()
-        if self.validate() then
+        if self:validate() then
             floatwin:refreshTopline()
             scrollbar:update()
         end
     end, 80) or function()
     end
     self.highlightDebounced = debounce(function()
-        self.mapBufHighlight((self.get() or {}).bufnr)
+        self:mapBufHighlight()
     end, 50)
 end
 

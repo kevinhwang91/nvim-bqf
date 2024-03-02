@@ -10,7 +10,6 @@ local shouldPreviewCallback
 local keepPreview, origPos
 local bufLabel
 local lastIdx
-local PLACEHOLDER_TBL
 
 local config = require('bqf.config')
 local qfs = require('bqf.qfwin.session')
@@ -65,20 +64,26 @@ end
 
 ---
 ---@param qwinid? number
----@return BqfPreviewSession|table
-local function previewSession(qwinid)
+---@param skipValid? boolean
+---@return BqfPreviewSession?
+local function previewSession(qwinid, skipValid)
     qwinid = qwinid or api.nvim_get_current_win()
-    return pvs.get(qwinid) or PLACEHOLDER_TBL
+    local ps = pvs:get(qwinid)
+    if not skipValid then
+        return ps and ps:validate() and ps or nil
+    else
+        return ps
+    end
 end
 
 local function doSyntax(qwinid)
     local ps = previewSession(qwinid)
-    if ps == PLACEHOLDER_TBL or ps.syntax then
+    if not ps or ps.syntax then
         return
     end
 
     local ft = 'bqfpreview'
-    local fbufnr = ps.floatBufnr()
+    local fbufnr = ps:floatBufnr()
     local loaded = utils.isBufLoaded(ps.bufnr)
     if loaded then
         ft = vim.bo[ps.bufnr].ft
@@ -170,9 +175,9 @@ function M.redrawWin(qwinid)
         qwinid = fn.bufwinid(bufnr)
     end
     if utils.isWinValid(qwinid) then
-        local preview = pvs.validate()
+        local ps = previewSession(qwinid, true)
         M.close(qwinid)
-        if preview then
+        if ps then
             M.open(qwinid)
         end
     end
@@ -188,7 +193,7 @@ end
 
 function M.toggleMode(qwinid)
     local ps = previewSession(qwinid)
-    if ps == PLACEHOLDER_TBL then
+    if not ps then
         return
     end
 
@@ -206,13 +211,12 @@ function M.close(qwinid)
     end
 
     lastIdx = -1
-    pvs.close()
-
     ts.shrinkCache()
 
     qwinid = qwinid or api.nvim_get_current_win()
-    local ps = previewSession(qwinid)
+    local ps = previewSession(qwinid, true)
     if ps then
+        ps:close()
         ps.bufnr = nil
     end
     destroyWinResizeEvent()
@@ -224,22 +228,20 @@ end
 ---@param force? boolean
 function M.open(qwinid, qidx, force)
     qwinid = qwinid or api.nvim_get_current_win()
-    local qs = qfs:get(qwinid)
-    local qlist = qs:list()
-    local pwinid = qs:previousWinid()
-    local ps = previewSession(qwinid)
-
-    if ps == PLACEHOLDER_TBL or api.nvim_tabpage_list_wins(0) == 1 or fn.win_gettype(pwinid) ~= '' then
+    local ps = previewSession(qwinid, true)
+    if not ps or api.nvim_tabpage_list_wins(0) == 1 then
         return
     end
-
+    local qs = qfs:get(qwinid)
+    local pwinid = qs:previousWinid()
     qidx = qidx or api.nvim_win_get_cursor(qwinid)[1]
-    if not force and qidx == lastIdx then
+    if not force and qidx == lastIdx or fn.win_gettype(pwinid) ~= '' then
         return
     end
 
     lastIdx = qidx
 
+    local qlist = qs:list()
     local item = qlist:item(qidx)
     if not item then
         M.close(qwinid)
@@ -263,12 +265,11 @@ function M.open(qwinid, qidx, force)
     local size = qlist:getQfList({size = 0}).size
     local fbufnr
     ps:display(pwinid, pbufnr, qidx, size, function()
-        fbufnr = pvs.floatBufnr()
+        fbufnr = ps:floatBufnr()
         if force or ps.bufnr ~= pbufnr then
-            pvs.floatBufReset()
+            ps:floatBufReset()
             ts.disableActive(fbufnr)
             ps:transferBuf(pbufnr)
-            ps.bufnr = pbufnr
             ps.syntax = ts.tryAttach(pbufnr, fbufnr, loaded)
         end
     end)
@@ -288,10 +289,10 @@ function M.open(qwinid, qidx, force)
         lspRangeHl = lspRangeHlList[qidx]
     end
 
-    pvs.floatWinExec(function()
+    ps:floatWinExec(function()
         execPreview(item, lspRangeHl, patternHl)
         utils.zz()
-        pvs.scroll(pbufnr, loaded)
+        ps:scroll(loaded)
     end)
     if bufLabel then
         if size < 1000 or qlist:itemsCached() then
@@ -313,9 +314,10 @@ end
 ---@param direction number
 ---@param qwinid? number
 function M.scroll(direction, qwinid)
-    if pvs.validate() and direction then
-        qwinid = qwinid or api.nvim_get_current_win()
-        pvs.floatWinExec(function()
+    qwinid = qwinid or api.nvim_get_current_win()
+    local ps = previewSession(qwinid)
+    if ps and direction then
+        ps:floatWinExec(function()
             if direction == 0 then
                 api.nvim_win_set_cursor(0, origPos)
             else
@@ -323,8 +325,7 @@ function M.scroll(direction, qwinid)
                 cmd(('norm! %c'):format(direction > 0 and 0x04 or 0x15))
             end
             utils.zz()
-            local ps = previewSession(qwinid)
-            pvs.scroll(ps.bufnr)
+            ps:scroll()
         end)
     end
 end
@@ -333,8 +334,8 @@ end
 ---@param qwinid? number
 function M.toggle(qwinid)
     qwinid = qwinid or api.nvim_get_current_win()
-    local ps = previewSession(qwinid)
-    if ps == PLACEHOLDER_TBL then
+    local ps = previewSession(qwinid, true)
+    if not ps then
         return
     end
     autoPreview = autoPreview ~= true
@@ -352,7 +353,8 @@ end
 ---@return boolean
 function M.showWindow(qwinid)
     local res = false
-    if not pvs.validate() then
+    qwinid = qwinid or api.nvim_get_current_win()
+    if not previewSession(qwinid) then
         M.open(qwinid, nil, true)
         res = true
     end
@@ -364,7 +366,8 @@ end
 ---@return boolean
 function M.hideWindow(qwinid)
     local res = false
-    if pvs.validate() then
+    qwinid = qwinid or api.nvim_get_current_win()
+    if previewSession(qwinid) then
         M.close(qwinid)
         res = true
     end
@@ -372,7 +375,8 @@ function M.hideWindow(qwinid)
 end
 
 function M.toggleWindow(qwinid)
-    if pvs.validate() then
+    qwinid = qwinid or api.nvim_get_current_win()
+    if previewSession(qwinid) then
         M.close(qwinid)
     else
         M.open(qwinid, nil, true)
@@ -381,8 +385,8 @@ end
 
 function M.moveCursor()
     local qwinid = api.nvim_get_current_win()
-    local ps = previewSession(qwinid)
-    if ps == PLACEHOLDER_TBL then
+    local ps = previewSession(qwinid, true)
+    if not ps then
         return
     end
 
@@ -398,7 +402,7 @@ end
 local function checkClicked()
     fn.getchar()
     local winid = vim.v.mouse_winid
-    clicked = pvs.floatWinid() == winid
+    clicked = pvs:floatWinid() == winid
     return winid
 end
 
@@ -531,12 +535,10 @@ local function init()
     ]])
     clicked = false
 
-    PLACEHOLDER_TBL = {}
     -- Damn it! someone wants to disable syntax :(
     -- https://github.com/kevinhwang91/nvim-bqf/issues/89
     ---@diagnostic disable-next-line: unused-local
-    M.doSyntax = delaySyntax >= 0 and debounce(doSyntax, delaySyntax) or function(qwinid)
-    end
+    M.doSyntax = delaySyntax >= 0 and debounce(doSyntax, delaySyntax) or function(qwinid) end
 end
 
 init()
