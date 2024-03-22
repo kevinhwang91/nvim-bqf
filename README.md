@@ -172,6 +172,10 @@ Using external grep-like program to search `display` and replace it to `show`, b
             any floating attributes.]],
         default = true
     },
+    enable_mouse = {
+        description = [[Enable item selection mouse keymaps]],
+        default = true
+    },
     auto_resize_height = {
         description = [[Resize quickfix window height automatically.
             Shrink higher height to size of list in quickfix window, otherwise extend height

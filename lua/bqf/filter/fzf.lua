@@ -485,7 +485,7 @@ function M.preHandle(qwinid, size, bind)
         end
     end
 
-    if vim.o.mouse:match('[na]') ~= nil then
+    if vim.o.mouse:match('[na]') ~= nil and config.enable_mouse then
         api.nvim_buf_set_keymap(bufnr, 'n', '<LeftMouse>',
                                 [[<Cmd>lua require('bqf.preview.handler').mouseClick('t')<CR>]],
                                 {nowait = true, noremap = false})
