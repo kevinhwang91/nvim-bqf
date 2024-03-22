@@ -459,7 +459,7 @@ function M.initialize(qwinid)
         aug END
     ]])
 
-    local mouseEnabled = vim.o.mouse:match('[na]') ~= nil
+    local mouseEnabled = vim.o.mouse:match('[na]') ~= nil and config.enable_mouse
 
     pvs:new(qwinid, mouseEnabled)
     -- some plugins will change the quickfix window, preview window should init later

@@ -2,6 +2,7 @@
 ---@field auto_enable boolean
 ---@field magic_window boolean
 ---@field auto_resize_height boolean
+---@field enable_mouse boolean
 ---@field preview BqfConfigPreview
 ---@field func_map table<string, string>
 ---@field filter BqfConfigFilter
@@ -9,6 +10,7 @@ local def = {
     auto_enable = true,
     magic_window = true,
     auto_resize_height = false,
+    enable_mouse = true,
     previous_winid_ft_skip = {},
     preview = {
         auto_preview = true,
@@ -96,6 +98,7 @@ local function init()
     vim.validate({
         auto_enable = {Config.auto_enable, 'boolean'},
         magic_window = {Config.magic_window, 'boolean'},
+        enable_mouse = {Config.enable_mouse, 'boolean'},
         auto_resize_height = {Config.auto_resize_height, 'boolean'},
         preview = {Config.preview, 'table'},
         func_map = {Config.func_map, 'table'},

@@ -169,13 +169,16 @@ function M.initialize()
             )
         end
     end
-    api.nvim_buf_set_keymap(
-        0,
-        'n',
-        '<2-LeftMouse>',
-        '<CR>',
-        {desc = 'Open the item under the cursor', nowait = true, noremap = false}
-    )
+
+    if vim.o.mouse:match('[na]') ~= nil and config.enable_mouse then
+        api.nvim_buf_set_keymap(
+            0,
+            'n',
+            '<2-LeftMouse>',
+            '<CR>',
+            {desc = 'Open the item under the cursor', nowait = true, noremap = false}
+        )
+    end
 end
 
 ---
