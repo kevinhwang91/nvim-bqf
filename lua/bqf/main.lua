@@ -31,10 +31,6 @@ function M.enable()
     if qlist:changedtick() == 0 and vim.w.bqf_enabled then
         return
     end
-    vim.wo.nu, vim.wo.rnu = true, false
-    vim.wo.wrap = false
-    vim.wo.foldenable, vim.wo.foldcolumn = false, '0'
-    vim.wo.signcolumn = 'number'
 
     local adjustHeightCallback = layout.initialize(qwinid)
     preview.initialize(qwinid)
