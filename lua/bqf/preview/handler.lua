@@ -76,13 +76,35 @@ local function previewSession(qwinid, skipValid)
     end
 end
 
+local function detectFileType(bufnr, fbufnr)
+    local name = fn.fnameescape(api.nvim_buf_get_name(bufnr))
+    if utils.has08() then
+        return vim.filetype.match({
+            filename = name,
+            buf = bufnr,
+        })
+    end
+    local ft
+    local eiBak = vim.o.ei
+    local ok, res = pcall(api.nvim_buf_call, fbufnr, function()
+        vim.o.ei = 'FileType'
+        cmd(('do filetypedetect BufRead %s'):format(name))
+        return vim.bo.ft
+    end)
+    vim.o.ei = eiBak
+    if ok then
+        ft = res
+    end
+    return ft
+end
+
 local function doSyntax(qwinid)
     local ps = previewSession(qwinid)
     if not ps or ps.syntax then
         return
     end
 
-    local ft = 'bqfpreview'
+    local ft
     local fbufnr = ps:floatBufnr()
     local loaded = utils.isBufLoaded(ps.bufnr)
     if loaded then
@@ -94,21 +116,10 @@ local function doSyntax(qwinid)
         local bytes = api.nvim_buf_get_offset(fbufnr, lcount)
         -- bytes / lcount < 500 LGTM :)
         if bytes / lcount < 500 then
-            local eiBak = vim.o.ei
-            local ok, res = pcall(api.nvim_buf_call, fbufnr, function()
-                vim.o.ei = 'FileType'
-                vim.bo.ft = ft
-                cmd(('do filetypedetect BufRead %s'):format(
-                    fn.fnameescape(api.nvim_buf_get_name(ps.bufnr))))
-                return vim.bo.ft
-            end)
-            vim.o.ei = eiBak
-            if ok then
-                ft = res
-            end
+            ft = detectFileType(ps.bufnr, fbufnr)
         end
     end
-    if ft ~= 'bqfpreview' then
+    if type(ft) == 'string' then
         ps.syntax = ts.attach(ps.bufnr, fbufnr, ft)
         if not ps.syntax then
             vim.bo[fbufnr].syntax = ft
