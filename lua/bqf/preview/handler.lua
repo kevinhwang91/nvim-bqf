@@ -285,7 +285,7 @@ function M.open(qwinid, qidx, force)
         end
     end)
 
-    if not fbufnr then
+    if not ps.bufnr or not fbufnr then
         return
     end
 
