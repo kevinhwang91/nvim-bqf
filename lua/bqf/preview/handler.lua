@@ -100,7 +100,7 @@ end
 
 local function doSyntax(qwinid)
     local ps = previewSession(qwinid)
-    if not ps or ps.syntax then
+    if not ps or not ps.bufnr or ps.syntax then
         return
     end
 
