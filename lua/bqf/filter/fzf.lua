@@ -36,20 +36,20 @@ local function filterActions(actions)
     end
 end
 
-local function compareVersion(a, b)
-    local asecs = vim.split(a, '%.')
-    local bsecs = vim.split(b, '%.')
-    for i = 1, math.max(#asecs, #bsecs) do
-        local n1 = tonumber(asecs[i]) or -1
-        local n2 = tonumber(bsecs[i]) or -1
-        if n1 < n2 then
-            return -1
-        elseif n1 > n2 then
-            return 1
-        end
-    end
-    return 0
-end
+-- local function compareVersion(a, b)
+--     local asecs = vim.split(a, '%.')
+--     local bsecs = vim.split(b, '%.')
+--     for i = 1, math.max(#asecs, #bsecs) do
+--         local n1 = tonumber(asecs[i]) or -1
+--         local n2 = tonumber(bsecs[i]) or -1
+--         if n1 < n2 then
+--             return -1
+--         elseif n1 > n2 then
+--             return 1
+--         end
+--     end
+--     return 0
+-- end
 
 local function exportForHeadless(bufnr, signs, fname)
     local fnameData = fname .. '_data'
@@ -201,7 +201,7 @@ local function sourceCmd(qwinid, signs, delim)
 
     local bqfRtp
     local qfFiles = vim.list_extend(api.nvim_get_runtime_file('syntax/qf.vim', true),
-                                    api.nvim_get_runtime_file('syntax/qf.lua', true))
+        api.nvim_get_runtime_file('syntax/qf.lua', true))
     local rtps, sortedQfFiles = {}, {}
     for _, rtp in ipairs(api.nvim_list_runtime_paths()) do
         if not bqfRtp and rtp:find('nvim-bqf', 1, true) then
@@ -487,11 +487,11 @@ function M.preHandle(qwinid, size, bind)
 
     if vim.o.mouse:match('[na]') ~= nil then
         api.nvim_buf_set_keymap(bufnr, 'n', '<LeftMouse>',
-                                [[<Cmd>lua require('bqf.preview.handler').mouseClick('t')<CR>]],
-                                {nowait = true, noremap = false})
+            [[<Cmd>lua require('bqf.preview.handler').mouseClick('t')<CR>]],
+            {nowait = true, noremap = false})
         api.nvim_buf_set_keymap(bufnr, 'n', '<2-LeftMouse>',
-                                [[<Cmd>lua require('bqf.preview.handler').mouseDoubleClick('t')<CR>]],
-                                {nowait = true, noremap = false})
+            [[<Cmd>lua require('bqf.preview.handler').mouseDoubleClick('t')<CR>]],
+            {nowait = true, noremap = false})
     end
 
     if M.postHandle then
@@ -514,14 +514,8 @@ function M.run()
     -- greater than 1000 items is worth using headless as stream to improve user experience
     local source = size > 1000 and sourceCmd or sourceList
 
-    local baseOpt = {'--color', 'gutter:-1'}
-    if compareVersion(version, '0.27.4') >= 0 then
-        table.insert(baseOpt, '--scroll-off')
-        table.insert(baseOpt, utils.scrolloff(qwinid))
-    end
-    if compareVersion(version, '0.35.0') >= 0 then
-        table.insert(baseOpt, '--no-separator')
-    end
+    local baseOpt = {'--color', 'gutter:-1', '--no-separator', '--scroll-off',
+        utils.scrolloff(qwinid)}
 
     -- TODO
     -- ctx.fzf_extra_opts and ctx.fzf_action_for are used by myself, I'm not sure who wants them.
@@ -576,7 +570,7 @@ local function init()
         return
     end
     assert(vim.g.loaded_fzf or fn.exists('*fzf#run') == 1,
-           'fzf#run function not found. You also need Vim plugin from the main fzf repository')
+        'fzf#run function not found. You also need Vim plugin from the main fzf repository')
     version = getVersion()
 
     config = require('bqf.config')
