@@ -47,6 +47,7 @@ function M.enable()
             au WinEnter <buffer> ++nested lua require('bqf.main').enterQf()
             au WinClosed <buffer> ++nested lua require('bqf.main').closeQf()
             au WinLeave <buffer> lua require('bqf.main').saveWinView()
+            au BufEnter <buffer> lua require('bqf.main').validBuf()
         aug END
     ]])
     -- TODO
@@ -101,6 +102,12 @@ end
 function M.saveWinView()
     local winid = api.nvim_get_current_win()
     qfs:saveWinView(winid)
+end
+
+function M.validBuf()
+    if not vim.w.bqf_enabled and not qfs:get(api.nvim_get_current_win()) then
+        M.disable()
+    end
 end
 
 function M.enterQf()
