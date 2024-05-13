@@ -243,21 +243,22 @@ function M.open(close, jumpCmd, qwinid, idx)
             end
             cmd(('%s %s'):format(jumpCmd, fname))
         else
-            local current_tabnr = vim.api.nvim_win_get_tabpage(vim.api.nvim_get_current_win())
             local winnr
             local winid
+            local tabnr
+            local current_tabnr = vim.api.nvim_win_get_tabpage(vim.api.nvim_get_current_win())
+            local current_tab = false
+
             local bufInfos = fn.getbufinfo(bufnr)
             for key, buffinfo in pairs(bufInfos) do
-                local windows = buffinfo.windows
-                for i = 1, #windows do
-                    local window = windows[i]
-                    local wininfo = vim.fn.getwininfo(window)[1]
+                for i = 1, #buffinfo.windows do
+                    local wininfo = vim.fn.getwininfo(windows[i])[1]
 
-                    -- if wininfo.tabnr ~= current_tabnr then
-                    --     print('break')
-                    --     -- continue
-                    --     do break end
-                    -- end
+                    local tabnr_ = wininfo.tabnr
+
+                    if tabnr and tabnr_ > tabnr then
+                        do break end
+                    end
 
                     local winnr_ = wininfo.winnr
                     local winid_ = wininfo.winid
@@ -265,26 +266,34 @@ function M.open(close, jumpCmd, qwinid, idx)
                     if not (winid) then
                         winnr = winnr_
                         winid = winid_
-                    else
-                        if winnr_ < winnr then
+                        tabnr = tabnr_
+                    elseif tabnr_ == current_tabnr then
+                        if current_tab == false or winnr_ < winnr then
                             winnr = winnr_
+                            if winnr == 1 then
+                                goto finish
+                            end
                             winid = winid_
+                            tabnr = tabnr_
+                            current_tab = true
                         end
-                    end
-
-                    if winnr == 1 then
-                        break
+                    elseif tabnr_ < tabnr then
+                        winnr = winnr_
+                        winid = winid_
+                        tabnr = tabnr_
+                    elseif winnr_ < winnr then
+                        winnr = winnr_
+                        winid = winid_
                     end
                 end
             end
 
             if not (winid) then
-                local buffnr = vim.fn.winbufnr(1)
-                local winid = vim.fn.bufwinid(buffnr)
-                vim.api.nvim_set_current_win(winid)
-            else
-                vim.api.nvim_set_current_win(winid)
+                local bufnr = vim.fn.winbufnr(1)
+                winid = vim.fn.bufwinid(bufnr)
             end
+            :: finish ::
+            vim.api.nvim_set_current_win(winid)
             api.nvim_set_current_buf(bufnr)
         end
     end)
