@@ -243,46 +243,22 @@ function M.open(close, jumpCmd, qwinid, idx)
             end
             cmd(('%s %s'):format(jumpCmd, fname))
         else
-            local winnr
             local winid
-            local tabnr
-            local current_tabnr = vim.api.nvim_win_get_tabpage(vim.api.nvim_get_current_win())
-            local current_tab = false
+            local lastused
 
             local bufInfos = fn.getbufinfo(bufnr)
             for key, buffinfo in pairs(bufInfos) do
                 for i = 1, #buffinfo.windows do
                     local wininfo = vim.fn.getwininfo(windows[i])[1]
 
-                    local tabnr_ = wininfo.tabnr
-
-                    if tabnr and tabnr_ > tabnr then
-                        do break end
-                    end
-
-                    local winnr_ = wininfo.winnr
+                    local lastused_ = wininfo.lastused
                     local winid_ = wininfo.winid
 
-                    if not (winid) then
-                        winnr = winnr_
+                    if not lastused then
+                        lastused = lastused_
                         winid = winid_
-                        tabnr = tabnr_
-                    elseif tabnr_ == current_tabnr then
-                        if current_tab == false or winnr_ < winnr then
-                            winnr = winnr_
-                            if winnr == 1 then
-                                goto finish
-                            end
-                            winid = winid_
-                            tabnr = tabnr_
-                            current_tab = true
-                        end
-                    elseif tabnr_ < tabnr then
-                        winnr = winnr_
-                        winid = winid_
-                        tabnr = tabnr_
-                    elseif winnr_ < winnr then
-                        winnr = winnr_
+                    elseif lastused_ > lastused then
+                        lastused = lastused_
                         winid = winid_
                     end
                 end
@@ -292,7 +268,6 @@ function M.open(close, jumpCmd, qwinid, idx)
                 local bufnr = vim.fn.winbufnr(1)
                 winid = vim.fn.bufwinid(bufnr)
             end
-            :: finish ::
             vim.api.nvim_set_current_win(winid)
             api.nvim_set_current_buf(bufnr)
         end
