@@ -61,8 +61,8 @@ end
 
 function PreviewSession:floatBufReset()
     local fwinid = floatwin.winid
-    local fbufnr = floatwin.bufnr
-    local tbufnr = scrollbar.bufnr
+    local fbufnr = floatwin:getBufnr()
+    local tbufnr = scrollbar:getBufnr()
 
     -- 1. make ml_flags empty
     -- 2. treesitter can't clean parser cache until to unload buffer
