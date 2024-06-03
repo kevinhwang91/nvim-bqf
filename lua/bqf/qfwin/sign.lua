@@ -150,7 +150,9 @@ local function init()
     sgroup = 'BqfSignGroup'
     sname = 'BqfSign'
     cmd('hi default BqfSign ctermfg=14 guifg=Cyan')
-    fn.sign_define('BqfSign', {text = ' ^', texthl = 'BqfSign'})
+    if vim.tbl_isempty(vim.fn.sign_getdefined('BqfSign')) then
+        fn.sign_define('BqfSign', {text = ' ^', texthl = 'BqfSign'})
+    end
 end
 
 init()
