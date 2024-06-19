@@ -92,7 +92,9 @@ function QfSession:saveWinView(winid)
     if winid then
         local obj = self.pool[winid]
         local wv = utils.winCall(winid, fn.winsaveview)
-        obj:list():setWinView(wv)
+        if obj ~= nil then
+            obj:list():setWinView(wv)
+        end
     end
 end
 
