@@ -70,7 +70,7 @@ So why not nvim-bqf?
 
 ### Requirements
 
-- [Neovim](https://github.com/neovim/neovim) 0.6.1 or later
+- [Neovim](https://github.com/neovim/neovim) 0.7.2 or later
 - [fzf](https://github.com/junegunn/fzf) (optional, 0.42.0 later)
 - [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (optional)
 
@@ -97,8 +97,9 @@ end
 use {'nvim-treesitter/nvim-treesitter', run = ':TSUpdate'}
 ```
 
-The nvim-bqf's preview builds upon the buffers. I highly recommended to use
-[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) to do syntax for the buffer,
+The nvim-bqf's preview builds upon the buffers. I highly recommended to use queries
+provided by [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)
+to get more accurate syntax highlighting,
 because vim's syntax is very lagging and is extremely bad for the user experience in large files.
 
 > nvim-bqf has optimized the preview performance for treesitter
