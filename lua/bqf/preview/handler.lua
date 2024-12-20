@@ -81,7 +81,7 @@ local function detectFileType(bufnr, fbufnr)
     if utils.has08() then
         return vim.filetype.match({
             filename = name,
-            buf = bufnr,
+            buf = fbufnr,
         })
     end
     local ft
