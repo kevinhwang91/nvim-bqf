@@ -227,8 +227,8 @@ local function revertOpeningWins(qwinid, pwinid, qfPos, layoutCallback)
                     -- turn off scrolloff to prepare for guessing bwrow
                     vim.wo[winid].scrolloff = 0
                     cmd(('au BqfMagicWin WinLeave * ++once %s')
-                        :format(([[lua vim.schedule(function() vim.wo[%d].scrolloff = %d end)]])
-                            :format(winid, scrollOff)))
+                        :format(([[lua vim.schedule(function() if vim.api.nvim_win_is_valid(%d) then vim.wo[%d].scrolloff = %d end end)]])
+                            :format(winid, winid, scrollOff)))
                 end
 
                 bwrows[winid] = guessBwrow(qwinid, winid)
