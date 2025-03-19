@@ -1,5 +1,6 @@
 local api = vim.api
 local cmd = vim.cmd
+local uv = vim.uv or vim.loop
 
 ---@type BqfPreviewTitle
 local title
@@ -187,8 +188,12 @@ function PreviewSession:display(pwinid, pbufnr, idx, size, handler)
             -- like scrollbar, clear screen manually.
             if hasShowedScrollBar == false and floatwin.showScrollBar == true and utils.has10() and
                 api.nvim_get_mode().mode == 't' then
-                -- ^L = 0x0c
-                api.nvim_feedkeys(('%c'):format(0x0c), 'it', false)
+                if utils.isWindows() then -- ^L = 0x0c
+                    api.nvim_feedkeys(('%c'):format(0x0c), 'it', false)
+                else                      -- SIGWINCH to force fzf redraw on resize
+                    vim.tbl_map(function(pid) uv.kill(pid, 28) end,
+                        vim._os_proc_children(vim.fn.jobpid(vim.bo.channel)))
+                end
             end
         end
     end
