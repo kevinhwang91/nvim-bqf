@@ -227,13 +227,18 @@ end
 
 ---
 ---@param close boolean
----@param jumpCmd boolean
+---@param jumpCmd string|fun(fname: string)
 ---@param qwinid number
 ---@param idx number
 function M.open(close, jumpCmd, qwinid, idx)
     doEdit(qwinid, idx, close, function(bufnr)
-        if jumpCmd then
-            local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
+        if not jumpCmd then
+            api.nvim_set_current_buf(bufnr)
+            return
+        end
+
+        local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
+        if type(jumpCmd) == 'string' then
             if jumpCmd == 'drop' then
                 local bufInfo = fn.getbufinfo(bufnr)
                 if fname == '' or #bufInfo == 1 and #bufInfo[1].windows == 0 then
@@ -242,8 +247,8 @@ function M.open(close, jumpCmd, qwinid, idx)
                 end
             end
             cmd(('%s %s'):format(jumpCmd, fname))
-        else
-            api.nvim_set_current_buf(bufnr)
+        elseif type(jumpCmd) == 'function' then
+            pcall(jumpCmd, fname)
         end
     end)
 end
