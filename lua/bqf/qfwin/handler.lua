@@ -74,9 +74,9 @@ function M.signVMToggle(bufnr)
     vim.validate({
         mode = {
             mode, function(m)
-                -- ^V = 0x16
-                return m:lower() == 'v' or m == ('%c'):format(0x16)
-            end, 'visual mode'
+            -- ^V = 0x16
+            return m:lower() == 'v' or m == ('%c'):format(0x16)
+        end, 'visual mode'
         }
     })
     -- ^[ = 0x1b
@@ -243,6 +243,32 @@ function M.open(close, jumpCmd, qwinid, idx)
             end
             cmd(('%s %s'):format(jumpCmd, fname))
         else
+            local winid
+            local lastused
+
+            local bufInfos = fn.getbufinfo(bufnr)
+            for key, buffinfo in pairs(bufInfos) do
+                for i = 1, #buffinfo.windows do
+                    local wininfo = vim.fn.getwininfo(windows[i])[1]
+
+                    local lastused_ = wininfo.lastused
+                    local winid_ = wininfo.winid
+
+                    if not lastused then
+                        lastused = lastused_
+                        winid = winid_
+                    elseif lastused_ > lastused then
+                        lastused = lastused_
+                        winid = winid_
+                    end
+                end
+            end
+
+            if not (winid) then
+                local bufnr = vim.fn.winbufnr(1)
+                winid = vim.fn.bufwinid(bufnr)
+            end
+            vim.api.nvim_set_current_win(winid)
             api.nvim_set_current_buf(bufnr)
         end
     end)
@@ -257,10 +283,10 @@ function M.tabedit(stay, qwinid, idx)
     qwinid = qwinid or api.nvim_get_current_win()
     local unnameBuf = true
     if doEdit(qwinid, idx, false, function(bufnr)
-        unnameBuf = false
-        local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
-        cmd(('tabedit %s'):format(fname))
-    end) then
+            unnameBuf = false
+            local fname = fn.fnameescape(api.nvim_buf_get_name(bufnr))
+            cmd(('tabedit %s'):format(fname))
+        end) then
         local curTabPage = api.nvim_get_current_tabpage()
         if not unnameBuf then
             api.nvim_set_current_win(qwinid)
