@@ -63,6 +63,10 @@ local function init()
         int plines_win_nofill(win_T *wp, linenr_T lnum, bool winheight);
         win_T *find_window_by_handle(int window, Error *err);
     ]])
+
+    jit.off(M.plinesWin, true)
+    jit.off(M.plinesWinNofill, true)
+    jit.off(M.plinesWinCol, true)
 end
 
 init()
