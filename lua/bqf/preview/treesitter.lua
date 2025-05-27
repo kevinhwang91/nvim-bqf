@@ -3,18 +3,23 @@ local M = {}
 
 local api = vim.api
 
-local parsers, configs
+local treesitter = vim.treesitter
 local parsersCache
 local parsersLimit
 local lru
-local initialized
+
+---@param lang string
+---@return boolean
+local function hasHighlightQuery(lang)
+    return treesitter.query.get(lang, "highlights") ~= nil
+end
 
 local function injectParserForHighlight(parser, srcBufnr, dstBufnr, loaded)
     if loaded then
         parser._source = dstBufnr
     end
 
-    vim.treesitter.highlighter.new(parser)
+    treesitter.highlighter.new(parser)
 
     if loaded then
         parser._source = srcBufnr
@@ -27,8 +32,8 @@ function M.disableActive(bufnr)
     if not initialized then
         return
     end
-    if vim.treesitter.highlighter.active[bufnr] then
-        vim.treesitter.highlighter.active[bufnr] = nil
+    if treesitter.highlighter.active[bufnr] then
+        treesitter.highlighter.active[bufnr] = nil
     end
 end
 
@@ -44,7 +49,7 @@ function M.tryAttach(srcBufnr, dstBufnr, loaded)
     end
     local parser
     if loaded then
-        parser = parsers.get_parser(srcBufnr)
+        parser = treesitter.get_parser(srcBufnr)
     else
         parser = parsersCache:get(srcBufnr)
         if parser and not api.nvim_buf_is_valid(parser:source()) then
@@ -52,7 +57,7 @@ function M.tryAttach(srcBufnr, dstBufnr, loaded)
             parsersCache:set(srcBufnr, nil)
         end
     end
-    if parser and configs.is_enabled('highlight', parser:lang(), srcBufnr) then
+    if parser and hasHighlightQuery(parser:lang()) then
         injectParserForHighlight(parser, srcBufnr, dstBufnr, loaded)
         ret = true
     end
@@ -69,8 +74,8 @@ function M.attach(srcBufnr, dstBufnr, fileType)
     if not initialized then
         return ret
     end
-    local lang = parsers.ft_to_lang(fileType)
-    if not configs.is_enabled('highlight', lang, srcBufnr) then
+    local lang = treesitter.language.get_lang(fileType)
+    if not hasHighlightQuery(lang) then
         return ret
     end
 
@@ -80,9 +85,9 @@ function M.attach(srcBufnr, dstBufnr, fileType)
     if loaded then
         -- delete old cache if buffer has loaded
         parsersCache:set(srcBufnr, nil)
-        parser = parsers.get_parser(srcBufnr, lang)
+        parser = treesitter.get_parser(srcBufnr, lang)
     else
-        parser = parsers.get_parser(dstBufnr, lang)
+        parser = treesitter.get_parser(dstBufnr, lang)
         -- no need to deepcopy the parser for the cache, upstream only dereference parser and
         -- invalidate it to make self._tree up to date, so we can cache the parser and reuse it
         -- to speed up rendering buffer.
@@ -112,13 +117,7 @@ function M.shrinkCache()
 end
 
 local function init()
-    initialized, parsers = pcall(require, 'nvim-treesitter.parsers')
-    if not initialized then
-        return
-    end
-    initialized = true
-    configs = require('nvim-treesitter.configs')
-    lru = require('bqf.struct.lru')
+    lru = require("bqf.struct.lru")
 
     parsersLimit = 48
     parsersCache = lru:new(parsersLimit)
