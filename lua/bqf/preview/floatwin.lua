@@ -23,7 +23,7 @@ local utils = require('bqf.utils')
 ---@field showScrollBar boolean
 ---@field topline number
 ---@field hasTitle boolean
----@field border string|'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string[]
+---@field border string|'none'|'single'|'double'|'rounded'|'solid'|'shadow'|'bold'|string[]
 ---@field rawBorder string[]
 local FloatWin = {wpos = require('bqf.wpos')}
 
@@ -35,6 +35,7 @@ local defaultBorder = {
     solid   = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
     shadow  = {'', '', {' ', 'FloatShadowThrough'}, {' ', 'FloatShadow'},
         {' ', 'FloatShadow'}, {' ', 'FloatShadow'}, {' ', 'FloatShadowThrough'}, ''},
+    bold    = {'┏', '━', '┓', '┃', '┛', '━', '┗', '┃'},
 }
 
 local function borderHasLine(border, index)
