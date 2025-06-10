@@ -116,6 +116,18 @@ local function init()
     if not initialized then
         return
     end
+    if parsers.get_parser == nil then
+        -- NOTE: nvim-treesitter main branch is used.
+        -- https://github.com/nvim-treesitter/nvim-treesitter/blob/main/lua/nvim-treesitter/parsers.lua
+        -- Users should have their own autocommands for starting Treesitter parsers
+        -- in buffers, including the `qf` buffer. We do not need to handle it for them.
+        initialized = false
+        parsers = nil
+        return
+    end
+
+    -- NOTE: nvim-treesitter master branch is used.
+    -- https://github.com/nvim-treesitter/nvim-treesitter/blob/master/lua/nvim-treesitter/parsers.lua
     initialized = true
     configs = require('nvim-treesitter.configs')
     lru = require('bqf.struct.lru')
