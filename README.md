@@ -212,7 +212,7 @@ Using external grep-like program to search `display` and replace it to `show`, b
         winblend = {
             description = [[The winblend for preview window, `:h winblend`]],
             default = 12
-        }
+        },
         wrap = {
             description = [[Wrap the line, `:h wrap` for detail]],
             default = false
