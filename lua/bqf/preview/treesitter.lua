@@ -119,17 +119,24 @@ local function init()
     if parsers.get_parser == nil then
         -- NOTE: nvim-treesitter main branch is used.
         -- https://github.com/nvim-treesitter/nvim-treesitter/blob/main/lua/nvim-treesitter/parsers.lua
-        -- Users should have their own autocommands for starting Treesitter parsers
-        -- in buffers, including the `qf` buffer. We do not need to handle it for them.
-        initialized = false
-        parsers = nil
-        return
+        parsers = {
+            get_parser = function(bufnr, lang)
+                return vim.treesitter.get_parser(bufnr, lang, { error = false })
+            end,
+            ft_to_lang = vim.treesitter.language.get_lang,
+        }
+        configs = {
+            is_enabled = function(_, lang, _)
+                return #vim.treesitter.query.get_files(lang, "highlights") > 0
+            end,
+        }
+    else
+        -- NOTE: nvim-treesitter master branch is used.
+        -- https://github.com/nvim-treesitter/nvim-treesitter/blob/master/lua/nvim-treesitter/parsers.lua
+        configs = require("nvim-treesitter.configs")
     end
 
-    -- NOTE: nvim-treesitter master branch is used.
-    -- https://github.com/nvim-treesitter/nvim-treesitter/blob/master/lua/nvim-treesitter/parsers.lua
     initialized = true
-    configs = require('nvim-treesitter.configs')
     lru = require('bqf.struct.lru')
 
     parsersLimit = 48
