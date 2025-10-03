@@ -485,10 +485,10 @@ function M.initialize(qwinid)
             local qbufnr = api.nvim_win_get_buf(qwinid)
             api.nvim_buf_set_keymap(qbufnr, '', '<LeftMouse>',
                 [[<Cmd>lua require('bqf.preview.handler').mouseClick()<CR>]],
-                {nowait = true, noremap = false})
+                {nowait = true, noremap = false, desc = 'Preview the item under the cursor'})
             api.nvim_buf_set_keymap(qbufnr, 'n', '<2-LeftMouse>',
                 [[<Cmd>lua require('bqf.preview.handler').mouseDoubleClick()<CR>]],
-                {nowait = true, noremap = false})
+                {nowait = true, noremap = false, desc = 'Open the item under the cursor'})
         end
 
         if autoPreview and api.nvim_get_current_win() == qwinid then
