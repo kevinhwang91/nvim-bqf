@@ -9,6 +9,7 @@ local preview = require('bqf.preview.handler')
 local layout = require('bqf.layout')
 local magicwin = require('bqf.magicwin.handler')
 local keymap = require('bqf.keymap')
+local utils = require('bqf.utils')
 
 function M.toggle()
     if vim.w.bqf_enabled then
@@ -31,10 +32,11 @@ function M.enable()
     if qlist:changedtick() == 0 and vim.w.bqf_enabled then
         return
     end
-    vim.wo.nu, vim.wo.rnu = true, false
-    vim.wo.wrap = false
-    vim.wo.foldenable, vim.wo.foldcolumn = false, '0'
-    vim.wo.signcolumn = 'number'
+    local wo = utils.has10() and vim.wo[qwinid][0] or vim.wo
+    wo.nu, wo.rnu = true, false
+    wo.wrap = false
+    wo.foldenable, wo.foldcolumn = false, '0'
+    wo.signcolumn = 'number'
 
     local adjustHeightCallback = layout.initialize(qwinid)
     preview.initialize(qwinid)
