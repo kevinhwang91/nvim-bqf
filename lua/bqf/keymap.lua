@@ -3,6 +3,7 @@ local M = {}
 local api = vim.api
 
 local config = require('bqf.config')
+local utils = require('bqf.utils')
 
 local funcMap
 
@@ -165,7 +166,7 @@ function M.initialize()
                 tblFunc.mode,
                 keymap,
                 funcrefStr(tblFunc),
-                {desc = tblFunc.desc, nowait = true}
+                {desc = utils.has08() and tblFunc.desc or nil, nowait = true}
             )
         end
     end
@@ -174,7 +175,7 @@ function M.initialize()
         'n',
         '<2-LeftMouse>',
         '<CR>',
-        {desc = 'Open the item under the cursor', nowait = true, noremap = false}
+        {desc = utils.has08() and 'Open the item under the cursor' or nil, nowait = true, noremap = false}
     )
 end
 

@@ -225,7 +225,8 @@ function FloatWin:display(qwinid, pwinid, focusable, full, postHandle, titleOpts
         wo.cursorline = true
         wo.signcolumn, wo.colorcolumn = 'no', ''
         wo.winhl = 'Normal:BqfPreviewFloat,CursorLine:BqfPreviewCursorLine,' ..
-            'FloatBorder:BqfPreviewBorder,FloatTitle:BqfPreviewTitle'
+            'FloatBorder:BqfPreviewBorder' .. (utils.has08() and ',FloatTitle:BqfPreviewTitle' or '')
+
         wo.winblend = self.winblend
     end
     self.winConfig = wopts
