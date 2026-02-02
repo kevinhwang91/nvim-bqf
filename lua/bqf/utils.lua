@@ -295,6 +295,8 @@ end
 function M.winCall(winid, f)
     if winid == 0 or winid == api.nvim_get_current_win() then
         return f()
+    elseif api.nvim_win_call then
+        return api.nvim_win_call(winid, f)
     else
         local nr = fn.winnr('#')
         local lastWinid
