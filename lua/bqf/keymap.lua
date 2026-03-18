@@ -170,13 +170,6 @@ function M.initialize()
             )
         end
     end
-    api.nvim_buf_set_keymap(
-        0,
-        'n',
-        '<2-LeftMouse>',
-        '<CR>',
-        {desc = utils.has08() and 'Open the item under the cursor' or nil, nowait = true, noremap = false}
-    )
 end
 
 ---
