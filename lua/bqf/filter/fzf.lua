@@ -449,6 +449,7 @@ function M.preHandle(qwinid, size, bind)
         row = 0,
         col = 0
     })
+    cmd('setlocal stl=')
 
     -- keep fzf term away from dithering
     if vim.o.termguicolors then
