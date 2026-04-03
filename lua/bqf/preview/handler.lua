@@ -425,8 +425,12 @@ end
 
 function M.mouseClick(mode)
     local clickedWinid = checkClicked()
+    local clickedBufnr = api.nvim_win_get_buf(clickedWinid)
+    local qfBufClicked = api.nvim_get_option_value('bt', {buf = clickedBufnr}) == 'quickfix'
     if not clicked then
-        api.nvim_set_current_win(clickedWinid)
+        if not qfBufClicked then
+            api.nvim_set_current_win(clickedWinid)
+        end
         cmd(('norm! %dgg%d|'):format(vim.v.mouse_lnum, vim.v.mouse_col))
     else
         if mode == 't' then
@@ -437,9 +441,15 @@ end
 
 function M.mouseDoubleClick(mode)
     local clickedWinid = checkClicked()
+    local clickedBufnr = api.nvim_win_get_buf(clickedWinid)
+    local qfBufClicked = api.nvim_get_option_value('bt', {buf = clickedBufnr}) == 'quickfix'
     if api.nvim_get_current_win() == clickedWinid then
-        -- ^M = 0x0d
-        cmd(('norm! %c'):format(0x0d))
+        if qfBufClicked then
+            -- ^M = 0x0d
+            cmd(('norm %c'):format(0x0d))
+        else
+            cmd(('norm! %c'):format(0x0d))
+        end
     elseif clicked then
         if mode == 't' then
             cmd('startinsert')
