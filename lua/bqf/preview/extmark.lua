@@ -24,15 +24,8 @@ function M.mapBufHighlight(srcBufnr, dstBufnr, ns, topline, botline)
             {details = true})
         for _, m in ipairs(extmarks) do
             local _, row, col, details = unpack(m)
-            local endRow, endCol = details.end_row, details.end_col
-            local hlGroup = details.hl_group
-            local priority = details.priority
-            pcall(api.nvim_buf_set_extmark, dstBufnr, ns, row, col, {
-                end_row = endRow,
-                end_col = endCol,
-                hl_group = hlGroup,
-                priority = priority
-            })
+            details.ns_id = nil
+            pcall(api.nvim_buf_set_extmark, dstBufnr, ns, row, col, details)
         end
     end
 end
